@@ -142,3 +142,75 @@ After:
 - `public/result-sample.png` — 위 모달용 1.2MB 샘플 이미지 (4958×3508)
 
 → 진행하려면 모달 JSX 완성 후 commit, 폐기하려면 `git restore`. 현재는 살아있지만 사용자 가시 버튼 클릭 시 아무 일도 안 일어남.
+
+---
+
+# 작업 로그 (소담스퀘어/오픈놀 버전 기획)
+
+기존 REMO AI Studio를 소담스퀘어(운영: 오픈놀) 전용 버전으로 재구성하기 위한 기획 트랙. 기존 v1 저장소와 **분리된 신규 저장소**로 진행.
+
+## 한눈에 보는 결과
+
+```
+- 현재 제공 범위 확정: 스토리보드 제작까지만 / 영상제작은 기존 게이팅 그대로 차단 유지
+- 인증 전환 방향 확정: Google OAuth 제거 → 아이디/비번 발급 체계
+- 3-Tier 계정 구조 설계: 리모(개발사) → 오픈놀(마스터 1개) → 발급계정 최대 20개
+- 마스터 크레딧 부여 한도(pool) 도입: 임시 60,000 (REMO 협의하 변경)
+- 기획 산출물 HTML 3종 작성
+- 신규 Private 저장소 생성·업로드: newtechremo/sodam-ai-studio
+- 보안: 하드코딩된 Gemini API 키 제거
+```
+
+### 2026-07-09 (세션) — 현황 진단 + 소담 버전 기획 + 신규 저장소
+
+#### 1. 현황 진단
+| 확인 | 결과 |
+|------|------|
+| 스토리보드→영상제작 연결 | 파이프라인 코드 완결·실제 API 연동(Kling/VEO). Mock 아님 |
+| 영상제작 사용자 진입 | `ProductionStep.tsx:86` `showComingSoonModal=true`로 완전 차단. 모달 탈출 경로 2개 모두 ASSEMBLY 복귀 → 렌더 UI 도달 불가 |
+| 크레딧 소진 기준 | 스토리보드(이미지 매트릭스) 2~5 / 업스케일 2K=3·4K=5 / 스크립트 1 / 영상 30(Kling)·100(VEO). 영상은 차단 중이라 실제 미소진 |
+
+#### 2. 소담스퀘어 버전 설계 확정사항
+| 항목 | 확정 |
+|------|------|
+| 제공 범위 | 스토리보드 제작까지. 영상제작은 기존 차단 유지(코드 변경 없음) |
+| 유저 간 의뢰 | 사이트 내 유저 지정 의뢰 행위 제외. 스토리보드 내보내기·이메일 발송만 |
+| 인증 | Google 제거 → 아이디/비번. 셀프가입 없음 (아이디→합성이메일 매핑 제안) |
+| 마스터 범위 | 오픈놀 1개 고정 (다중 고객사 제외) |
+| 아이디 생성 | 마스터가 직접 지정 (예: sodam-gangnam) |
+| 초기 크레딧 | 신규 계정 60 자동 (기존값 유지) |
+| 마스터 부여 한도 | 임시 60,000 크레딧 · REMO 협의하 변경 (`masters.credit_quota`) |
+| 계정 삭제 | 정지(이력 보존)만. 완전 삭제 없음 |
+| REMO 슈퍼관리자 | 초기엔 DB 수동 프로비저닝 (별도 UI 없음) |
+| 수신 주소 | 고정 1개: `momo.ai.fren@gmail.com` (서버 주입) |
+| 비밀번호 재발급 | 임시 비번 자동생성 후 전달 |
+
+#### 3. 데이터 모델 방향 (미구현, 설계만)
+- 신규: `masters`(단일 행, `credit_quota`), `accounts/profiles`(20개 상한), 마스터 RPC, authStore 교체
+- 재활용: `user_credits`, `credit_transactions`(type=manual 부여 로그), `production_requests`(+`recipient_email` 컬럼), `admin_get_all_requests`
+
+#### 4. 산출물 (프로젝트 루트 HTML)
+| 파일 | 내용 |
+|------|------|
+| `크레딧_영상제작_현황.html` | 영상제작 연결 현황 + 크레딧 소진 기준 + 논의 지점 |
+| `와이어프레임_소담스퀘어.html` | 3-Tier 계정 구조 저해상도 와이어프레임 + 확정 결정 |
+| `마스터_UI시안_소담스퀘어.html` | 마스터 영역 6화면 하이파이 UI 시안(앱 디자인 토큰 반영) |
+
+#### 5. 신규 저장소 업로드
+- **newtechremo/sodam-ai-studio** (Private) 생성, `main` 브랜치 push (89 파일)
+- 완전 신규 `git init` — 기존 v1 저장소와 히스토리 분리
+- 커밋 신원: 이 저장소 한정 `newtechremo`
+
+#### 6. 보안 조치
+- `tools/video_pipeline/src/video_pipeline/config.py:59`의 **하드코딩 Gemini 키 제거** → `os.getenv("GEMINI_API_KEY", "")`
+- `.env`·`node_modules`·`.omc/`·`.claude/` 스테이징 제외 검증
+- ⚠️ **미완료(사용자 조치 필요):** 노출됐던 키 `AIzaSyD…QetFTA` Google 콘솔에서 폐기(rotate) 필요
+
+## 미해결 / 다음 작업 (소담 트랙)
+| 우선도 | 작업 | 비고 |
+|--------|------|------|
+| 🔴 | 노출 Gemini 키 rotate | 사용자 직접. 폐기 후 신규 키를 env로만 |
+| 🟡 | 크레딧 한도 회복 방식 확정 | (A) 부여 누계 방식 vs (B) 잔여 풀 방식 — 현재 (A) 제안 |
+| 🟡 | 스키마 마이그레이션 작성 | `masters`·`accounts` + 마스터 RPC + RLS |
+| 🟡 | authStore 교체 | signInWithGoogle → signInWithPassword(합성이메일) |
+| 🟢 | 마스터 영역 컴포넌트 구현 | UI 시안 기반 React 컴포넌트화 |
