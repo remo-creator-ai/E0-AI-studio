@@ -1,0 +1,16 @@
+# Python pipeline (운영진용 로컬 CLI 도구, Vercel 빌드 시 제외)
+tools/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Generated pipeline outputs
+output/
+
+# Local dev artifacts
+.omc/
+.claude/
+.env.local.backup

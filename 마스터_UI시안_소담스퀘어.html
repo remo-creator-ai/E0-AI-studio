@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>REMO × 소담스퀘어 — 마스터 영역 UI 시안 (Hi-Fi)</title>
+<style>
+  :root{
+    --black:#000; --panel:#0A0A0A; --panel2:#111317; --line:#1A1A1A; --line2:#242830;
+    --white:#fff; --g300:#c9ced6; --g400:#9aa1ac; --g500:#6b7280; --g600:#4b5563;
+    --primary:#0057FF; --primary-soft:#0057FF26; --glow:0 0 24px rgba(0,87,255,.45);
+    --ok:#22c55e; --ok-bg:#22c55e22; --warn:#f5a524; --warn-bg:#f5a52422; --red:#ef4444; --red-bg:#ef444422;
+    --amber:#fbbf24;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#050505;color:var(--white);
+    font-family:"Pretendard","Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;}
+  body{padding:34px 20px 90px;}
+  .page{max-width:1120px;margin:0 auto;}
+  .doc-h{margin-bottom:26px;}
+  .doc-h .kick{color:var(--primary);font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;}
+  .doc-h h1{font-size:26px;margin:6px 0 4px;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;}
+  .doc-h p{color:var(--g400);font-size:13.5px;margin:0;}
+  .cap{display:flex;align-items:baseline;gap:10px;margin:38px 0 12px;}
+  .cap .num{background:var(--primary);color:#fff;font-weight:900;font-size:13px;border-radius:8px;
+    width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;box-shadow:var(--glow);}
+  .cap h2{font-size:17px;margin:0;font-weight:800;letter-spacing:-.01em;}
+  .cap span{color:var(--g500);font-size:12.5px;}
+
+  /* device frame */
+  .frame{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--black);
+    box-shadow:0 30px 80px rgba(0,0,0,.6);}
+  .topbar{height:34px;background:#0d0d0d;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:0 14px;}
+  .tb-dot{width:11px;height:11px;border-radius:50%;background:#2a2a2a;}
+  .tb-url{margin-left:10px;font-size:11px;color:var(--g500);font-family:"Cascadia Code",Consolas,monospace;}
+
+  /* app shell */
+  .shell{display:flex;min-height:560px;background:var(--black);}
+  .side{width:236px;background:var(--panel);border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:22px;flex-shrink:0;}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 6px;}
+  .brand .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#00E0FF);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;}
+  .brand b{font-size:14px;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;line-height:1.1;}
+  .navlabel{font-size:9.5px;font-weight:800;color:var(--g500);text-transform:uppercase;letter-spacing:.14em;padding:0 8px;margin-bottom:6px;}
+  .nav{display:flex;flex-direction:column;gap:5px;}
+  .nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;color:var(--g400);
+    font-size:13.5px;font-weight:600;text-decoration:none;cursor:default;}
+  .nav a:hover{background:#ffffff08;color:#fff;}
+  .nav a.on{background:var(--primary);color:#fff;box-shadow:var(--glow);font-weight:700;}
+  .nav a .ic{width:18px;height:18px;flex-shrink:0;}
+  .side .foot{margin-top:auto;border-top:1px solid var(--line);padding-top:14px;display:flex;align-items:center;gap:10px;}
+  .avatar{width:34px;height:34px;border-radius:10px;background:#1c2230;display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:900;font-size:13px;}
+  .foot .who{font-size:12px;font-weight:800;line-height:1.2;}
+  .foot .who small{display:block;color:var(--g500);font-weight:600;font-size:10px;}
+
+  .main{flex:1;padding:26px 28px;overflow:hidden;}
+  .ph-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+  .ph-head h3{font-size:22px;margin:0;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;}
+  .ph-head .desc{color:var(--g500);font-size:12.5px;margin-top:3px;}
+
+  .ic{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+
+  /* buttons / pills / inputs */
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:#0f1116;color:#fff;
+    border-radius:12px;padding:9px 15px;font-size:12.5px;font-weight:800;cursor:default;text-transform:uppercase;letter-spacing:.02em;}
+  .btn.pri{background:var(--primary);border-color:var(--primary);box-shadow:0 8px 24px rgba(0,87,255,.32);}
+  .btn.ghost{background:transparent;}
+  .btn.sm{padding:6px 11px;font-size:11px;border-radius:9px;}
+  .btn.danger{color:#ff9b9b;border-color:#3a2222;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:999px;}
+  .pill.ok{background:var(--ok-bg);color:var(--ok);}
+  .pill.warn{background:var(--warn-bg);color:var(--warn);}
+  .pill.off{background:#ffffff10;color:var(--g400);}
+  .pill.pri{background:var(--primary-soft);color:#7aa5ff;}
+  .dotpulse{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:10px;font-weight:800;color:var(--g500);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+  .input{width:100%;background:#0d0f13;border:1px solid var(--line2);border-radius:11px;padding:11px 13px;color:#fff;font-size:13px;font-family:"Cascadia Code",Consolas,monospace;}
+  .input.ph{color:var(--g500);}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  @media(max-width:680px){.cards{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
+  .card .lab{font-size:10px;font-weight:800;color:var(--g500);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:7px;}
+  .card .big{font-size:34px;font-weight:900;letter-spacing:-.03em;margin:8px 0 2px;}
+  .card .sub{font-size:11.5px;color:var(--g400);}
+  .card .sub b{color:var(--ok);} .card .sub i{color:var(--warn);font-style:normal;}
+
+  /* table */
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .tbl th{text-align:left;font-size:10px;font-weight:800;color:var(--g500);text-transform:uppercase;letter-spacing:.08em;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .tbl td{padding:12px 12px;border-bottom:1px solid var(--line);color:var(--g300);vertical-align:middle;}
+  .tbl tr:last-child td{border-bottom:none;}
+  .tbl .mono{font-family:"Cascadia Code",Consolas,monospace;color:#fff;font-weight:600;}
+  .tbl .name{color:#fff;font-weight:700;}
+  .cr{font-family:"Cascadia Code",Consolas,monospace;font-weight:800;}
+  .panelwrap{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+  .rowacts{display:flex;gap:6px;}
+  .iconbtn{width:30px;height:30px;border:1px solid var(--line2);border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:var(--g400);background:#0f1116;}
+
+  .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .sel{background:#0d0f13;border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--g300);display:inline-flex;align-items:center;gap:8px;}
+  .sel b{color:#fff;font-weight:700;}
+
+  /* modal */
+  .modalstage{position:relative;background:
+    radial-gradient(120% 120% at 50% 0%, #0b1020 0%, #050505 60%);
+    border:1px solid var(--line);border-radius:16px;padding:40px 20px;display:flex;justify-content:center;}
+  .modal{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line2);border-radius:22px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.7);}
+  .modal .mh{padding:22px 24px 6px;}
+  .modal .mh .eyebrow{font-size:10px;font-weight:900;color:var(--primary);text-transform:uppercase;letter-spacing:.12em;}
+  .modal .mh h4{margin:6px 0 2px;font-size:18px;font-weight:900;letter-spacing:-.02em;}
+  .modal .mh p{margin:0;color:var(--g500);font-size:12px;}
+  .modal .mb{padding:14px 24px 8px;}
+  .modal .mf{padding:14px 24px 22px;display:flex;gap:10px;}
+  .genrow{display:flex;gap:8px;}
+  .genrow .input{flex:1;}
+  .hintline{font-size:11px;color:var(--g500);margin-top:4px;}
+
+  /* login */
+  .loginstage{background:radial-gradient(130% 100% at 50% -10%, #0a1330 0%, #030303 55%);
+    padding:56px 20px;display:flex;justify-content:center;}
+  .logincard{width:100%;max-width:360px;text-align:center;}
+  .logincard .lg{width:52px;height:52px;border-radius:15px;margin:0 auto 16px;background:linear-gradient(135deg,var(--primary),#00E0FF);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;box-shadow:var(--glow);}
+  .logincard h4{font-size:20px;font-weight:900;letter-spacing:-.02em;text-transform:uppercase;margin:0 0 3px;}
+  .logincard .tagline{color:var(--g500);font-size:12px;margin-bottom:22px;}
+  .logincard .field{text-align:left;}
+  .logincard .btn.pri{width:100%;justify-content:center;padding:13px;font-size:13px;margin-top:4px;}
+  .logincard .foothelp{margin-top:16px;font-size:11px;color:var(--g600);}
+
+  .callout{border:1px solid var(--line);border-left:3px solid var(--primary);background:#0a0d13;border-radius:0 12px 12px 0;padding:12px 16px;margin:14px 0 0;font-size:12.5px;color:var(--g300);}
+  .callout b{color:#fff;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--g400);margin:6px 0 0;}
+  .drawer{border-left:1px solid var(--line);background:var(--panel);width:270px;flex-shrink:0;padding:20px;}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px;}
+  .kv span{color:var(--g500);} .kv b{color:#fff;font-weight:700;text-align:right;}
+  .att{display:flex;align-items:center;gap:8px;background:#0d0f13;border:1px solid var(--line2);border-radius:10px;padding:8px 11px;font-size:12px;margin-top:8px;color:var(--g300);font-family:"Cascadia Code",Consolas,monospace;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="kick">REMO AI Studio · 소담스퀘어(오픈놀) · Hi-Fi UI 시안</div>
+  <h1>마스터 영역 화면 상세</h1>
+  <p>실제 앱 디자인 언어(다크 · Primary #0057FF · 블루 글로우) 기준 · 확정 와이어프레임 반영본 · 2026-07-09</p>
+</div>
+
+<!-- ============ 1. LOGIN ============ -->
+<div class="cap"><span class="num">1</span><h2>로그인 — 아이디 / 비밀번호</h2><span>Google 로그인·셀프가입 제거</span></div>
+<div class="frame">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / login</span></div>
+  <div class="loginstage">
+    <div class="logincard">
+      <div class="lg">R</div>
+      <h4>REMO × 소담스퀘어</h4>
+      <div class="tagline">AI 스토리보드 스튜디오</div>
+      <div class="field"><label>아이디</label><div class="input">sodam-gangnam</div></div>
+      <div class="field"><label>비밀번호</label><div class="input ph">••••••••••</div></div>
+      <div class="btn pri">로그인</div>
+      <div class="foothelp">계정 발급·문의는 오픈놀 관리자에게 요청하세요<br>셀프 회원가입은 제공하지 않습니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. DASHBOARD ============ -->
+<div class="cap"><span class="num">2</span><h2>마스터 대시보드</h2><span>/master</span></div>
+<div class="frame">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master</span></div>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><div class="logo">R</div><b>REMO<br>STUDIO</b></div>
+      <div>
+        <div class="navlabel">마스터</div>
+        <nav class="nav">
+          <a class="on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>대시보드</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>계정 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5"/></svg>크레딧 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>사용 이력</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>의뢰 기록</a>
+        </nav>
+      </div>
+      <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+    </aside>
+    <main class="main">
+      <div class="ph-head">
+        <div><h3>대시보드</h3><div class="desc">오픈놀 · 소담스퀘어 발급계정 현황</div></div>
+        <span class="pill pri"><span class="dotpulse"></span>MASTER</span>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="lab">발급 계정</div><div class="big">12<span style="font-size:18px;color:var(--g500)"> / 20</span></div><div class="sub"><b>활성 10</b> · <i>정지 2</i></div></div>
+        <div class="card"><div class="lab">크레딧 부여 한도 <span class="pill pri" style="font-size:8px;padding:1px 6px">REMO 설정</span></div><div class="big">60,000</div><div class="sub">배분 <b>4,420</b> · 잔여 <span style="color:#7aa5ff">55,580</span></div></div>
+        <div class="card"><div class="lab">누적 의뢰</div><div class="big">47</div><div class="sub"><i>대기 5</i> · <b>완료 40</b></div></div>
+      </div>
+      <div class="card" style="margin-bottom:18px;padding:16px 20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+          <div class="lab" style="margin:0">한도 배분 현황</div>
+          <div style="font-size:11px;color:var(--g400)">배분 <b style="color:#fff">4,420</b> / 한도 <b style="color:#fff">60,000</b> <span style="color:var(--g600)">(7.4%)</span></div>
+        </div>
+        <div style="height:9px;border-radius:99px;background:#141821;overflow:hidden">
+          <div style="height:100%;width:7.4%;border-radius:99px;background:linear-gradient(90deg,var(--primary),#00E0FF);box-shadow:var(--glow)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--g500);margin-top:8px">발급계정에 부여한 크레딧 누계가 한도를 초과할 수 없음 · 한도 변경은 <b style="color:var(--g300)">리모와 협의</b> 후 조정</div>
+      </div>
+      <div class="panelwrap">
+        <table class="tbl">
+          <thead><tr><th>최근 활동</th><th>계정</th><th>내용</th><th>시각</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill warn">의뢰</span></td><td class="mono">sodam-busan</td><td>부산점 홍보영상 제작 의뢰</td><td>07-09 15:10</td></tr>
+            <tr><td><span class="pill off">소진</span></td><td class="mono">sodam-gangnam</td><td>스토리보드 생성 (-3)</td><td>07-09 14:22</td></tr>
+            <tr><td><span class="pill pri">지급</span></td><td class="mono">sodam-hongdae</td><td>마스터 크레딧 +100</td><td>07-08 10:00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ 3. ACCOUNTS ============ -->
+<div class="cap"><span class="num">3</span><h2>계정 관리 — 20 슬롯</h2><span>/master/accounts</span></div>
+<div class="frame">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / accounts</span></div>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><div class="logo">R</div><b>REMO<br>STUDIO</b></div>
+      <div>
+        <div class="navlabel">마스터</div>
+        <nav class="nav">
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>대시보드</a>
+          <a class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>계정 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5"/></svg>크레딧 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>사용 이력</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>의뢰 기록</a>
+        </nav>
+      </div>
+      <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+    </aside>
+    <main class="main">
+      <div class="ph-head">
+        <div><h3>계정 관리</h3><div class="desc">발급 12 / 20 · 삭제 없이 정지로 이력 보존</div></div>
+        <span class="btn pri"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>계정 생성</span>
+      </div>
+      <div class="panelwrap">
+        <table class="tbl">
+          <thead><tr><th>아이디</th><th>표시명</th><th>크레딧</th><th>상태</th><th>최근접속</th><th style="text-align:right">관리</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">sodam-gangnam</td><td class="name">소담-강남점</td>
+              <td class="cr" style="color:#fff">320</td><td><span class="pill ok">활성</span></td><td>07-09</td>
+              <td><div class="rowacts" style="justify-content:flex-end">
+                <span class="iconbtn" title="크레딧"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M9.5 10h4a1.25 1.25 0 0 1 0 2.5h-4m0 0h4.5"/></svg></span>
+                <span class="btn sm ghost">정지</span><span class="btn sm ghost">비번재발급</span>
+              </div></td>
+            </tr>
+            <tr>
+              <td class="mono">sodam-hongdae</td><td class="name">소담-홍대점</td>
+              <td class="cr" style="color:var(--g500)">0</td><td><span class="pill off">정지</span></td><td>07-01</td>
+              <td><div class="rowacts" style="justify-content:flex-end">
+                <span class="iconbtn"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M9.5 10h4a1.25 1.25 0 0 1 0 2.5h-4m0 0h4.5"/></svg></span>
+                <span class="btn sm pri" style="box-shadow:none">활성화</span><span class="btn sm ghost">비번재발급</span>
+              </div></td>
+            </tr>
+            <tr>
+              <td class="mono">sodam-busan</td><td class="name">소담-부산점</td>
+              <td class="cr" style="color:#fff">150</td><td><span class="pill ok">활성</span></td><td>07-08</td>
+              <td><div class="rowacts" style="justify-content:flex-end">
+                <span class="iconbtn"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M9.5 10h4a1.25 1.25 0 0 1 0 2.5h-4m0 0h4.5"/></svg></span>
+                <span class="btn sm ghost">정지</span><span class="btn sm ghost">비번재발급</span>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">20개 도달 시 <b>계정 생성</b> 버튼 비활성 · 삭제 없이 <b>정지(이력 보존)</b>만 제공</div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ 4. MODALS ============ -->
+<div class="cap"><span class="num">4</span><h2>모달 — 계정 생성 · 크레딧 관리</h2><span>확정 정책 반영</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="frame">
+    <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">계정 생성</span></div>
+    <div class="modalstage">
+      <div class="modal">
+        <div class="mh"><div class="eyebrow">New Account</div><h4>발급 계정 생성</h4><p>아이디는 마스터가 직접 지정합니다</p></div>
+        <div class="mb">
+          <div class="field"><label>아이디 (직접 지정)</label><div class="input">sodam-daejeon</div></div>
+          <div class="field"><label>표시명</label><div class="input ph">소담-대전점</div></div>
+          <div class="field"><label>초기 비밀번호</label>
+            <div class="genrow"><div class="input" style="font-size:12px">Xk7#pQ2m</div><span class="btn sm" style="text-transform:none">⟳ 자동생성</span></div>
+            <div class="hintline">임시 비번 자동생성 → 최초 로그인 시 변경 유도</div>
+          </div>
+          <div class="field"><label>초기 크레딧</label><div class="input">60</div><div class="hintline">기본 60 고정 (기존값 유지)</div></div>
+        </div>
+        <div class="mf"><span class="btn pri" style="flex:1;justify-content:center">생성</span><span class="btn ghost">취소</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">크레딧 관리</span></div>
+    <div class="modalstage">
+      <div class="modal">
+        <div class="mh"><div class="eyebrow">Credit · sodam-gangnam</div><h4>크레딧 관리</h4><p>소담-강남점</p></div>
+        <div class="mb">
+          <div style="background:#0d0f13;border:1px solid var(--line2);border-radius:14px;padding:16px;text-align:center;margin-bottom:14px">
+            <div style="font-size:10px;color:var(--g500);font-weight:800;text-transform:uppercase;letter-spacing:.1em">현재 잔액</div>
+            <div style="font-size:32px;font-weight:900;letter-spacing:-.03em">320</div>
+          </div>
+          <div class="field"><label>작업</label>
+            <div class="genrow"><span class="btn sm pri" style="box-shadow:none">＋ 충전</span><span class="btn sm ghost">－ 차감</span><span class="btn sm ghost">＝ 설정</span></div>
+          </div>
+          <div class="field"><label>수량</label><div class="input">+ 100</div>
+            <div class="hintline">마스터 잔여 한도 <b style="color:#7aa5ff">55,580</b> 이내에서만 부여 가능</div>
+          </div>
+          <div class="field"><label>사유 (로그 기록)</label><div class="input ph">7월 정기 지급</div></div>
+        </div>
+        <div class="mf"><span class="btn pri" style="flex:1;justify-content:center">적용</span><span class="btn ghost">닫기</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="callout" style="margin-top:14px">크레딧 변동은 기존 <b>credit_transactions</b>(type=<b>manual</b>)에 기록 → 사용 이력 화면에 그대로 노출</div>
+
+<!-- ============ 5. USAGE ============ -->
+<div class="cap"><span class="num">5</span><h2>사용 이력</h2><span>/master/usage · credit_transactions 재활용</span></div>
+<div class="frame">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / usage</span></div>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><div class="logo">R</div><b>REMO<br>STUDIO</b></div>
+      <div>
+        <div class="navlabel">마스터</div>
+        <nav class="nav">
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>대시보드</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>계정 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5"/></svg>크레딧 관리</a>
+          <a class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>사용 이력</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>의뢰 기록</a>
+        </nav>
+      </div>
+      <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+    </aside>
+    <main class="main">
+      <div class="ph-head">
+        <div><h3>사용 이력</h3><div class="desc">계정별 크레딧 소진·지급 로그</div></div>
+        <span class="btn ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>CSV 내보내기</span>
+      </div>
+      <div class="filters">
+        <span class="sel">계정 <b>sodam-gangnam</b> ▾</span>
+        <span class="sel">기간 <b>2026-07</b> ▾</span>
+        <span class="sel">유형 <b>전체</b> ▾</span>
+      </div>
+      <div class="panelwrap">
+        <table class="tbl">
+          <thead><tr><th>일시</th><th>계정</th><th>유형</th><th>내용</th><th style="text-align:right">변동</th><th style="text-align:right">잔액</th></tr></thead>
+          <tbody>
+            <tr><td>07-09 14:22</td><td class="mono">sodam-gangnam</td><td><span class="pill off">deduct</span></td><td>스토리보드 생성 (Nano Banana 2)</td><td class="cr" style="text-align:right;color:#ff9b9b">-3</td><td class="cr" style="text-align:right">317</td></tr>
+            <tr><td>07-09 14:05</td><td class="mono">sodam-gangnam</td><td><span class="pill off">deduct</span></td><td>4K 업스케일 (CUT #3)</td><td class="cr" style="text-align:right;color:#ff9b9b">-5</td><td class="cr" style="text-align:right">320</td></tr>
+            <tr><td>07-08 10:00</td><td class="mono">sodam-gangnam</td><td><span class="pill pri">manual</span></td><td>7월 정기 지급 (마스터)</td><td class="cr" style="text-align:right;color:var(--ok)">+100</td><td class="cr" style="text-align:right">325</td></tr>
+            <tr><td>07-07 16:40</td><td class="mono">sodam-gangnam</td><td><span class="pill off">deduct</span></td><td>스크립트 생성</td><td class="cr" style="text-align:right;color:#ff9b9b">-1</td><td class="cr" style="text-align:right">225</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">영상 생성(30/100)은 <b>차단 상태이므로 이력에 나타나지 않음</b> — 소진 항목은 스토리보드·업스케일·스크립트뿐</div>
+    </main>
+  </div>
+</div>
+
+<!-- ============ 6. REQUESTS ============ -->
+<div class="cap"><span class="num">6</span><h2>의뢰 기록 관리</h2><span>/master/requests · 누가·언제·어디로·무엇</span></div>
+<div class="frame">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / requests</span></div>
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><div class="logo">R</div><b>REMO<br>STUDIO</b></div>
+      <div>
+        <div class="navlabel">마스터</div>
+        <nav class="nav">
+          <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>대시보드</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>계정 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a1.5 1.5 0 0 1 0 3H9m0 0h5"/></svg>크레딧 관리</a>
+          <a><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-8 5"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>사용 이력</a>
+          <a class="on"><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>의뢰 기록</a>
+        </nav>
+      </div>
+      <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+    </aside>
+    <main class="main" style="padding-right:0;display:flex;flex-direction:column">
+      <div class="ph-head" style="padding-right:28px">
+        <div><h3>의뢰 기록</h3><div class="desc">수신 주소 고정 · <span class="mono" style="color:var(--g300)">momo.ai.fren@gmail.com</span></div></div>
+      </div>
+      <div style="display:flex;flex:1;min-height:0">
+        <div style="flex:1;padding-right:22px">
+          <div class="filters">
+            <span class="sel">계정 <b>전체</b> ▾</span><span class="sel">상태 <b>전체</b> ▾</span>
+            <span class="sel"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg> 검색</span>
+          </div>
+          <div class="panelwrap">
+            <table class="tbl">
+              <thead><tr><th>일시</th><th>의뢰 계정</th><th>목적</th><th>상태</th></tr></thead>
+              <tbody>
+                <tr style="background:#0d1220"><td>07-09 15:10</td><td class="mono">sodam-busan</td><td>부산점 홍보영상 / 광고</td><td><span class="pill warn">대기</span></td></tr>
+                <tr><td>07-07 11:30</td><td class="mono">sodam-gangnam</td><td>강남점 오픈 / SNS</td><td><span class="pill ok">완료</span></td></tr>
+                <tr><td>07-05 09:15</td><td class="mono">sodam-hongdae</td><td>홍대점 이벤트 / 매장</td><td><span class="pill ok">완료</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="drawer">
+          <div style="font-size:10px;color:var(--primary);font-weight:900;text-transform:uppercase;letter-spacing:.12em">의뢰 상세</div>
+          <h4 style="margin:6px 0 14px;font-size:16px;font-weight:900;letter-spacing:-.02em">부산점 홍보영상</h4>
+          <div class="kv"><span>의뢰 계정</span><b>sodam-busan</b></div>
+          <div class="kv"><span>의뢰 일시</span><b>07-09 15:10</b></div>
+          <div class="kv"><span>수신 주소</span><b style="font-size:11px">momo.ai.fren@gmail.com</b></div>
+          <div class="kv"><span>목적</span><b>광고 / 홍보</b></div>
+          <div class="kv"><span>상태</span><b><span class="pill warn">대기</span></b></div>
+          <div style="font-size:10px;color:var(--g500);font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 4px">첨부</div>
+          <div class="att"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>storyboard.json</div>
+          <div class="att"><svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>assets.zip</div>
+          <div style="margin-top:16px;display:flex;gap:8px"><span class="btn pri sm" style="flex:1;justify-content:center">완료 처리</span><span class="btn ghost sm">취소</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="callout" style="margin-top:22px">
+  <b>매핑:</b> 로그인→authStore 교체 · 계정관리/크레딧→신규 masters·accounts + master RPC · 사용이력→credit_transactions 재활용 · 의뢰기록→production_requests 재활용 + recipient_email(고정 <b>momo.ai.fren@gmail.com</b>) 컬럼 · 크레딧 부여한도→masters.<b>credit_quota</b>(임시 60,000, REMO만 변경), 부여 시 배분누계 검증.
+</div>
+
+<footer style="margin-top:34px;padding-top:18px;border-top:1px solid var(--line);color:var(--g500);font-size:12px">
+  Hi-Fi 시안 v1 · 실제 앱 디자인 토큰(#0057FF, #0A0A0A, rounded-2xl, uppercase black) 기준 · 확정 정책 전면 반영.
+  다음 단계 후보: 컴포넌트 분해 → 스키마 마이그레이션 → 구현.
+</footer>
+
+</div>
+</body>
+</html>

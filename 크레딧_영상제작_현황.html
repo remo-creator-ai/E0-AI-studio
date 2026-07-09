@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>REMO AI Studio — 영상제작 연결 현황 & 크레딧 소진 기준</title>
+<style>
+  :root{
+    --bg:#0e1117; --panel:#161b22; --panel2:#1c2330; --border:#2a3240;
+    --text:#e6edf3; --muted:#9aa7b4; --accent:#6ea8fe; --accent2:#a78bfa;
+    --green:#3fb950; --amber:#e3b341; --red:#f85149; --mono:#79c0ff;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f6f8fa; --panel:#ffffff; --panel2:#f0f3f7; --border:#d5dbe2;
+      --text:#1c2128; --muted:#57606a; --accent:#0969da; --accent2:#8250df;
+      --green:#1a7f37; --amber:#9a6700; --red:#cf222e; --mono:#0550ae;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+    line-height:1.65;font-size:15px;}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 24px 80px;}
+  header{border-bottom:1px solid var(--border);padding-bottom:24px;margin-bottom:8px;}
+  .kicker{color:var(--accent);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;}
+  h1{font-size:28px;margin:8px 0 6px;line-height:1.25;}
+  h2{font-size:20px;margin:44px 0 14px;padding-left:12px;border-left:4px solid var(--accent);}
+  h3{font-size:16px;margin:24px 0 10px;color:var(--text);}
+  .sub{color:var(--muted);font-size:14px;}
+  p{margin:10px 0;}
+  code{font-family:"Cascadia Code",Consolas,monospace;font-size:12.5px;color:var(--mono);
+    background:var(--panel2);padding:1px 6px;border-radius:5px;}
+  .badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;vertical-align:middle;}
+  .b-green{background:rgba(63,185,80,.15);color:var(--green);}
+  .b-amber{background:rgba(227,179,65,.15);color:var(--amber);}
+  .b-red{background:rgba(248,81,73,.15);color:var(--red);}
+  .b-blue{background:rgba(110,168,254,.15);color:var(--accent);}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:16px 0;}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-size:13.5px;}
+  .step{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-weight:600;}
+  .step.hot{border-color:var(--accent);color:var(--accent);}
+  .arrow{color:var(--muted);font-size:18px;}
+  .tblwrap{overflow-x:auto;margin:14px 0;border:1px solid var(--border);border-radius:12px;}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;}
+  tr:last-child td{border-bottom:none;}
+  td.num{font-family:"Cascadia Code",Consolas,monospace;color:var(--mono);font-weight:600;text-align:right;}
+  .cost-hi{color:var(--red);} .cost-mid{color:var(--amber);} .cost-lo{color:var(--green);}
+  ul{margin:10px 0;padding-left:22px;} li{margin:6px 0;}
+  .note{background:var(--panel2);border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:14px;}
+  .warn{border-left-color:var(--amber);}
+  .src{color:var(--muted);font-size:12px;font-family:"Cascadia Code",Consolas,monospace;}
+  .qbox{background:linear-gradient(135deg,rgba(110,168,254,.10),rgba(167,139,250,.10));
+    border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin:18px 0;}
+  .qbox h3{margin-top:0;color:var(--accent);}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+  .big{font-size:26px;font-weight:700;font-family:"Cascadia Code",Consolas,monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">REMO AI Studio · 현황 브리핑</div>
+  <h1>스토리보드 → 영상제작 연결 현황 &amp; 크레딧 소진 기준</h1>
+  <p class="sub">현재 코드베이스(REMO-AI-Studio-v1) 기준 조사 결과 · 2026-07-09</p>
+</header>
+
+<!-- ============ PART 1 ============ -->
+<h2>1. 영상제작이 붙어 있는가?</h2>
+
+<div class="card">
+  <p style="margin-top:0;font-size:16px;">
+    <span class="badge b-green">현재 제공 범위(확정)</span>
+    <strong>스토리보드 제작까지만 제공.</strong> 영상제작(즉시 렌더링)은 <strong>기존 게이팅 그대로 차단 유지</strong>합니다.
+  </p>
+  <p style="margin-bottom:0;">
+    영상 파이프라인 자체는 <strong>코드상 완결되어 실제 AI 비디오 API와 연동</strong>되어 있으나(Mock 아님),
+    사용자 진입은 <span class="badge b-amber">Coming Soon</span> 모달로 막혀 있습니다.
+    사용자에게 열린 것은 <strong>스토리보드 결과물 내보내기(다운로드)와 이메일 발송</strong>까지입니다.
+  </p>
+</div>
+
+<div class="note">
+  <strong>차단 메커니즘 (코드 변경 없이 유지):</strong>
+  <code>showComingSoonModal</code> 초기값 <code>true</code> <span class="src">(ProductionStep.tsx:86)</span> →
+  PRODUCTION 단계 진입 즉시 모달이 전체를 덮음. 모달을 벗어나는 두 경로(닫기 · 의뢰 폼 제출)가
+  <strong>모두 ASSEMBLY로 복귀</strong> <span class="src">(:948-950, :1213-1214)</span> →
+  Render / 배치 렌더 UI에 도달하는 정상 경로가 없어 <strong>영상제작은 완전 차단</strong>.
+</div>
+
+<div class="note warn">
+  <strong>범위 정의:</strong> 사이트 안에서 <u>특정 유저를 지정해 제작을 의뢰하거나 의뢰를 수신하는(유저 간 의뢰) 행위는 범위에서 제외</u>됩니다.
+  사용자가 할 수 있는 것은 <strong>스토리보드 결과물의 내보내기(export)와 이메일 발송</strong>에 한정됩니다.
+</div>
+
+<h3>사용자에게 열려 있는 내보내기 / 발송 기능</h3>
+<div class="tblwrap">
+<table>
+  <thead><tr><th>기능</th><th>산출물</th><th>형식</th><th>위치</th></tr></thead>
+  <tbody>
+    <tr><td>스토리보드 내보내기</td><td>프로젝트 스토리보드</td><td class="num" style="text-align:left"><code>.storyboard</code> (JSON)</td><td class="src">ProductionStep.tsx:874</td></tr>
+    <tr><td>에셋 다운로드</td><td>컷별 이미지 묶음</td><td class="num" style="text-align:left"><code>.zip</code> (PNG)</td><td class="src">ProductionStep.tsx:911</td></tr>
+    <tr><td>영상 다운로드</td><td>씬별 렌더링 영상</td><td class="num" style="text-align:left"><code>.mp4</code></td><td class="src">ProductionStep.tsx:787</td></tr>
+    <tr><td>이메일 발송</td><td>스토리보드·에셋 첨부 전송</td><td class="num" style="text-align:left">이메일 알림</td><td class="src">ProductionStep.tsx:1184</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>워크플로우 4단계</h3>
+<div class="flow">
+  <span class="step">DASHBOARD</span><span class="arrow">→</span>
+  <span class="step">PLANNING<br><span class="src">기획·스크립트</span></span><span class="arrow">→</span>
+  <span class="step hot">VISUALIZING<br><span class="src">스토리보드</span></span><span class="arrow">→</span>
+  <span class="step">ASSEMBLY<br><span class="src">편집·업스케일</span></span><span class="arrow">→</span>
+  <span class="step hot">PRODUCTION<br><span class="src">영상 생성</span></span>
+</div>
+
+<h3>스토리보드 → 영상 연결 방식</h3>
+<p>각 씬의 <strong>스토리보드 이미지가 image-to-video의 시작 프레임</strong>으로 그대로 전달됩니다.</p>
+<div class="card" style="font-family:'Cascadia Code',Consolas,monospace;font-size:12.5px;color:var(--muted);">
+generateSceneVideo(<br>
+&nbsp;&nbsp;`${scene.image_prompt_en}, ${scene.video_motion_en}`,&nbsp;&nbsp;<span style="color:var(--green)">// 스토리보드 프롬프트</span><br>
+&nbsp;&nbsp;scene.image_url,&nbsp;&nbsp;<span style="color:var(--green)">// 스토리보드 이미지 = 시작 프레임</span><br>
+&nbsp;&nbsp;engine, project?.aspect_ratio<br>
+)
+<div class="src" style="margin-top:8px;">components/ProductionStep.tsx:216-221</div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0;">사용 영상 엔진</h3>
+    <ul style="margin-bottom:0;">
+      <li><strong>Kling AI</strong> <span class="badge b-blue">Budget</span><br><span class="src">kling-v1 · image2video · 5초 클립</span></li>
+      <li><strong>Google VEO 3.1</strong> <span class="badge b-blue">High-End</span><br><span class="src">veo-3.1-generate-preview · 1080p</span></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">구현 상태</h3>
+    <ul style="margin-bottom:0;">
+      <li>JWT 서명·폴링·에러처리·크레딧 차감까지 <span class="badge b-green">실동작</span></li>
+      <li>진입 게이팅: <span class="badge b-amber">Coming Soon 모달</span> (초기값 true)</li>
+      <li>운영진용 <strong>Python 파이프라인</strong>(Kling + TTS + FFmpeg) 별도 존재</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ PART 2 ============ -->
+<h2>2. 크레딧 소진 기준 (현재 정의)</h2>
+<p class="sub">요청하신 3개 항목 — 스토리보드 생성 · 이미지 업스케일 · AI 영상 생성</p>
+
+<div class="tblwrap">
+<table>
+  <thead>
+    <tr><th>단계</th><th>작업</th><th>옵션 / 모델</th><th style="text-align:right">크레딧</th><th>정의 위치</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3"><strong>스토리보드 생성</strong><br><span class="src">이미지 매트릭스</span></td>
+      <td rowspan="3">3×3 그리드 1장 생성</td>
+      <td>Nano Banana 2 <span class="src">(기본)</span></td>
+      <td class="num cost-lo">3</td>
+      <td class="src" rowspan="3">types.ts:63-79<br>VisualizingStep.tsx:206</td>
+    </tr>
+    <tr><td>Gemini 3 Pro</td><td class="num cost-mid">5</td></tr>
+    <tr><td>Gemini 2.5 Flash</td><td class="num cost-lo">2</td></tr>
+
+    <tr>
+      <td rowspan="2"><strong>이미지 업스케일</strong></td>
+      <td rowspan="2">컷 1장당</td>
+      <td>2K</td><td class="num cost-lo">3</td>
+      <td class="src" rowspan="2">types.ts:155-158<br>AssemblyStep.tsx:184</td>
+    </tr>
+    <tr><td>4K</td><td class="num cost-mid">5</td></tr>
+
+    <tr>
+      <td rowspan="2"><strong>AI 영상 생성</strong></td>
+      <td rowspan="2">씬(컷) 1개당 · 5초</td>
+      <td>Kling <span class="src">(VIDEO_STANDARD)</span></td>
+      <td class="num cost-hi">30</td>
+      <td class="src" rowspan="2">creditStore.ts:8-9<br>ProductionStep.tsx:192</td>
+    </tr>
+    <tr><td>VEO 3.1 <span class="src">(VIDEO_HD)</span></td><td class="num cost-hi">100</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note warn">
+  <strong>현재 소진되는 항목:</strong> 스토리보드 생성 · 이미지 업스케일 · 스크립트 생성뿐입니다.
+  <strong>AI 영상 생성 크레딧(30 / 100)은 정의만 되어 있고, 영상제작이 차단된 현재는 실제로 소진되지 않습니다.</strong>
+</div>
+<div class="note">
+  <strong>참고 — 부가 항목:</strong> 스크립트 생성 <code>1</code> 크레딧(PlanningStep). 무료 프로젝트 상한 <code>MAX_FREE_PROJECTS = 100</code>.
+</div>
+
+<h3>차감 동작 방식</h3>
+<ul>
+  <li><strong>선차감 아님 · 성공 후 차감:</strong> 생성 API가 성공 반환한 <em>뒤에</em> <code>deduct()</code> 호출 → 실패 시 크레딧 소모 없음.</li>
+  <li><strong>사전 잔액 확인:</strong> 각 작업 전 <code>hasEnough(cost)</code>로 검사, 부족 시 경고 후 중단.</li>
+  <li><strong>백엔드 원자적 차감:</strong> Supabase RPC <code>deduct_credits</code>가 서버에서 검증(음수면 잔액 부족).</li>
+  <li><strong>배치 업스케일:</strong> 대상 컷 수 × 단가 총합을 한 번에 확인 후 순차 진행.</li>
+</ul>
+
+<!-- ============ PART 3 ============ -->
+<h2>3. 논의가 필요한 지점</h2>
+
+<div class="qbox">
+  <h3>① 스토리보드 과금 단위 = "컷"이 아니라 "3×3 그리드 1장"</h3>
+  <p>스토리보드는 개별 컷이 아니라 <strong>3×3 매트릭스 시트 단위</strong>로 생성·과금됩니다.
+  기본 모델 기준 그리드 1장 = <code>3</code> 크레딧 → 컷당 실효 비용은 매우 낮음.
+  <br><strong>논의:</strong> 과금을 "컷당"으로 볼지 "시트당"으로 볼지, 가격 커뮤니케이션 기준을 통일할 필요.</p>
+</div>
+
+<div class="qbox">
+  <h3>② 영상이 압도적 비용 드라이버 (이미지의 6~50배)</h3>
+  <p>이미지 <code>2~5</code> vs 영상 <code>30~100</code>. 영상 1편(예: 8컷)을 VEO로 뽑으면 <code>800</code> 크레딧.
+  <br><strong>논의:</strong> "Coming Soon" 게이팅과도 직결 — 즉시 렌더링을 열 때 <strong>1인당 영상 한도/과금 정책</strong>을 먼저 확정해야 함.</p>
+</div>
+
+<div class="qbox">
+  <h3>③ 정의는 됐으나 미사용인 <code>VIDEO_ULTRA = 250</code></h3>
+  <p>상수와 설정 화면 가격표에는 있으나, 실제 엔진 분기(<code>getVideoCreditCost</code>)는 Kling/VEO 두 가지만 매핑.
+  <br><strong>논의:</strong> ULTRA 티어를 실제 출시할지, 아니면 표기에서 제거할지.</p>
+</div>
+
+<div class="qbox">
+  <h3>④ 이미지 단가 정의가 두 곳에 중복</h3>
+  <p><code>CREDIT_COSTS.IMAGE_PRO/STANDARD</code> (5/2) 와 <code>IMAGE_MODEL_INFO[].creditCost</code> (3/5/2) 가 별개로 존재.
+  실제 스토리보드 생성은 <strong>후자</strong>만 사용.
+  <br><strong>논의:</strong> 단일 소스로 통합해 불일치·유지보수 리스크 제거.</p>
+</div>
+
+<footer>
+  근거 파일: <code>store/creditStore.ts</code> · <code>types.ts</code> ·
+  <code>components/VisualizingStep.tsx</code> · <code>components/AssemblyStep.tsx</code> ·
+  <code>components/ProductionStep.tsx</code><br>
+  본 문서는 현재 코드 스냅샷 기준 자동 정리본이며, 가격 정책 결정용 논의 자료입니다.
+</footer>
+
+</div>
+</body>
+</html>

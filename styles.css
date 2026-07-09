@@ -1,0 +1,310 @@
+@import "tailwindcss";
+
+/* Custom Properties */
+:root {
+    --primary: #0057FF;
+    --secondary: #1A1A1A;
+    --accent: #00D1FF;
+    --border: #333333;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #050505;
+    color: #ffffff;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* Fix italic text clipping on right edge */
+h1, h2, h3 {
+    padding-right: 0.05em;
+    overflow: visible;
+}
+h1 span, h2 span, h3 span {
+    padding-right: 0.1em;
+    display: inline-block;
+}
+
+/* Hero animated gradient mesh background */
+@keyframes blob-move-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(80px, -60px) scale(1.1); }
+    50% { transform: translate(-40px, 80px) scale(0.95); }
+    75% { transform: translate(60px, 40px) scale(1.05); }
+}
+@keyframes blob-move-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(-100px, 50px) scale(1.05); }
+    50% { transform: translate(60px, -80px) scale(1.1); }
+    75% { transform: translate(-30px, -40px) scale(0.95); }
+}
+@keyframes blob-move-3 {
+    0%, 100% { transform: translate(0, 0) scale(1.05); }
+    25% { transform: translate(50px, 70px) scale(0.95); }
+    50% { transform: translate(-80px, -30px) scale(1.1); }
+    75% { transform: translate(40px, -60px) scale(1); }
+}
+
+.bg-primary { background-color: var(--primary); }
+.text-primary { color: var(--primary); }
+.border-primary { border-color: var(--primary); }
+.bg-secondary { background-color: var(--secondary); }
+.border-accent { border-color: var(--accent); }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #050505; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+
+.glass-panel {
+    background: rgba(26, 26, 26, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.grid-preview-container {
+    background: #000;
+    overflow: hidden;
+}
+
+.storyboard-a4 {
+    width: 297mm;
+    min-height: 210mm;
+    padding: 15mm;
+    background: white;
+    color: black;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    margin: 20px auto;
+}
+
+/* Batch Pulse Animation */
+.batch-pulse {
+    animation: batchPulse 1.5s ease-in-out infinite;
+}
+@keyframes batchPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* React Easy Crop Custom Styles */
+.react-easy-crop_Container {
+    border-radius: 1.5rem;
+}
+
+/* Print: Force A4 Landscape (must be outside @media print for some CSS processors) */
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+/* Print Styles for A4 Landscape Storyboard */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html {
+    width: 297mm !important;
+    height: 210mm !important;
+  }
+
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    width: 297mm !important;
+    height: 210mm !important;
+  }
+
+  /* Hide everything except storyboard pages */
+  aside, header, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset layout container for print */
+  #app-layout {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+    background: white !important;
+  }
+
+  #root {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  main {
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  main > div {
+    padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  /* Reset the Assembly root div - remove spacing/padding */
+  main > div > div {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Reset storyboard wrapper - remove scale transform and gap */
+  .storyboard-print-wrapper {
+    transform: none !important;
+    gap: 0 !important;
+  }
+
+  /* Storyboard container - remove all visual styling */
+  .storyboard-pages-container {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    gap: 0 !important;
+  }
+
+  .storyboard-page {
+    width: 297mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
+    max-height: 210mm !important;
+    padding: 10mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    border: none !important;
+    background: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  .storyboard-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+}
+
+/* ─── Onboarding Tour Theme ─── */
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.75) !important;
+}
+
+.remo-tour-popover.driver-popover {
+  background: #0A0A0A !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 1.5rem !important;
+  color: #ffffff !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 87, 255, 0.15) !important;
+  max-width: 360px !important;
+  padding: 0 !important;
+}
+
+.remo-tour-popover .driver-popover-title {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.02em !important;
+  font-size: 1.25rem !important;
+  color: #ffffff !important;
+  padding: 1.5rem 1.75rem 0 !important;
+}
+
+.remo-tour-popover .driver-popover-description {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.7 !important;
+  color: #9CA3AF !important;
+  padding: 0.625rem 1.75rem 1.25rem !important;
+  font-style: normal !important;
+  text-transform: none !important;
+}
+
+.remo-tour-popover .driver-popover-progress-text {
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: #6B7280 !important;
+  padding: 0 1.5rem !important;
+}
+
+.remo-tour-popover .driver-popover-navigation-btns {
+  padding: 0.75rem 1.5rem 1.25rem !important;
+  gap: 0.5rem !important;
+  display: flex !important;
+}
+
+.remo-tour-popover .driver-popover-prev-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #9CA3AF !important;
+  border-radius: 0.75rem !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  padding: 0.625rem 1rem !important;
+  text-shadow: none !important;
+  transition: all 0.2s !important;
+}
+
+.remo-tour-popover .driver-popover-prev-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.remo-tour-popover .driver-popover-next-btn {
+  background: #0057FF !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+  font-weight: 900 !important;
+  font-size: 0.75rem !important;
+  padding: 0.625rem 1.25rem !important;
+  text-shadow: none !important;
+  box-shadow: 0 8px 20px rgba(0, 87, 255, 0.3) !important;
+  transition: all 0.2s !important;
+  border: none !important;
+}
+
+.remo-tour-popover .driver-popover-next-btn:hover {
+  background: rgba(0, 87, 255, 0.9) !important;
+}
+
+.remo-tour-popover .driver-popover-close-btn {
+  color: #6B7280 !important;
+  transition: color 0.2s !important;
+}
+
+.remo-tour-popover .driver-popover-close-btn:hover {
+  color: #ffffff !important;
+}
+
+.remo-tour-popover.driver-popover .driver-popover-arrow-side-left { border-left-color: #0A0A0A !important; }
+.remo-tour-popover.driver-popover .driver-popover-arrow-side-right { border-right-color: #0A0A0A !important; }
+.remo-tour-popover.driver-popover .driver-popover-arrow-side-top { border-top-color: #0A0A0A !important; }
+.remo-tour-popover.driver-popover .driver-popover-arrow-side-bottom { border-bottom-color: #0A0A0A !important; }
+
+.driver-active-element {
+  border-radius: 1rem !important;
+}
+
+@media (max-width: 767px) {
+  .remo-tour-popover.driver-popover {
+    max-width: calc(100vw - 2rem) !important;
+    margin: 0 1rem !important;
+  }
+}

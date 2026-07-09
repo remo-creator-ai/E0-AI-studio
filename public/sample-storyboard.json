@@ -1,0 +1,88 @@
+{
+  "title": "Sample 15s Storyboard",
+  "key_message": "최첨단 스마트워치의 일상 속 우아함",
+  "duration": 15,
+  "style": "Cinematic",
+  "idea": "최첨단 스마트워치의 아침 일상을 세련되게 표현해줘.",
+  "layout": "2x5",
+  "global_grid_prompt": "A cinematic 3x3 grid sheet showing a young professional with a smartwatch in a modern apartment, 9 different camera angles (ECU, CU, MS, OTS, Full, Low, High, Profile, Wide), cinematic, consistent look, no text, no borders.",
+  "units": [
+    {
+      "section": "0-15s",
+      "scenes": [
+        {
+          "order": 1,
+          "content_kr": "햇살이 침실 창으로 부드럽게 들어오는 아침 풍경",
+          "script_kr": "새로운 하루의 시작.",
+          "script_en": "A new day begins.",
+          "image_prompt_en": "Soft morning sunlight streaming through bedroom curtains, cinematic warm tones, 4k.",
+          "video_motion_en": "SLOW PAN RIGHT"
+        },
+        {
+          "order": 2,
+          "content_kr": "스마트워치가 손목 위에서 알람으로 살짝 진동",
+          "script_kr": "조용히, 그러나 확실하게.",
+          "script_en": "Quiet, but certain.",
+          "image_prompt_en": "Close-up of a smartwatch on a wrist, subtle haptic vibration, soft bokeh background.",
+          "video_motion_en": "EXTREME CLOSE-UP STATIC"
+        },
+        {
+          "order": 3,
+          "content_kr": "주인공이 미소 지으며 일어나는 모습",
+          "script_kr": "당신을 위한 시작.",
+          "script_en": "A start made for you.",
+          "image_prompt_en": "Young professional smiling while waking up, natural light, lifestyle cinematic shot.",
+          "video_motion_en": "MEDIUM SHOT TILT UP"
+        },
+        {
+          "order": 4,
+          "content_kr": "화면에 표시되는 오늘의 일정",
+          "script_kr": "하루를 한눈에.",
+          "script_en": "Your day at a glance.",
+          "image_prompt_en": "Smartwatch screen showing daily schedule UI, sharp clear display, modern design.",
+          "video_motion_en": "OVER-THE-SHOULDER STATIC"
+        },
+        {
+          "order": 5,
+          "content_kr": "따뜻한 커피잔과 손목 위 시계의 클로즈업",
+          "script_kr": "디테일이 만드는 차이.",
+          "script_en": "Details that define the day.",
+          "image_prompt_en": "Cinematic close-up of coffee cup and smartwatch, shallow depth of field, warm tones.",
+          "video_motion_en": "CLOSE-UP SLOW PUSH IN"
+        },
+        {
+          "order": 6,
+          "content_kr": "거리로 나서며 음악을 재생하는 손동작",
+          "script_kr": "리듬을 따라.",
+          "script_en": "Move with the rhythm.",
+          "image_prompt_en": "Hand tapping smartwatch to play music while stepping outside, urban morning street.",
+          "video_motion_en": "MEDIUM SHOT TRACKING"
+        },
+        {
+          "order": 7,
+          "content_kr": "달리기 중 심박수가 표시되는 화면",
+          "script_kr": "한계를 넘어서.",
+          "script_en": "Beyond your limits.",
+          "image_prompt_en": "Dynamic running shot, smartwatch heart rate display visible, cinematic motion blur.",
+          "video_motion_en": "TRACKING SHOT"
+        },
+        {
+          "order": 8,
+          "content_kr": "성취감 있는 미소와 함께 도시 전경을 바라보는 모습",
+          "script_kr": "오늘도, 완벽하게.",
+          "script_en": "Today, perfectly done.",
+          "image_prompt_en": "Wide cinematic shot of a person overlooking the cityscape with a satisfied smile, golden hour.",
+          "video_motion_en": "WIDE SHOT SLOW ZOOM OUT"
+        },
+        {
+          "order": 9,
+          "content_kr": "제품 로고와 슬로건이 떠오르는 마무리 컷",
+          "script_kr": "당신의 시간, 다시 정의되다.",
+          "script_en": "Your time, redefined.",
+          "image_prompt_en": "Product logo emerging on a clean dark background with subtle particle effects, cinematic finale.",
+          "video_motion_en": "STATIC LOGO REVEAL"
+        }
+      ]
+    }
+  ]
+}
