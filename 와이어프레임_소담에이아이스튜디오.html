@@ -92,9 +92,9 @@
 <div class="wrap">
 
 <header>
-  <div class="kicker">소담에이아이스튜디오 (Sodam-ai-studio) · 오픈놀 버전 · 와이어프레임 v0.1</div>
+  <div class="kicker">소담에이아이스튜디오 (Sodam-ai-studio) · 오픈놀 버전 · 와이어프레임 v0.2</div>
   <h1>마스터 계정 · 발급계정 구조 와이어프레임</h1>
-  <p class="sub">Google 로그인 제거 → 아이디/비번 발급 체계 · 마스터의 크레딧/사용이력/의뢰기록 관리 · 2026-07-09</p>
+  <p class="sub">Google 로그인 제거 → 아이디/비번 발급 체계 · 공통 진입+관리자 콘솔 · 마스터의 크레딧/사용이력/의뢰기록 관리 · 2026-07-10</p>
 </header>
 
 <div class="legend">
@@ -195,8 +195,10 @@
     </ul>
   </div>
   <div class="wbox" style="border-color:var(--accent);">
-    <div class="wlabel" style="color:var(--accent);">마스터 계정 (오픈놀) — 신규 영역 <code>/master</code></div>
+    <div class="wlabel" style="color:var(--accent);">마스터 계정 (오픈놀) = 크리에이티브 앱(제작) + 관리 콘솔 <code>/master</code></div>
     <ul style="margin:0;">
+      <li>크리에이티브 앱 <strong>제작 전체</strong> — 발급계정과 동일(기획~스토리보드~어셈블리~내보내기)</li>
+      <li>사이드바 <strong>[⚙ 관리자 콘솔]</strong> 진입점 (마스터만 노출) ↓</li>
       <li><strong>마스터 대시보드</strong> (요약 지표)</li>
       <li><strong>계정 관리</strong> (20 슬롯: 생성/정지/비번재발급)</li>
       <li><strong>크레딧 관리</strong> (계정별 부여·수정)</li>
@@ -204,6 +206,9 @@
       <li><strong>의뢰 기록 관리</strong> (수신주소·일시·내용)</li>
     </ul>
   </div>
+</div>
+<div class="note">
+  <strong>공통:</strong> 마스터·발급계정 모두 로그인 후 <strong>크리에이티브 앱으로 공통 진입</strong>. 차이는 마스터에게만 사이드바 <strong>[⚙ 관리자 콘솔]</strong>이 보인다는 점뿐입니다(위 <em>‘로그인 후 진입 &amp; 마스터 콘솔 접근 정의’</em> 참조).
 </div>
 
 <!-- ===== 4. 화면 와이어프레임 ===== -->
