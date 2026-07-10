@@ -160,6 +160,26 @@
   email/password 인증을 그대로 활용하는 방식을 제안(별도 비밀번호 해싱 불필요). 계정 생성은 마스터가 <strong>service-role Edge Function</strong>으로 호출.
 </div>
 
+<h3 style="margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:16px;color:var(--accent);">▸ 로그인 후 역할 기반 라우팅 — 마스터 진입 정의</h3>
+<p>로그인 성공 시 계정 <code>role</code>로 분기합니다. 마스터와 발급계정은 <strong>완전히 분리된 경험</strong>이며,
+일반 사용자(20인)가 마스터로 승격되는 경로는 <strong>존재하지 않습니다</strong>(권한 상승 차단). 마스터는 리모가 발급한 별도의 21번째 계정입니다.</p>
+<div class="grid2">
+  <div class="wbox" style="border-color:var(--accent);">
+    <div class="wlabel" style="color:var(--accent);">role = master · 오픈놀(1개)</div>
+    <div style="font-size:13.5px;">로그인 → <strong>/master 콘솔 자동 진입</strong></div>
+    <div class="sub" style="font-size:12px;margin-top:5px;">크리에이티브 앱(대시보드·스토리보드) 미노출. 계정·크레딧·사용이력·의뢰만 관리.</div>
+  </div>
+  <div class="wbox">
+    <div class="wlabel">role = user · 발급(20인)</div>
+    <div style="font-size:13.5px;">로그인 → <strong>스토리보드 앱</strong></div>
+    <div class="sub" style="font-size:12px;margin-top:5px;">/master 직접 URL 접근 시 차단·리다이렉트. 사이드바에 마스터 진입점 미노출.</div>
+  </div>
+</div>
+<div class="note">
+  <strong>구현:</strong> 기존 <code>isAdmin(email)</code> 게이팅을 <code>accounts.role</code> 기반으로 확장 →
+  <code>App.tsx</code> 최상위에 <strong>역할 라우트 가드</strong>를 두어 role별 진입 지점을 강제. (email 하드코딩 방식 폐기)
+</div>
+
 <!-- ===== 3. 사이트맵 ===== -->
 <h2><span class="n">3</span>사이트맵 (역할별)</h2>
 <div class="grid2">
@@ -312,7 +332,7 @@
     <tr>
       <td class="tag">accounts / profiles</td>
       <td class="new">신규</td>
-      <td>발급 계정. <code>user_id(auth), username(마스터 지정), display_name, status(active/suspended), created_by</code>. 20개 <strong>상한 트리거</strong>.</td>
+      <td>발급 계정. <code>user_id(auth), role(master/user), master_id, username(마스터 지정), display_name, status(active/suspended), created_by</code>. 20개 <strong>상한 트리거</strong> · <strong>role로 로그인 라우팅 분기</strong>.</td>
     </tr>
     <tr>
       <td class="tag">user_credits</td>

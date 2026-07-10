@@ -206,10 +206,27 @@ After:
 - `.env`·`node_modules`·`.omc/`·`.claude/` 스테이징 제외 검증
 - ⚠️ **미완료(사용자 조치 필요):** 노출됐던 키 `AIzaSyD…QetFTA` Google 콘솔에서 폐기(rotate) 필요
 
+### 2026-07-10 (세션) — 제품명 통일 + 마스터 진입 정의
+
+#### 제품명 통일
+- 제품 브랜드를 **소담에이아이스튜디오 (Sodam-ai-studio)**로 통일 (기획 문서 3종 + 파일명 `_소담스퀘어`→`_소담에이아이스튜디오`)
+- 개발사 표기 **리모(REMO)**는 유지 (크레딧 한도 설정 주체)
+- 실제 앱 코드 리브랜딩(index.html 메타·i18n·로고·README)은 **보류** — 추후 구현 단계에서 일괄
+
+#### 마스터 진입(전환) 정의 — 기존 설계 갭 해소
+- 갭: 시안에 `/master` 콘솔·로그인은 있으나 **콘솔 진입 경로 정의 누락**
+- 확정: **역할 기반 자동 분리(Model A)**
+  - `role=master`(오픈놀 1개) → 로그인 시 `/master` 콘솔 자동 진입, 크리에이티브 앱 미노출
+  - `role=user`(발급 20인) → 스토리보드 앱, `/master` 직접 접근 차단·리다이렉트
+  - **일반 사용자→마스터 승격 경로 없음**(권한 상승 차단). 마스터는 리모 발급 별도 21번째 계정
+  - 구현: 기존 `isAdmin(email)` 게이팅 → `accounts.role` 기반 `App.tsx` 라우트 가드로 확장
+- `accounts` 스키마에 `role(master/user)`·`master_id` 필드 추가 반영
+
 ## 미해결 / 다음 작업 (소담 트랙)
 | 우선도 | 작업 | 비고 |
 |--------|------|------|
 | 🔴 | 노출 Gemini 키 rotate | 사용자 직접. 폐기 후 신규 키를 env로만 |
+| 🟢 | 실제 앱 리브랜딩 | REMO AI Studio → 소담에이아이스튜디오 (index.html·i18n·로고·README·package.json). 현재 보류 |
 | 🟡 | 크레딧 한도 회복 방식 확정 | (A) 부여 누계 방식 vs (B) 잔여 풀 방식 — 현재 (A) 제안 |
 | 🟡 | 스키마 마이그레이션 작성 | `masters`·`accounts` + 마스터 RPC + RLS |
 | 🟡 | authStore 교체 | signInWithGoogle → signInWithPassword(합성이메일) |
