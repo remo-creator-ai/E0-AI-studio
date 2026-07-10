@@ -171,40 +171,66 @@
   일반 사용자→마스터 경로 <b>없음</b>(권한 상승 차단).
 </div>
 
-<div class="cap" style="margin-top:22px"><span class="num" style="background:#2a2f3a">1·5</span><h2>마스터 뷰 — 크리에이티브 앱 사이드바</h2><span>관리자 콘솔 진입점</span></div>
-<div class="frame" style="max-width:280px">
+<div class="cap" style="margin-top:22px"><span class="num" style="background:#2a2f3a">1·5</span><h2>마스터 뷰 — 크리에이티브 앱 사이드바</h2><span>실제 앱 구조(한글) + 마스터 진입점</span></div>
+<div class="frame" style="max-width:266px">
   <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">앱 · master 로그인</span></div>
-  <aside class="side" style="width:100%;min-height:auto">
-    <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+  <aside class="side" style="width:100%;min-height:auto;gap:16px">
+    <div class="brand"><div class="logo">S</div><b>소담에이아이<br>스튜디오</b></div>
+
+    <nav class="nav">
+      <a class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>대시보드</a>
+    </nav>
+
     <div>
-      <div class="navlabel">제작</div>
+      <div class="navlabel">워크플로우</div>
       <nav class="nav">
-        <a class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>대시보드</a>
-        <a><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>기획</a>
-        <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>스토리보드</a>
-        <a><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>어셈블리</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>1. 기획</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>2. 비주얼라이징</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>3. 어셈블리</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/></svg>4. 프로덕션</a>
       </nav>
     </div>
-    <div style="border-top:1px dashed var(--primary);margin:4px 0;padding-top:10px">
+
+    <div>
+      <div class="navlabel">설정</div>
+      <nav class="nav">
+        <a><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>설정</a>
+      </nav>
+    </div>
+
+    <div style="border-top:1px dashed var(--primary);padding-top:12px">
       <div class="navlabel" style="color:#7aa5ff">master 전용</div>
       <nav class="nav">
         <a style="background:var(--primary-soft);color:#9dbcff;border:1px solid #2a3a5e">
-          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-          관리자 콘솔
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>관리자 콘솔
         </a>
       </nav>
     </div>
-    <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+
+    <a style="display:flex;align-items:center;gap:11px;padding:8px 12px;color:var(--g500);font-size:12.5px;text-decoration:none;cursor:default">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>가이드 다시보기
+    </a>
+
+    <div style="background:#0d0f13;border:1px solid var(--line2);border-radius:14px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:9.5px;font-weight:800;color:var(--g500);text-transform:uppercase;letter-spacing:.12em">크레딧</span>
+        <svg class="ic" style="width:13px;height:13px;color:#7aa5ff" viewBox="0 0 24 24"><circle cx="9" cy="9" r="6"/><path d="M15.5 4.2A6 6 0 1 1 15 15.8"/></svg>
+      </div>
+      <div style="margin:3px 0 9px"><b style="font-size:22px;font-weight:900;color:#ff6b6b;font-family:'Cascadia Code',Consolas,monospace;font-style:italic">48</b><span style="color:var(--g500);font-size:12px"> / 60</span></div>
+      <div style="height:5px;border-radius:99px;background:#1a1d24;overflow:hidden"><div style="height:100%;width:80%;background:#ff5a5a;border-radius:99px"></div></div>
+    </div>
+
+    <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>로그아웃</small></div></div>
   </aside>
 </div>
-<div class="callout" style="margin-top:12px">user(20인) 로그인 시 <b>‘master 전용’ 구분선과 [관리자 콘솔] 항목이 렌더되지 않음</b> — 제작 메뉴만 노출.</div>
+<div class="callout" style="margin-top:12px">실제 앱 사이드바 구조를 한글로 반영: <b>대시보드 · 워크플로우(1~4) · 설정 · 가이드 · 크레딧 · 로그아웃</b>. 여기에 <b>master만</b> ‘master 전용 · 관리자 콘솔’ 항목이 추가로 렌더됨. user(20인)에겐 이 구분선·항목이 <b>미노출</b>.</div>
 
 <div class="cap"><span class="num">2</span><h2>마스터 대시보드</h2><span>/master</span></div>
 <div class="frame">
   <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master</span></div>
   <div class="shell">
     <aside class="side">
-      <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+      <div class="brand"><div class="logo">S</div><b>소담에이아이<br>스튜디오</b></div>
       <div>
         <div class="navlabel">마스터</div>
         <nav class="nav">
@@ -257,7 +283,7 @@
   <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / accounts</span></div>
   <div class="shell">
     <aside class="side">
-      <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+      <div class="brand"><div class="logo">S</div><b>소담에이아이<br>스튜디오</b></div>
       <div>
         <div class="navlabel">마스터</div>
         <nav class="nav">
@@ -364,7 +390,7 @@
   <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / usage</span></div>
   <div class="shell">
     <aside class="side">
-      <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+      <div class="brand"><div class="logo">S</div><b>소담에이아이<br>스튜디오</b></div>
       <div>
         <div class="navlabel">마스터</div>
         <nav class="nav">
@@ -409,7 +435,7 @@
   <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">app.sodam-remo.ai / master / requests</span></div>
   <div class="shell">
     <aside class="side">
-      <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+      <div class="brand"><div class="logo">S</div><b>소담에이아이<br>스튜디오</b></div>
       <div>
         <div class="navlabel">마스터</div>
         <nav class="nav">
