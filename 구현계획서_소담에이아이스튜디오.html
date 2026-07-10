@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>소담에이아이스튜디오 — 구현 계획서 (개발팀·대표 논의용)</title>
+<style>
+  :root{
+    --bg:#f6f8fa; --paper:#fff; --ink:#1c2128; --muted:#57606a; --line:#d5dbe2; --line2:#c3c9d2;
+    --accent:#0969da; --accent-bg:#ddf0ff; --ok:#1a7f37; --ok-bg:#e6f5ec; --warn:#9a6700; --warn-bg:#fdf3d7;
+    --red:#cf222e; --red-bg:#ffe9e9; --chip:#eef1f5;
+    --S:#1a7f37; --M:#9a6700; --L:#cf222e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --paper:#161b22; --ink:#e6edf3; --muted:#9aa7b4; --line:#2a3240; --line2:#3a434f;
+      --accent:#6ea8fe; --accent-bg:#15243c; --ok:#3fb950; --ok-bg:#12261a; --warn:#e3b341; --warn-bg:#2a2411;
+      --red:#f85149; --red-bg:#2a1414; --chip:#1e242c;
+      --S:#3fb950; --M:#e3b341; --L:#f85149;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.62;font-size:14.5px;
+    font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;}
+  .wrap{max-width:1000px;margin:0 auto;padding:38px 22px 90px;}
+  header{border-bottom:2px solid var(--line);padding-bottom:20px;margin-bottom:8px;}
+  .kicker{color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;}
+  h1{font-size:27px;margin:6px 0 4px;line-height:1.25;}
+  .sub{color:var(--muted);font-size:13.5px;}
+  h2{font-size:20px;margin:44px 0 12px;display:flex;align-items:center;gap:10px;}
+  h2 .n{background:var(--ink);color:var(--paper);width:28px;height:28px;border-radius:7px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;}
+  h3{font-size:15.5px;margin:22px 0 8px;}
+  p{margin:9px 0;} ul{margin:8px 0;padding-left:20px;} li{margin:5px 0;}
+  code{font-family:"Cascadia Code",Consolas,monospace;font-size:12px;background:var(--chip);padding:1px 6px;border-radius:5px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0;}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:14px 0;}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px;}
+  th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--chip);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;}
+  tr:last-child td{border-bottom:none;}
+  .badge{display:inline-block;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap;}
+  .b-new{background:var(--accent-bg);color:var(--accent);}
+  .b-reuse{background:var(--ok-bg);color:var(--ok);}
+  .b-alter{background:var(--warn-bg);color:var(--warn);}
+  .sz{display:inline-block;width:22px;height:22px;border-radius:6px;color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:22px;}
+  .sz.S{background:var(--S);} .sz.M{background:var(--M);} .sz.L{background:var(--L);}
+  .callout{border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--paper);border-radius:0 10px 10px 0;padding:13px 16px;margin:14px 0;}
+  .callout.warn{border-left-color:var(--warn);background:var(--warn-bg);}
+  .callout.key{border-left-color:var(--accent);background:var(--accent-bg);}
+  .callout b{color:var(--ink);}
+  .q{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0;}
+  .q .qh{font-weight:800;color:var(--accent);margin-bottom:4px;}
+  .q .opts{font-size:13px;color:var(--muted);}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:5px;background:var(--chip);}
+  .flow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:14px 0;}
+  .ph{flex:1;min-width:150px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .ph .t{font-weight:800;font-size:13px;} .ph .d{font-size:12px;color:var(--muted);margin-top:4px;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:8px 0;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;}
+  .tag{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">소담에이아이스튜디오 (Sodam-ai-studio) · 오픈놀 버전</div>
+  <h1>구현 계획서 <span style="font-size:15px;color:var(--muted);font-weight:400">— 개발팀·대표 논의용</span></h1>
+  <p class="sub">확정 설계 기반 · “스키마 마이그레이션 필요 범위” 판단 포함 · 2026-07-10 · 저장소 <code>newtechremo/sodam-ai-studio</code></p>
+</header>
+
+<!-- 0 -->
+<h2><span class="n">0</span>이 문서의 목적</h2>
+<div class="card">
+  <p style="margin-top:0">소담에이아이스튜디오(오픈놀) 버전 = <strong>마스터/발급계정 체계 + 아이디·비번 인증 + 크레딧·의뢰 관리 콘솔</strong>을 기존 앱 위에 얹는 작업입니다.</p>
+  <p style="margin-bottom:0">본 문서는 <strong>개발팀·대표님과 함께</strong> ① 스키마 마이그레이션이 어디까지 필요한지, ② 착수 전 결정할 항목을 판단하기 위한 논의 자료입니다. (하단 <strong>§6 결정 필요 항목</strong> 참조)</p>
+</div>
+
+<!-- 1 -->
+<h2><span class="n">1</span>확정된 설계 (전제)</h2>
+<div class="tblwrap"><table>
+  <tr><th>영역</th><th>확정</th></tr>
+  <tr><td>제품명</td><td>소담에이아이스튜디오 (Sodam-ai-studio)</td></tr>
+  <tr><td>계정 체계</td><td>리모(개발사) → 오픈놀(마스터 1개) → 발급계정 최대 20개</td></tr>
+  <tr><td>인증</td><td>아이디/비번. Google·셀프가입 제거. 계정은 마스터가 발급</td></tr>
+  <tr><td>마스터 진입</td><td>모두 크리에이티브 앱 공통 진입 + 마스터만 사이드바 [관리자 콘솔] → <code>/master</code></td></tr>
+  <tr><td>워크플로우 라벨</td><td>기획 · 스토리보드 만들기 · 편집 · 내보내기 (영상제작 게이팅 유지)</td></tr>
+  <tr><td>크레딧</td><td>신규계정 초기 60. 마스터 부여 한도 <strong>6만 · 부여 누계 방식</strong>(소진 회복 없음), REMO 협의로 상향</td></tr>
+  <tr><td>계정 삭제</td><td>정지(이력 보존)만</td></tr>
+  <tr><td>의뢰 수신주소</td><td>고정 <code>momo.ai.fren@gmail.com</code> (서버 주입)</td></tr>
+  <tr><td>비번 재발급</td><td>임시 비번 자동생성</td></tr>
+</table></div>
+
+<!-- 2 -->
+<h2><span class="n">2</span>핵심 판단 — 스키마 마이그레이션 필요한가?</h2>
+<div class="callout key">
+  <b>요약:</b> <strong>대규모 마이그레이션은 불필요합니다.</strong> 기존 <code>user_credits · credit_transactions · production_requests · projects</code>를 <strong>전면 재사용</strong>하고,
+  변경은 대부분 <strong>기존 <code>profiles</code>에 컬럼 몇 개 추가(ALTER)</strong> 수준입니다. 새 테이블은 <strong>0~1개</strong> 사이에서 선택하면 됩니다.
+</div>
+
+<h3>현재 스키마 (그대로 활용)</h3>
+<div class="legend">
+  <span><span class="badge b-reuse">재사용</span> 변경 없음</span>
+  <span><span class="badge b-alter">ALTER</span> 컬럼 추가</span>
+  <span><span class="badge b-new">신규</span> 새로 필요</span>
+</div>
+<div class="tblwrap"><table>
+  <tr><th>테이블</th><th>상태</th><th>내용 / 필요한 변경</th></tr>
+  <tr><td class="tag">profiles</td><td><span class="badge b-alter">ALTER</span></td><td><code>role(master/user)</code> <span class="pill">필수</span>, <code>username</code>, <code>status(active/suspended)</code> 추가. (선택) <code>master_id</code> — 단일 마스터라 생략 가능</td></tr>
+  <tr><td class="tag">production_requests</td><td><span class="badge b-alter">ALTER</span></td><td><code>recipient_email</code> 컬럼 1개 추가(고정 주입). 나머지 그대로</td></tr>
+  <tr><td class="tag">user_credits</td><td><span class="badge b-reuse">재사용</span></td><td>변경 없음. 신규계정 기본 60 유지</td></tr>
+  <tr><td class="tag">credit_transactions</td><td><span class="badge b-reuse">재사용</span></td><td><code>type=manual</code> 이미 존재 → 마스터 부여/사용이력 그대로</td></tr>
+  <tr><td class="tag">projects</td><td><span class="badge b-reuse">재사용</span></td><td>변경 없음</td></tr>
+  <tr><td class="tag">admin_config</td><td><span class="badge b-reuse">재사용</span></td><td>키값 저장소. 아래 quota 저장 옵션에 활용 가능</td></tr>
+  <tr><td class="tag">masters</td><td><span class="badge b-new">신규(선택)</span></td><td>credit_quota / allocated 저장용. <strong>안 만들 수도 있음</strong>(아래 참조)</td></tr>
+</table></div>
+
+<h3>마스터 부여 한도(6만) 저장 위치 — 두 옵션</h3>
+<div class="tblwrap"><table>
+  <tr><th></th><th>옵션 A — 새 테이블 없음 (최소)</th><th>옵션 B — <code>masters</code> 테이블 1개</th></tr>
+  <tr><td>방식</td><td><code>admin_config</code>에 <code>master_credit_quota=60000</code> 키값. 부여 누계는 <code>credit_transactions</code>의 manual 합계로 계산</td><td><code>masters(id, name, credit_quota, allocated)</code> 단일 행</td></tr>
+  <tr><td>장점</td><td>신규 테이블 0개. 마이그레이션 최소</td><td>의미 명료, 향후 다중 마스터 확장 용이, 조회 단순</td></tr>
+  <tr><td>단점</td><td>quota 로직이 config+집계에 흩어짐</td><td>테이블 1개 추가(그래도 소규모)</td></tr>
+</table></div>
+<div class="callout warn">
+  <b>→ 논의 포인트 (개발팀·대표):</b> “새 테이블 0개(옵션 A)”로 최소화할지, “masters 테이블 1개(옵션 B)”로 깔끔하게 갈지.
+  어느 쪽이든 <strong>대규모 마이그레이션이 아니며</strong>, 실제 난이도의 핵심은 스키마가 아니라 <strong>인증 교체(§3-WS2)</strong>입니다.
+</div>
+
+<!-- 3 -->
+<h2><span class="n">3</span>구현 범위 (5개 워크스트림)</h2>
+<div class="legend">
+  <span><span class="sz S">S</span> 작음</span><span><span class="sz M">M</span> 보통</span><span><span class="sz L">L</span> 큼/리스크</span>
+</div>
+<div class="tblwrap"><table>
+  <tr><th>WS</th><th>난이도</th><th>내용</th><th>주요 산출</th></tr>
+  <tr>
+    <td><strong>WS1 · 스키마</strong></td><td><span class="sz S">S</span></td>
+    <td>profiles ALTER(role/username/status), production_requests ALTER(recipient_email), (선택) masters 테이블, RLS 정책 확장</td>
+    <td>마이그레이션 SQL 1~2개</td>
+  </tr>
+  <tr>
+    <td><strong>WS2 · 인증 교체</strong></td><td><span class="sz L">L</span></td>
+    <td>Google OAuth 제거 → 아이디/비번(<code>{아이디}@도메인</code> 합성이메일). 셀프가입 UI 삭제. 계정 생성은 <strong>service-role Edge Function</strong>(마스터만). 임시 비번 자동생성·재발급. <code>handle_new_user</code> 트리거 정비</td>
+    <td>authStore 교체, 로그인 화면, create-account Edge Function</td>
+  </tr>
+  <tr>
+    <td><strong>WS3 · 마스터 RPC</strong></td><td><span class="sz M">M</span></td>
+    <td>계정 생성/정지/비번재발급, 크레딧 부여(<strong>누계 ≤ quota 검증</strong>)·조회, 사용이력 조회, 의뢰 조회. 20개 상한은 RPC 카운트로 enforce(스키마 불필요)</td>
+    <td>master_* RPC 세트 (SECURITY DEFINER + role 검증)</td>
+  </tr>
+  <tr>
+    <td><strong>WS4 · 라우팅·콘솔 UI</strong></td><td><span class="sz M">M</span></td>
+    <td>role 가드(<code>App.tsx</code>) + 사이드바 [관리자 콘솔] 진입점(master만, 기존 <code>isAdmin</code> 패턴 확장). <code>/master</code> 콘솔 5화면(대시보드·계정·크레딧·사용이력·의뢰). 워크플로우 한글 라벨 <code>ko.json</code> 반영</td>
+    <td>마스터 콘솔 컴포넌트, 라우트 가드</td>
+  </tr>
+  <tr>
+    <td><strong>WS5 · 의뢰</strong></td><td><span class="sz S">S</span></td>
+    <td>제출 시 <code>recipient_email</code> 고정 주입(서버). 마스터 의뢰 조회는 기존 <code>admin_get_all_requests</code> 재사용</td>
+    <td>제출 로직·조회 화면 연결</td>
+  </tr>
+</table></div>
+
+<!-- 4 -->
+<h2><span class="n">4</span>리스크 &amp; 유의점</h2>
+<ul>
+  <li><span class="sz L">L</span> <strong>인증 전환이 최대 리스크.</strong> Google OAuth 제거·Supabase provider 설정·세션·비번 재설정 흐름. 기존 로그인 사용자 영향 검토 필요.</li>
+  <li><span class="sz M">M</span> <strong>마스터 제작 시 크레딧 출처 미결.</strong> 마스터도 앱에서 제작 → 개인 크레딧에서 빠지나, 6만 풀에서 빠지나? 로직에 직접 영향 → <strong>결정 필요</strong>.</li>
+  <li><span class="sz M">M</span> <strong>기존 데이터/배포 형태.</strong> 신규 빈 DB로 시작인지, 기존 Supabase 데이터 이전인지에 따라 마이그레이션 절차 달라짐.</li>
+  <li><span class="sz S">S</span> 임시 비번 <strong>전달 방식</strong>(마스터 화면 표시 vs 이메일 발송)에 따라 UX·보안 상이.</li>
+</ul>
+
+<!-- 5 -->
+<h2><span class="n">5</span>단계별 진행 제안</h2>
+<div class="flow">
+  <div class="ph"><div class="t">Phase 0 · 결정</div><div class="d">§6 항목 확정 (스키마 범위·크레딧 출처·배포 형태). 본 문서로 논의</div></div>
+  <div class="ph"><div class="t">Phase 1 · 기반</div><div class="d">WS1 스키마 + WS2 인증 교체 (가장 무겁고 선행 필요)</div></div>
+  <div class="ph"><div class="t">Phase 2 · 콘솔</div><div class="d">WS3 RPC + WS4 라우팅·콘솔 UI</div></div>
+  <div class="ph"><div class="t">Phase 3 · 마감</div><div class="d">WS5 의뢰 고정주소 + 통합 QA</div></div>
+</div>
+
+<!-- 6 -->
+<h2><span class="n">6</span>결정 필요 항목 (개발팀·대표)</h2>
+<div class="q"><div class="qh">① 스키마 범위</div><div class="opts">새 테이블 0개(옵션 A · admin_config) vs <code>masters</code> 테이블 1개(옵션 B). — <em>권장: 단일 마스터라 A도 충분하나, 명료성·확장성 원하면 B</em></div></div>
+<div class="q"><div class="qh">② 마스터 제작 크레딧 출처</div><div class="opts">마스터가 앱에서 제작 시 (a) 마스터 개인 크레딧 차감 vs (b) 6만 부여 풀에서 차감 vs (c) 마스터는 무제한 — <em>로직·정산에 직접 영향</em></div></div>
+<div class="q"><div class="qh">③ 배포 형태</div><div class="opts">신규 빈 DB로 시작 vs 기존 Supabase 데이터 이전 — <em>기존 Google 가입 사용자 처리 포함</em></div></div>
+<div class="q"><div class="qh">④ Supabase 프로젝트</div><div class="opts">기존 프로젝트 재사용 vs 소담 전용 신규 프로젝트(권한·데이터 격리)</div></div>
+<div class="q"><div class="qh">⑤ 임시 비번 전달</div><div class="opts">마스터 화면에 1회 표시(복사해 전달) vs 계정 이메일로 발송 — <em>발급계정에 이메일이 있나? 없으면 화면 표시</em></div></div>
+<div class="q"><div class="qh">⑥ 로그인 아이디 도메인</div><div class="opts">합성이메일 도메인 확정(예: <code>{아이디}@sodam.local</code>). 실제 메일 수신 불필요</div></div>
+
+<footer>
+  본 계획서는 착수 전 <strong>논의·판단용 초안</strong>입니다. §6 결정 후 각 워크스트림별 상세 태스크·마이그레이션 SQL로 구체화합니다.<br>
+  근거: <code>supabase/schema.sql</code> · <code>migrations/005·008·011·012</code> · <code>store/authStore.ts</code> · <code>services/adminConfigService.ts</code> · <code>components/Layout.tsx</code>
+</footer>
+
+</div>
+</body>
+</html>

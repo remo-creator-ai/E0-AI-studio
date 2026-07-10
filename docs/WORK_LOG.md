@@ -242,6 +242,7 @@ After:
 | 🔴 | 노출 Gemini 키 rotate | 사용자 직접. 폐기 후 신규 키를 env로만 |
 | 🟢 | 실제 앱 리브랜딩 | REMO AI Studio → 소담에이아이스튜디오 (index.html·i18n·로고·README·package.json). 현재 보류 |
 | ✅ | 크레딧 한도 회복 방식 = **(A) 부여 누계** 확정 | 60,000 = 평생 부여 총량. 계정이 소진해도 한도 회복 없음. 누계 도달 시 REMO 협의로 한도 상향(=충전). 환불은 한도와 무관 |
+| 🟡 | C단계 구현계획서 논의 (Phase 0) | `구현계획서_소담에이아이스튜디오.html` 작성 → 개발팀·대표 논의. 스키마 마이그레이션=경량(profiles ALTER + 선택적 masters 테이블), 최대 리스크=인증 교체. 결정 6항목(스키마 범위·마스터 제작 크레딧 출처·배포형태·Supabase 프로젝트·임시비번 전달·아이디 도메인) |
 | 🟡 | 스키마 마이그레이션 작성 | `masters`·`accounts` + 마스터 RPC + RLS |
 | 🟡 | authStore 교체 | signInWithGoogle → signInWithPassword(합성이메일) |
 | 🟢 | 마스터 영역 컴포넌트 구현 | UI 시안 기반 React 컴포넌트화 |
