@@ -160,24 +160,25 @@
   email/password 인증을 그대로 활용하는 방식을 제안(별도 비밀번호 해싱 불필요). 계정 생성은 마스터가 <strong>service-role Edge Function</strong>으로 호출.
 </div>
 
-<h3 style="margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:16px;color:var(--accent);">▸ 로그인 후 역할 기반 라우팅 — 마스터 진입 정의</h3>
-<p>로그인 성공 시 계정 <code>role</code>로 분기합니다. 마스터와 발급계정은 <strong>완전히 분리된 경험</strong>이며,
-일반 사용자(20인)가 마스터로 승격되는 경로는 <strong>존재하지 않습니다</strong>(권한 상승 차단). 마스터는 리모가 발급한 별도의 21번째 계정입니다.</p>
+<h3 style="margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:16px;color:var(--accent);">▸ 로그인 후 진입 &amp; 마스터 콘솔 접근 정의</h3>
+<p><strong>모든 계정은 로그인 후 크리에이티브 앱으로 공통 진입</strong>합니다(마스터도 직접 제작함).
+마스터(오픈놀)만 사이드바에 <strong>‘관리자 콘솔’ 진입점</strong>이 노출되어 <code>/master</code>로 이동합니다.
+일반 사용자(20인)에겐 이 진입점이 보이지 않으며, 마스터로 승격되는 경로도 <strong>없습니다</strong>(권한 상승 차단). 마스터는 리모가 발급한 별도의 21번째 계정입니다.</p>
 <div class="grid2">
   <div class="wbox" style="border-color:var(--accent);">
     <div class="wlabel" style="color:var(--accent);">role = master · 오픈놀(1개)</div>
-    <div style="font-size:13.5px;">로그인 → <strong>/master 콘솔 자동 진입</strong></div>
-    <div class="sub" style="font-size:12px;margin-top:5px;">크리에이티브 앱(대시보드·스토리보드) 미노출. 계정·크레딧·사용이력·의뢰만 관리.</div>
+    <div style="font-size:13.5px;">공통 앱 진입(제작) + 사이드바 <strong>[⚙ 관리자 콘솔] → /master</strong></div>
+    <div class="sub" style="font-size:12px;margin-top:5px;">제작(스토리보드)과 관리(계정·크레딧·사용이력·의뢰)를 오감.</div>
   </div>
   <div class="wbox">
     <div class="wlabel">role = user · 발급(20인)</div>
-    <div style="font-size:13.5px;">로그인 → <strong>스토리보드 앱</strong></div>
-    <div class="sub" style="font-size:12px;margin-top:5px;">/master 직접 URL 접근 시 차단·리다이렉트. 사이드바에 마스터 진입점 미노출.</div>
+    <div style="font-size:13.5px;">공통 앱 진입(제작)</div>
+    <div class="sub" style="font-size:12px;margin-top:5px;">관리자 진입점 미노출 · <code>/master</code> 직접 URL 접근 시 차단·리다이렉트.</div>
   </div>
 </div>
 <div class="note">
-  <strong>구현:</strong> 기존 <code>isAdmin(email)</code> 게이팅을 <code>accounts.role</code> 기반으로 확장 →
-  <code>App.tsx</code> 최상위에 <strong>역할 라우트 가드</strong>를 두어 role별 진입 지점을 강제. (email 하드코딩 방식 폐기)
+  <strong>구현:</strong> 기존 <code>isAdmin(email)</code> <u>사이드바 게이팅 패턴을 그대로 재사용</u> → <code>accounts.role='master'</code> 기반으로 전환.
+  콘솔 라우트(<code>/master</code>)는 <strong>role=master 가드</strong>로 보호(서버 RLS·RPC 이중 검증). email 하드코딩 방식 폐기.
 </div>
 
 <!-- ===== 3. 사이트맵 ===== -->

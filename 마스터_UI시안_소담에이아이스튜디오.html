@@ -166,11 +166,38 @@
 
 <!-- ============ 2. DASHBOARD ============ -->
 <div class="callout" style="margin-top:14px">
-  <b>로그인 후 역할 라우팅:</b> 인증 성공 → 계정 <b>role</b> 판별 →
-  <b>master(오픈놀)</b>는 <b>/master 콘솔로 자동 진입</b>(크리에이티브 앱 미노출),
-  <b>user(20인)</b>는 스토리보드 앱으로 진입(/master 접근 차단).
-  일반 사용자가 마스터로 넘어가는 경로는 <b>없음</b>(권한 상승 차단).
+  <b>로그인 후 진입:</b> 모든 계정은 <b>크리에이티브 앱으로 공통 진입</b>(마스터도 직접 제작). <b>master(오픈놀)</b>만 사이드바에
+  <b>[⚙ 관리자 콘솔]</b> 메뉴가 노출되어 <b>/master</b>로 이동. <b>user(20인)</b>는 이 메뉴 미노출 + /master 직접 접근 차단.
+  일반 사용자→마스터 경로 <b>없음</b>(권한 상승 차단).
 </div>
+
+<div class="cap" style="margin-top:22px"><span class="num" style="background:#2a2f3a">1·5</span><h2>마스터 뷰 — 크리에이티브 앱 사이드바</h2><span>관리자 콘솔 진입점</span></div>
+<div class="frame" style="max-width:280px">
+  <div class="topbar"><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-url">앱 · master 로그인</span></div>
+  <aside class="side" style="width:100%;min-height:auto">
+    <div class="brand"><div class="logo">S</div><b>SODAM<br>STUDIO</b></div>
+    <div>
+      <div class="navlabel">제작</div>
+      <nav class="nav">
+        <a class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10h14V10"/></svg>대시보드</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>기획</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>스토리보드</a>
+        <a><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>어셈블리</a>
+      </nav>
+    </div>
+    <div style="border-top:1px dashed var(--primary);margin:4px 0;padding-top:10px">
+      <div class="navlabel" style="color:#7aa5ff">master 전용</div>
+      <nav class="nav">
+        <a style="background:var(--primary-soft);color:#9dbcff;border:1px solid #2a3a5e">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+          관리자 콘솔
+        </a>
+      </nav>
+    </div>
+    <div class="foot"><div class="avatar">오</div><div class="who">오픈놀<small>MASTER</small></div></div>
+  </aside>
+</div>
+<div class="callout" style="margin-top:12px">user(20인) 로그인 시 <b>‘master 전용’ 구분선과 [관리자 콘솔] 항목이 렌더되지 않음</b> — 제작 메뉴만 노출.</div>
 
 <div class="cap"><span class="num">2</span><h2>마스터 대시보드</h2><span>/master</span></div>
 <div class="frame">
