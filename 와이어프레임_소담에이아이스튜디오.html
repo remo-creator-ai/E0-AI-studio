@@ -333,7 +333,7 @@
     <tr>
       <td class="tag">masters</td>
       <td class="new">신규(단일)</td>
-      <td>오픈놀 <strong>단일 행 고정</strong>. <code>id, name('오픈놀'), max_accounts(20), credit_quota(60000)</code>. <strong>credit_quota</strong> = 발급계정에 부여 가능한 총 크레딧 한도(임시 6만) · <strong>REMO만 변경</strong>. 부여 시 배분누계 ≤ quota 검증.</td>
+      <td>오픈놀 <strong>단일 행 고정</strong>. <code>id, name('오픈놀'), max_accounts(20), credit_quota(60000)</code>. <strong>credit_quota</strong> = 발급계정에 부여 가능한 총 크레딧 한도(임시 6만) · <strong>REMO만 변경</strong>. <strong>부여 누계 방식</strong>: 지금까지 부여한 총합 ≤ quota 검증(소진해도 회복 없음, 평생 총량).</td>
     </tr>
     <tr>
       <td class="tag">accounts / profiles</td>
@@ -381,7 +381,7 @@
   <tr><td>마스터 범위</td><td><strong>오픈놀 1개 고정</strong> (다중 고객사 제외)</td></tr>
   <tr><td>아이디 생성</td><td><strong>마스터가 직접 지정</strong> (예: sodam-gangnam)</td></tr>
   <tr><td>초기 크레딧</td><td><strong>60 자동</strong> (기존값 유지)</td></tr>
-  <tr><td>마스터 부여 한도</td><td><strong>임시 60,000 크레딧</strong> · REMO 협의하 변경 (<code>masters.credit_quota</code>)</td></tr>
+  <tr><td>마스터 부여 한도</td><td><strong>임시 60,000 크레딧</strong> · <strong>부여 누계 방식</strong>(소진 회복 없음, 평생 총량) · REMO 협의하 변경 (<code>masters.credit_quota</code>)</td></tr>
   <tr><td>계정 삭제</td><td><strong>정지(이력 보존)</strong> — 완전 삭제 없음</td></tr>
   <tr><td>REMO 슈퍼관리자</td><td><strong>DB 수동 프로비저닝</strong> — 별도 UI 없음</td></tr>
   <tr><td>수신 주소</td><td><strong>고정 1개</strong> · <code>momo.ai.fren@gmail.com</code></td></tr>
