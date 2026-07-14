@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { MOCK_MODE, getMockRole, MOCK_CREDITS } from '../lib/mockAuth';
 
 export const CREDIT_COSTS = {
   SCRIPT: 1,
@@ -33,6 +34,12 @@ export const useCreditStore = create<CreditState>()((set, get) => ({
   _userId: null,
 
   loadCredits: async (userId: string) => {
+    // 디자인(가계정) 모드: DB 없이 표시용 크레딧 설정
+    if (MOCK_MODE) {
+      const c = MOCK_CREDITS[getMockRole() ?? 'user'];
+      set({ balance: c.balance, maxCredits: c.maxCredits, isLoaded: true, _userId: userId, loadError: null });
+      return;
+    }
     try {
       const { data, error } = await supabase.rpc('initialize_user_credits', {
         p_user_id: userId,
@@ -66,6 +73,12 @@ export const useCreditStore = create<CreditState>()((set, get) => ({
     if (balance < amount) return false;
     if (!_userId) return false;
 
+    // 디자인(가계정) 모드: 로컬 잔액만 차감 (DB 호출 없음)
+    if (MOCK_MODE) {
+      set({ balance: balance - amount });
+      return true;
+    }
+
     try {
       const { data, error } = await supabase.rpc('deduct_credits', {
         p_user_id: _userId,
@@ -93,8 +106,14 @@ export const useCreditStore = create<CreditState>()((set, get) => ({
   },
 
   refund: async (amount: number, description: string) => {
-    const { _userId } = get();
+    const { _userId, balance, maxCredits } = get();
     if (!_userId) return false;
+
+    // 디자인(가계정) 모드: 로컬 잔액만 복원 (상한 초과 방지)
+    if (MOCK_MODE) {
+      set({ balance: Math.min(maxCredits, balance + amount) });
+      return true;
+    }
 
     try {
       const { data, error } = await supabase.rpc('refund_credits', {

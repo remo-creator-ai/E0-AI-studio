@@ -45,7 +45,7 @@ serve(async (req) => {
       <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto; background: #0A0A0A; color: #fff; border-radius: 16px; overflow: hidden;">
         <div style="background: #0057FF; padding: 24px; text-align: center;">
           <h1 style="margin: 0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px;">
-            REMO AI Studio - 영상 제작 의뢰
+            Sodam AI Studio - 영상 제작 의뢰
           </h1>
         </div>
         <div style="padding: 32px;">
@@ -74,7 +74,7 @@ serve(async (req) => {
           ${extra_file_urls?.length ? `<div style="margin-top: 16px; padding: 16px; background: #1A1A1A; border-radius: 8px;"><p style="color: #888; font-size: 12px; font-weight: 700; margin: 0 0 8px;">추가 첨부 파일</p>${extra_file_urls.map((url: string) => `<a href="${url}" style="color: #0057FF; display: block; margin: 4px 0; font-size: 13px;">${decodeURIComponent(url.split('/').pop() || url)}</a>`).join('')}</div>` : ''}
         </div>
         <div style="padding: 16px 32px; background: #111; text-align: center; font-size: 11px; color: #555;">
-          REMO AI Studio &copy; ${new Date().getFullYear()}
+          Sodam AI Studio &copy; ${new Date().getFullYear()}
         </div>
       </div>
     `
@@ -86,7 +86,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'REMO AI Studio <noreply@resend.dev>',
+        from: 'Sodam AI Studio <noreply@resend.dev>',
         to: [TO_EMAIL],
         reply_to: requester_email,
         subject: `[REMO] 영상 제작 의뢰 - ${project_title} (${requester_name})`,

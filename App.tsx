@@ -38,10 +38,10 @@ const App: React.FC = () => {
   // Auth loading
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFAFB] flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">Loading...</p>
+          <p className="text-sm text-zinc-400 font-bold uppercase tracking-widest">Loading...</p>
         </div>
       </div>
     );

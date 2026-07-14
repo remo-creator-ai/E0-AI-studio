@@ -165,16 +165,16 @@ export const VisualizingStep: React.FC = () => {
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-in fade-in duration-500">
-        <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center border border-white/10">
-          <FileText size={40} className="text-gray-500" />
+        <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center border border-zinc-200">
+          <FileText size={40} className="text-zinc-400" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-black italic uppercase tracking-tighter">{t('visualizing.noProject')}</h2>
-          <p className="text-gray-400 text-sm">{t('visualizing.noProjectDesc')}</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('visualizing.noProject')}</h2>
+          <p className="text-zinc-500 text-sm">{t('visualizing.noProjectDesc')}</p>
         </div>
         <button
           onClick={() => importTxtRef.current?.click()}
-          className="px-10 py-4 bg-primary rounded-2xl flex items-center gap-2 font-black shadow-2xl hover:scale-105 transition-all"
+          className="px-10 py-4 rounded-full bg-primary text-white flex items-center gap-2 font-black hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] transition-all"
         >
           <FileUp size={20} /> <span>{t('visualizing.importTxt')}</span>
         </button>
@@ -516,27 +516,27 @@ CRITICAL RULES:
       {/* ── Header: Title + Unit Navigation ── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight italic uppercase">{t('visualizing.title')} <span className="text-primary">{t('visualizing.titleHighlight')}</span></h1>
-          <p className="text-gray-400">{t('visualizing.subtitle')}</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900">{t('visualizing.title')} <span className="text-primary">{t('visualizing.titleHighlight')}</span></h1>
+          <p className="text-zinc-500">{t('visualizing.subtitle')}</p>
         </div>
 
         <div className="flex items-center gap-3">
           {totalUnits > 1 && (
-            <div className="flex items-center gap-4 bg-secondary p-2 rounded-2xl border border-white/5 shadow-xl">
+            <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-zinc-100 shadow-xl">
               <button
                 onClick={() => setCurrentUnitIdx(Math.max(0, currentUnitIdx - 1))}
-                className="p-2 hover:bg-white/5 rounded-xl disabled:opacity-30 transition-all"
+                className="p-2 hover:bg-zinc-100 rounded-xl disabled:opacity-30 transition-all"
                 disabled={currentUnitIdx === 0}
               >
                 <ChevronLeft size={20} />
               </button>
               <div className="flex flex-col items-center min-w-[80px]">
-                <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Navigation</span>
-                <span className="text-sm font-black italic">UNIT {currentUnitIdx + 1} / {totalUnits}</span>
+                <span className="text-[10px] font-black text-primary uppercase">Navigation</span>
+                <span className="text-sm font-black">UNIT {currentUnitIdx + 1} / {totalUnits}</span>
               </div>
               <button
                 onClick={() => setCurrentUnitIdx(Math.min(totalUnits - 1, currentUnitIdx + 1))}
-                className="p-2 hover:bg-white/5 rounded-xl disabled:opacity-30 transition-all"
+                className="p-2 hover:bg-zinc-100 rounded-xl disabled:opacity-30 transition-all"
                 disabled={currentUnitIdx === totalUnits - 1}
               >
                 <ChevronRight size={20} />
@@ -547,30 +547,30 @@ CRITICAL RULES:
       </div>
 
       {/* ── Project Info Bar (read-only) ── */}
-      <div className="bg-secondary rounded-2xl border border-white/10 px-6 py-4 flex items-center gap-6 flex-wrap">
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          {isPortrait ? <Smartphone size={16} className="text-accent" /> : <Monitor size={16} className="text-accent" />}
+      <div className="bg-white rounded-2xl border border-zinc-200 px-6 py-4 flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-zinc-600">
+          {isPortrait ? <Smartphone size={16} className="text-indigo-500" /> : <Monitor size={16} className="text-indigo-500" />}
           <span className="font-bold">{project.aspect_ratio || '16:9'}</span>
-          <span className="text-gray-500">{isPortrait ? t('visualizing.portrait') : t('visualizing.landscape')}</span>
+          <span className="text-zinc-400">{isPortrait ? t('visualizing.portrait') : t('visualizing.landscape')}</span>
         </div>
-        <div className="w-px h-5 bg-white/10" />
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <Film size={16} className="text-accent" />
+        <div className="w-px h-5 bg-zinc-200" />
+        <div className="flex items-center gap-2 text-sm text-zinc-600">
+          <Film size={16} className="text-indigo-500" />
           <span className="font-bold">{t('common.cuts', { count: project.scene_count || 9 })}</span>
         </div>
-        <div className="w-px h-5 bg-white/10" />
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <Clock size={16} className="text-accent" />
+        <div className="w-px h-5 bg-zinc-200" />
+        <div className="flex items-center gap-2 text-sm text-zinc-600">
+          <Clock size={16} className="text-indigo-500" />
           <span className="font-bold">{projectDuration}s</span>
         </div>
       </div>
 
       {/* ── Style + Prompt (unified section) ── */}
-      <div data-tour="visualizing-style" className="bg-secondary p-6 rounded-2xl border border-white/10 space-y-5 shadow-2xl">
+      <div data-tour="visualizing-style" className="bg-white p-6 rounded-2xl border border-zinc-200 space-y-5 shadow-2xl">
         {/* Style Dropdown + Prompt side by side */}
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest text-left">{t('visualizing.visualStyle')}</label>
+            <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest text-left">{t('visualizing.visualStyle')}</label>
             <button
               onClick={() => setIsStylePopupOpen(true)}
               className="w-full flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-2xl h-[120px] hover:bg-primary/15 transition-all text-left group"
@@ -579,15 +579,15 @@ CRITICAL RULES:
                 <Palette className="text-primary" size={20} />
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-black italic text-white truncate">{project.style}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">{t('visualizing.tapToChange')}</div>
+                <div className="text-sm font-black text-primary truncate">{project.style}</div>
+                <div className="text-[10px] text-zinc-400 mt-0.5">{t('visualizing.tapToChange')}</div>
               </div>
-              <ChevronRight size={16} className="text-gray-600 ml-auto shrink-0" />
+              <ChevronRight size={16} className="text-zinc-400 ml-auto shrink-0" />
             </button>
           </div>
 
           <div className="space-y-2">
-            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest text-left">Style Prompt</label>
+            <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest text-left">Style Prompt</label>
             <div className="relative">
               <textarea
                 value={customStylePrompt}
@@ -596,16 +596,16 @@ CRITICAL RULES:
                   setIsPromptAutoSet(false);
                 }}
                 placeholder="예: Cyberpunk city, neon lighting, grain texture..."
-                className="w-full h-[120px] bg-black/50 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-primary resize-none pr-8 transition-all"
+                className="w-full h-[120px] bg-white border border-zinc-200 text-zinc-900 placeholder-zinc-400 rounded-2xl p-4 text-sm focus:outline-none focus:border-primary resize-none pr-8 transition-all"
               />
-              <Type className="absolute right-4 top-4 text-white/10" size={14} />
+              <Type className="absolute right-4 top-4 text-zinc-300" size={14} />
             </div>
           </div>
         </div>
 
         {/* Model Selection */}
         <div className="flex items-center gap-4">
-          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest shrink-0">Image Model</label>
+          <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest shrink-0">Image Model</label>
           <div className="flex gap-3 flex-1">
             {Object.values(ImageModel).map((model) => {
               const info = IMAGE_MODEL_INFO[model];
@@ -616,17 +616,17 @@ CRITICAL RULES:
                   onClick={() => setSelectedModel(model)}
                   className={`flex-1 flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                     isSelected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(0,87,255,0.15)]'
-                      : 'border-white/10 hover:border-white/20 bg-black/20'
+                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(109,40,217,0.15)]'
+                      : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50'
                   }`}
                 >
-                  <Cpu size={16} className={isSelected ? 'text-primary' : 'text-gray-600'} />
+                  <Cpu size={16} className={isSelected ? 'text-primary' : 'text-zinc-400'} />
                   <div className="min-w-0">
-                    <div className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-400'}`}>{info.label}</div>
-                    <div className="text-[10px] text-gray-500">{info.description}</div>
+                    <div className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-zinc-500'}`}>{info.label}</div>
+                    <div className="text-[10px] text-zinc-400">{info.description}</div>
                   </div>
                   <span className={`ml-auto text-xs font-black px-2 py-1 rounded-lg shrink-0 ${
-                    isSelected ? 'bg-primary/20 text-primary' : 'bg-white/5 text-gray-500'
+                    isSelected ? 'bg-primary/20 text-primary' : 'bg-zinc-100 text-zinc-400'
                   }`}>
                     {info.creditCost}C
                   </span>
@@ -640,10 +640,10 @@ CRITICAL RULES:
         <div className="flex flex-col md:flex-row gap-5 items-start">
           {/* Reference Images */}
           <div className="space-y-2 flex-1 min-w-0">
-            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest text-left">Visual References ({refImages.length}/5)</label>
+            <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest text-left">Visual References ({refImages.length}/5)</label>
             <div className="flex items-center gap-2 flex-wrap">
               {refImages.map((ref, idx) => (
-                <div key={idx} className="w-14 h-14 rounded-xl overflow-hidden relative group border border-white/10 shrink-0">
+                <div key={idx} className="w-14 h-14 rounded-xl overflow-hidden relative group border border-zinc-200 shrink-0">
                   <img src={ref.image} className="w-full h-full object-cover" />
                   <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-[7px] font-black text-center py-0.5 text-primary uppercase">
                     {REFERENCE_CATEGORY_INFO[ref.category].labelKr}
@@ -659,7 +659,7 @@ CRITICAL RULES:
               {refImages.length < 5 && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-14 h-14 border-2 border-dashed border-white/10 rounded-xl flex items-center justify-center text-gray-600 hover:text-primary hover:border-primary/50 transition-all shrink-0"
+                  className="w-14 h-14 border-2 border-dashed border-zinc-200 rounded-xl flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/50 transition-all shrink-0"
                 >
                   <Upload size={16} />
                 </button>
@@ -673,7 +673,7 @@ CRITICAL RULES:
             <button
               onClick={handleGenerateAndApply}
               disabled={isLoading}
-              className="px-8 py-3.5 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl flex items-center justify-center gap-2 font-black italic uppercase text-sm transition-all shadow-[0_10px_25px_rgba(0,87,255,0.3)] active:scale-95 group"
+              className="px-8 py-3.5 bg-primary hover:bg-[#5B21B6] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white text-sm transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 group"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -696,33 +696,33 @@ CRITICAL RULES:
       </div>
 
       {/* ── Grid Preview (full width) ── */}
-      <div data-tour="visualizing-matrix" className="grid-preview-container rounded-[2.5rem] border-8 border-secondary overflow-hidden relative group shadow-2xl bg-[#080808]" style={{ aspectRatio: isPortrait ? '9 / 16' : '16 / 9', maxHeight: isPortrait ? '80vh' : undefined, margin: isPortrait ? '0 auto' : undefined, maxWidth: isPortrait ? '60%' : undefined }}>
+      <div data-tour="visualizing-matrix" className="grid-preview-container rounded-[2.5rem] border-8 border-zinc-200 overflow-hidden relative group shadow-2xl bg-zinc-100" style={{ aspectRatio: isPortrait ? '9 / 16' : '16 / 9', maxHeight: isPortrait ? '80vh' : undefined, margin: isPortrait ? '0 auto' : undefined, maxWidth: isPortrait ? '60%' : undefined }}>
         {!currentGridImage && !isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 gap-6">
-            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
-               <ImageIcon size={40} className="opacity-10 text-primary" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 gap-6">
+            <div className="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200 animate-pulse">
+               <ImageIcon size={40} className="opacity-30 text-primary" />
             </div>
             <div className="text-center space-y-2">
-              <p className="font-black text-2xl text-white/20 italic uppercase tracking-tighter">{t('visualizing.emptyMatrix', { unit: currentUnitIdx + 1 })}</p>
-              <p className="text-xs text-white/10 font-bold uppercase tracking-widest">{t('visualizing.emptyMatrixDesc')}</p>
+              <p className="font-extrabold text-2xl text-zinc-400 tracking-tight">{t('visualizing.emptyMatrix', { unit: currentUnitIdx + 1 })}</p>
+              <p className="text-xs text-zinc-300 font-bold uppercase tracking-widest">{t('visualizing.emptyMatrixDesc')}</p>
             </div>
           </div>
         )}
 
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-2xl z-20">
+          <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/40 backdrop-blur-md z-20">
             <div className="text-center space-y-8">
               <div className="relative">
                 <div className="w-24 h-24 border-4 border-primary/10 rounded-full mx-auto"></div>
                 <div className="w-24 h-24 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto absolute inset-0"></div>
               </div>
               <div className="space-y-3">
-                <p className="text-3xl font-black italic tracking-tighter text-white animate-pulse uppercase">
+                <p className="text-3xl font-extrabold tracking-tight text-white animate-pulse">
                   {generationProgress
                     ? `Batch Rendering [${generationProgress.current}/${generationProgress.total}]`
                     : `Rendering Unit ${currentUnitIdx + 1}...`}
                 </p>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                <p className="text-xs font-bold text-zinc-300 uppercase tracking-widest">
                   Gemini Vision Engine is processing sequence consistency
                 </p>
               </div>
@@ -748,15 +748,15 @@ CRITICAL RULES:
 
       {/* ── Action Bar ── */}
       {currentGridImage && !isLoading && (
-        <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-secondary rounded-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-4 shadow-2xl relative overflow-hidden group gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-between p-6 bg-white rounded-2xl border border-zinc-200 animate-in fade-in slide-in-from-bottom-4 shadow-2xl relative overflow-hidden group gap-4">
           <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-primary/50 transition-all shadow-inner">
+            <div className="w-14 h-14 bg-zinc-50 rounded-2xl flex items-center justify-center border border-zinc-200 group-hover:border-primary/50 transition-all shadow-inner">
                <ImageIcon size={24} className="text-primary" />
             </div>
             <div className="text-left">
-              <h4 className="font-black text-lg tracking-tighter italic uppercase">{t('visualizing.matrixReady')}</h4>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{project.aspect_ratio || '16:9'} &bull; {gridLayout.rows}x{gridLayout.cols} Grid &bull; Unit {currentUnitIdx + 1}</p>
+              <h4 className="font-extrabold text-lg tracking-tight text-zinc-900">{t('visualizing.matrixReady')}</h4>
+              <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{project.aspect_ratio || '16:9'} &bull; {gridLayout.rows}x{gridLayout.cols} Grid &bull; Unit {currentUnitIdx + 1}</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -767,7 +767,7 @@ CRITICAL RULES:
                 link.download = `REMO_Matrix_U${currentUnitIdx+1}.png`;
                 link.click();
               }}
-              className="p-4 bg-black/40 hover:bg-white/5 border border-white/10 rounded-2xl transition-all text-gray-400 hover:text-white"
+              className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-2xl transition-all text-zinc-500 hover:text-zinc-900"
               title="Raw Matrix Download"
             >
               <Download size={20} />
@@ -781,14 +781,14 @@ CRITICAL RULES:
                   setProject({ ...project, grid_images: newGridImages });
                 }
               }}
-              className="p-4 bg-black/40 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 rounded-2xl transition-all text-gray-400 hover:text-red-400"
+              className="p-4 bg-zinc-50 hover:bg-red-50 border border-zinc-200 hover:border-red-200 rounded-2xl transition-all text-zinc-500 hover:text-red-500"
               title="매트릭스 이미지 삭제"
             >
               <Trash2 size={20} />
             </button>
             <button
               onClick={handleApplyToStoryboard}
-              className="px-10 py-4 bg-white text-black font-black italic rounded-2xl flex items-center gap-3 hover:bg-gray-200 transition-all active:scale-95 shadow-2xl uppercase tracking-tighter whitespace-nowrap"
+              className="px-10 py-4 bg-primary text-white font-black rounded-full flex items-center gap-3 hover:bg-[#5B21B6] transition-all active:scale-95 shadow-[0_8px_20px_rgba(109,40,217,0.25)] whitespace-nowrap"
             >
               <Scissors size={18} />
               <span>{t('visualizing.applyCuts')}</span>
@@ -799,11 +799,11 @@ CRITICAL RULES:
 
       {/* Style Selection Popup */}
       {isStylePopupOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-secondary border border-white/10 rounded-2xl p-6 space-y-5 max-w-2xl w-full mx-4 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-5 max-w-2xl w-full mx-4 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-black italic uppercase tracking-tighter">{t('visualizing.selectStyle')}</h4>
-              <button onClick={() => setIsStylePopupOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors"><X size={18} /></button>
+              <h4 className="text-lg font-extrabold tracking-tight text-zinc-900">{t('visualizing.selectStyle')}</h4>
+              <button onClick={() => setIsStylePopupOpen(false)} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"><X size={18} /></button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.values(VisualStyle).map((styleVal) => {
@@ -829,13 +829,13 @@ CRITICAL RULES:
                     }}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                       isSelected
-                        ? 'border-primary bg-primary/15 shadow-[0_0_20px_rgba(0,87,255,0.2)]'
-                        : 'border-white/10 hover:border-white/20 bg-black/30 hover:bg-black/50'
+                        ? 'border-primary bg-violet-50 shadow-[0_0_20px_rgba(109,40,217,0.2)]'
+                        : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                     }`}
                   >
                     <span className="text-3xl">{styleIcons[styleVal] || '🎨'}</span>
                     <div>
-                      <div className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-300'}`}>{styleVal}</div>
+                      <div className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-zinc-600'}`}>{styleVal}</div>
                     </div>
                     {isSelected && (
                       <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -852,13 +852,13 @@ CRITICAL RULES:
 
       {/* Category Selection Popup */}
       {pendingImage && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-secondary border border-white/10 rounded-2xl p-6 space-y-4 max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-4 max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-black italic uppercase tracking-tighter">{t('visualizing.selectCategory')}</h4>
-              <button onClick={() => setPendingImage(null)} className="p-1 hover:bg-white/5 rounded-lg transition-colors"><X size={16} /></button>
+              <h4 className="text-sm font-extrabold tracking-tight text-zinc-900">{t('visualizing.selectCategory')}</h4>
+              <button onClick={() => setPendingImage(null)} className="p-1 hover:bg-zinc-100 rounded-lg transition-colors"><X size={16} /></button>
             </div>
-            <div className="w-20 h-20 rounded-xl overflow-hidden border border-white/10 mx-auto">
+            <div className="w-20 h-20 rounded-xl overflow-hidden border border-zinc-200 mx-auto">
               <img src={pendingImage} className="w-full h-full object-cover" />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -874,12 +874,12 @@ CRITICAL RULES:
                   <button
                     key={cat}
                     onClick={() => handleCategorySelect(cat)}
-                    className="flex items-center gap-2 p-3 bg-black/40 hover:bg-primary/20 border border-white/10 hover:border-primary/40 rounded-xl transition-all text-left"
+                    className="flex items-center gap-2 p-3 bg-zinc-50 hover:bg-primary/10 border border-zinc-200 hover:border-primary/40 rounded-xl transition-all text-left"
                   >
                     <span className="text-primary">{icons[cat]}</span>
                     <div>
                       <div className="text-xs font-bold">{info.labelKr}</div>
-                      <div className="text-[9px] text-gray-500">{info.label}</div>
+                      <div className="text-[9px] text-zinc-400">{info.label}</div>
                     </div>
                   </button>
                 );

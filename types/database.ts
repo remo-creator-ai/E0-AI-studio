@@ -9,6 +9,9 @@ export interface Database {
           email: string;
           display_name: string | null;
           avatar_url: string | null;
+          role: 'user' | 'master';
+          login_id: string | null;
+          status: 'active' | 'suspended';
           created_at: string;
         };
         Insert: {
@@ -16,6 +19,9 @@ export interface Database {
           email: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          role?: 'user' | 'master';
+          login_id?: string | null;
+          status?: 'active' | 'suspended';
           created_at?: string;
         };
         Update: {
@@ -23,6 +29,9 @@ export interface Database {
           email?: string;
           display_name?: string | null;
           avatar_url?: string | null;
+          role?: 'user' | 'master';
+          login_id?: string | null;
+          status?: 'active' | 'suspended';
         };
         Relationships: [];
       };
@@ -217,6 +226,10 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      is_master: {
+        Args: Record<never, never>;
+        Returns: boolean;
+      };
       get_project_summaries: {
         Args: {
           p_user_id: string;

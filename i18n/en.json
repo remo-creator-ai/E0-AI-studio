@@ -202,13 +202,13 @@
       "consent3": "."
     },
     "footer": {
-      "copyright": "© {{year}} REMO AI Studio. All rights reserved."
+      "copyright": "© {{year}} Sodam AI Studio. All rights reserved."
     },
     "privacy": {
       "title": "Privacy Policy",
       "lastModified": "Last updated: February 21, 2026",
       "section1Title": "1. Purpose of Collecting and Using Personal Information",
-      "section1Intro": "REMO AI Studio (the \"Service\") collects minimal personal information for the following purposes:",
+      "section1Intro": "Sodam AI Studio (the \"Service\") collects minimal personal information for the following purposes:",
       "section1Item1": "User identification and authentication for registration and service usage",
       "section1Item2": "Service provision, credit management, and payment processing",
       "section1Item3": "Service improvement and personalized content delivery",
@@ -246,7 +246,7 @@
       "title": "Terms of Service",
       "lastModified": "Last updated: February 21, 2026",
       "article1Title": "Article 1 (Purpose)",
-      "article1Text": "These terms establish the rights, obligations, and responsibilities between the service provider and users regarding the use of REMO AI Studio (the \"Service\").",
+      "article1Text": "These terms establish the rights, obligations, and responsibilities between the service provider and users regarding the use of Sodam AI Studio (the \"Service\").",
       "article2Title": "Article 2 (Definitions)",
       "article2Item1": "\"Service\" refers to the AI-based video storyboard production platform.",
       "article2Item2": "\"User\" refers to any person who uses the Service under these terms.",
@@ -459,7 +459,7 @@
     "exportHtml": "Export HTML",
     "printPdf": "Print PDF",
     "portraitLayout": "1x4 Portrait",
-    "storyboardHeader": "REMO AI STUDIO",
+    "storyboardHeader": "SODAM AI STUDIO",
     "storyboardSubheader": "Master Workflow Visual Output",
     "project": "PROJECT",
     "keyMsg": "KEY MESSAGE",
@@ -471,7 +471,7 @@
     "sceneMotion": "Motion",
     "sceneReady": "Ready",
     "sceneReadyToVisualize": "Ready to Visualize",
-    "pageFooter": "© REMO AI STUDIO • MASTER WORKFLOW OUTPUT",
+    "pageFooter": "© SODAM AI STUDIO • MASTER WORKFLOW OUTPUT",
     "pageOf": "Page {{current}} of {{total}}",
     "timelineManager": "Timeline Manager",
     "timelineSubtitle": "Direct Edit & Reorder Control",
@@ -684,7 +684,7 @@
   "onboarding": {
     "dashboard": {
       "welcome": {
-        "title": "Welcome to REMO AI Studio!",
+        "title": "Welcome to Sodam AI Studio!",
         "desc": "AI assists you through every step, from planning to final video. Let us show you around."
       },
       "workflow": {

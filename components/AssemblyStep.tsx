@@ -426,7 +426,7 @@ export const AssemblyStep: React.FC = () => {
     <div id="modal-content"></div>
   </div>
 </div>
-<footer>© REMO AI STUDIO · Generated Storyboard</footer>
+<footer>© SODAM AI STUDIO · Generated Storyboard</footer>
 <script>
 const scenes = ${JSON.stringify(sceneData)};
 const grid = document.getElementById('grid');
@@ -753,17 +753,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 animate-in fade-in duration-500">
-        <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center border border-white/10">
-          <FileText size={40} className="text-gray-500" />
+        <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center border border-zinc-200">
+          <FileText size={40} className="text-zinc-400" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-black italic uppercase tracking-tighter">{t('assembly.noProject')}</h2>
-          <p className="text-gray-400 text-sm">{t('assembly.noProjectDesc')}</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('assembly.noProject')}</h2>
+          <p className="text-zinc-500 text-sm">{t('assembly.noProjectDesc')}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => importInputRef.current?.click()}
-            className="px-10 py-4 bg-white text-black rounded-2xl flex items-center gap-2 font-black shadow-2xl hover:scale-105 transition-all"
+            className="px-10 py-4 bg-primary text-white rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:bg-[#5B21B6] transition-all"
           >
             <FileUp size={20} /> <span>{t('assembly.importStoryboard')}</span>
           </button>
@@ -796,7 +796,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       <input type="file" ref={importInputRef} className="hidden" accept=".storyboard,.json" onChange={handleImportStoryboard} />
 
       {/* Controls Bar */}
-      <div className="flex flex-col gap-6 print:hidden bg-secondary/50 p-8 rounded-[2.5rem] border border-white/5">
+      <div className="flex flex-col gap-6 print:hidden bg-white p-8 rounded-[2.5rem] border border-zinc-100">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
           <div className="space-y-4 text-left">
             <div className="space-y-1">
@@ -804,16 +804,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               <input 
                 value={project.title}
                 onChange={(e) => updateProjectSettings({ title: e.target.value })}
-                className="text-4xl font-bold tracking-tight italic bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg w-full text-white"
+                className="text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg w-full text-zinc-900"
                 placeholder={t('assembly.projectNamePlaceholder')}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('assembly.keyMessage')}</label>
-              <input 
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('assembly.keyMessage')}</label>
+              <input
                 value={project.key_message || ''}
                 onChange={(e) => updateProjectSettings({ key_message: e.target.value })}
-                className="text-xl font-medium tracking-tight bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg w-full text-gray-400"
+                className="text-xl font-medium tracking-tight bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-lg w-full text-zinc-500"
                 placeholder={t('assembly.keyMessagePlaceholder')}
               />
             </div>
@@ -821,29 +821,29 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
           
           <div className="flex flex-col gap-4 items-end">
             <div className="flex flex-wrap gap-3">
-              <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
-                <button onClick={() => setViewLanguage('KR')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewLanguage === 'KR' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}>
+              <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
+                <button onClick={() => setViewLanguage('KR')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewLanguage === 'KR' ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}>
                   <Languages size={14} /> KR
                 </button>
-                <button onClick={() => setViewLanguage('EN')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewLanguage === 'EN' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}>
+                <button onClick={() => setViewLanguage('EN')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${viewLanguage === 'EN' ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}>
                   <Languages size={14} /> EN
                 </button>
               </div>
               {isPortrait ? (
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
                   <div className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-primary text-white shadow-lg">
                     {t('assembly.portraitLayout')}
                   </div>
                 </div>
               ) : (
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
-                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_2X5 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_2X5 ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}>
+                <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
+                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_2X5 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_2X5 ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}>
                     2x5 Grid
                   </button>
-                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_2X4 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_2X4 ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}>
+                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_2X4 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_2X4 ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}>
                     2x4 Grid
                   </button>
-                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_1X4 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_1X4 ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}>
+                  <button onClick={() => updateProjectSettings({ layout: StoryboardLayout.GRID_1X4 })} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${project.layout === StoryboardLayout.GRID_1X4 ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}>
                     1x4 Wide
                   </button>
                 </div>
@@ -852,18 +852,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
             <div data-tour="assembly-export" className="flex flex-wrap gap-3 justify-end">
               <button
                 onClick={() => importInputRef.current?.click()}
-                className="px-5 py-3 bg-black/40 rounded-2xl flex items-center gap-2 border border-white/10 hover:bg-white/5 transition-all font-bold text-sm text-gray-400"
+                className="px-5 py-3 bg-white rounded-2xl flex items-center gap-2 border border-zinc-200 hover:bg-zinc-50 transition-all font-bold text-sm text-zinc-700"
                 title={t('assembly.importFile')}
               >
                 <FileUp size={18} /> <span>{t('assembly.importFile')}</span>
               </button>
-              <button onClick={handleExportStoryboard} className="px-5 py-3 bg-black/40 rounded-2xl flex items-center gap-2 border border-white/10 hover:bg-white/5 transition-all font-bold text-sm text-gray-400">
+              <button onClick={handleExportStoryboard} className="px-5 py-3 bg-white rounded-2xl flex items-center gap-2 border border-zinc-200 hover:bg-zinc-50 transition-all font-bold text-sm text-zinc-700">
                 <Download size={18} /> <span>{t('assembly.export')}</span>
               </button>
-              <button onClick={handleExportHtmlZip} disabled={isLoading} className="px-5 py-3 bg-black/40 rounded-2xl flex items-center gap-2 border border-white/10 hover:bg-white/5 transition-all font-bold text-sm text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button onClick={handleExportHtmlZip} disabled={isLoading} className="px-5 py-3 bg-white rounded-2xl flex items-center gap-2 border border-zinc-200 hover:bg-zinc-50 transition-all font-bold text-sm text-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 <FileText size={18} /> <span>{t('assembly.exportHtml')}</span>
               </button>
-              <button onClick={handlePrint} className="px-10 py-3 bg-primary rounded-2xl flex items-center gap-2 font-black shadow-[0_10px_25px_rgba(0,87,255,0.3)] hover:scale-105 transition-all text-white">
+              <button onClick={handlePrint} className="px-10 py-3 bg-primary rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:bg-[#5B21B6] transition-all text-white">
                 <Printer size={18} /> <span>{t('assembly.printPdf')}</span>
               </button>
             </div>
@@ -875,7 +875,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       <div
         data-tour="assembly-storyboard"
         ref={containerRef}
-        className="storyboard-pages-container flex flex-col gap-10 items-center bg-black/40 p-4 rounded-[3rem] border border-white/5"
+        className="storyboard-pages-container flex flex-col gap-10 items-center bg-zinc-50 p-4 rounded-[3rem] border border-zinc-100"
       >
         <div style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center' }} className="storyboard-print-wrapper flex flex-col gap-10">
           {pages.map((pageScenes, pageIdx) => (
@@ -883,7 +883,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               {/* Header */}
               <div className="flex justify-between items-start mb-6 border-b-4 border-black pb-4 text-left">
                 <div>
-                  <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">REMO AI STUDIO</h2>
+                  <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">SODAM AI STUDIO</h2>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{t('assembly.storyboardSubheader')}</p>
                 </div>
                 <div className="text-right grid grid-cols-2 gap-x-6 gap-y-1">
@@ -1013,20 +1013,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       </div>
 
       {/* Timeline Manager Grid Panel */}
-      <div data-tour="assembly-timeline" className="bg-secondary p-10 rounded-[3rem] border border-white/10 space-y-8 print:hidden">
+      <div data-tour="assembly-timeline" className="bg-white p-10 rounded-[3rem] border border-zinc-200 space-y-8 print:hidden">
         <div className="flex items-center justify-between">
           <div className="space-y-1 text-left">
-            <h3 className="text-2xl font-black italic flex items-center gap-3 uppercase">
+            <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-3">
               <LayoutIcon className="text-primary" /> {t('assembly.timelineManager')}
             </h3>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{t('assembly.timelineSubtitle')}</p>
+            <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{t('assembly.timelineSubtitle')}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* AI Full Story Refine */}
             <button
               onClick={handleRefineFullStory}
               disabled={isLoading}
-              className="px-6 py-3 bg-accent/20 hover:bg-accent/40 border border-accent/40 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <><RefreshCw size={16} className="animate-spin" /> <span>{t('assembly.refiningFullStory')}</span></>
@@ -1038,7 +1038,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
             <button
               onClick={handleBatchUpscale}
               disabled={isLoading}
-              className="px-6 py-3 bg-primary/20 hover:bg-primary border border-primary/40 rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-primary/20 hover:bg-primary border border-primary/40 text-primary hover:text-white rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
             >
               {upscaleProgress ? (
                 <><RefreshCw size={16} className="animate-spin" /> <span>{upscaleProgress.current}/{upscaleProgress.total}</span></>
@@ -1050,7 +1050,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
             <button
               onClick={handleDownloadImages}
               disabled={isLoading}
-              className="px-6 py-3 bg-primary hover:bg-primary/80 border border-primary rounded-2xl flex items-center gap-2 text-xs font-black uppercase transition-all text-white shadow-[0_4px_16px_rgba(0,87,255,0.3)] disabled:opacity-50"
+              className="px-6 py-3 bg-primary hover:bg-primary/80 border border-primary rounded-2xl flex items-center gap-2 text-xs font-black uppercase transition-all text-white shadow-[0_4px_16px_rgba(109,40,217,0.25)] disabled:opacity-50"
             >
               <Archive size={16} />
               <span>{t('assembly.downloadZip')}</span>
@@ -1061,14 +1061,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
           {project.scenes.map((scene, idx) => (
             <div key={scene.id} className="space-y-2 group">
-              <div className={`${isPortrait ? 'aspect-[9/16]' : 'aspect-video'} bg-black border-2 border-white/5 rounded-2xl overflow-hidden group-hover:border-primary transition-all relative shadow-lg cursor-pointer`}>
+              <div className={`${isPortrait ? 'aspect-[9/16]' : 'aspect-video'} bg-zinc-100 border-2 border-zinc-200 rounded-2xl overflow-hidden group-hover:border-primary transition-all relative shadow-lg cursor-pointer`}>
                 {scene.image_url ? (
                   <img src={scene.image_url} className="w-full h-full object-cover" />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center opacity-10"><ImageIcon size={24} /></div>
                 )}
                 {scene.upscale_level && (
-                  <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-green-500/80 rounded text-[8px] font-black text-white z-10">
+                  <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[8px] font-black text-emerald-700 z-10">
                     {scene.upscale_level}
                   </div>
                 )}
@@ -1078,24 +1078,24 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                 </div>
               </div>
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-black italic text-gray-500">#{String(idx + 1).padStart(2, '0')}</span>
+                <span className="text-[10px] font-black italic text-zinc-400">#{String(idx + 1).padStart(2, '0')}</span>
                 <div className="flex gap-1">
-                  <button onClick={() => moveScene(idx, 'up')} className="p-1 hover:text-primary text-gray-600 transition-colors" title="Move Left"><ArrowUp size={14} className="-rotate-90" /></button>
-                  <button onClick={() => moveScene(idx, 'down')} className="p-1 hover:text-primary text-gray-600 transition-colors" title="Move Right"><ArrowDown size={14} className="-rotate-90" /></button>
-                  <button 
-                    onClick={() => handleDownloadSingleScene(scene, idx)} 
+                  <button onClick={() => moveScene(idx, 'up')} className="p-1 hover:text-primary text-zinc-500 transition-colors" title="Move Left"><ArrowUp size={14} className="-rotate-90" /></button>
+                  <button onClick={() => moveScene(idx, 'down')} className="p-1 hover:text-primary text-zinc-500 transition-colors" title="Move Right"><ArrowDown size={14} className="-rotate-90" /></button>
+                  <button
+                    onClick={() => handleDownloadSingleScene(scene, idx)}
                     disabled={!scene.image_url}
-                    className="p-1 hover:text-primary text-gray-600 transition-colors disabled:opacity-30" 
+                    className="p-1 hover:text-primary text-zinc-500 transition-colors disabled:opacity-30"
                     title="Download Scene Image"
                   >
                     <Download size={14} />
                   </button>
-                  <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-red-500 text-gray-600 transition-colors ml-1" title="Delete"><Trash2 size={14} /></button>
+                  <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-red-500 text-zinc-500 transition-colors ml-1" title="Delete"><Trash2 size={14} /></button>
                 </div>
               </div>
             </div>
           ))}
-          <button onClick={addEmptyScene} className={`${isPortrait ? 'aspect-[9/16]' : 'aspect-video'} border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/5 hover:border-white/20 transition-all text-gray-500 group`}>
+          <button onClick={addEmptyScene} className={`${isPortrait ? 'aspect-[9/16]' : 'aspect-video'} border-2 border-dashed border-zinc-200 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-zinc-50 hover:border-zinc-300 transition-all text-zinc-400 group`}>
             <Plus size={24} className="group-hover:text-primary transition-colors" />
             <span className="text-[10px] font-bold uppercase tracking-tighter">New Cut</span>
           </button>
@@ -1104,22 +1104,22 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
       {/* Edit Modal Popup */}
       {editingScene && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl">
-          <div className="bg-secondary border border-white/10 rounded-[3rem] w-full max-w-7xl h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-8 border-b border-white/5 shrink-0">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-md">
+          <div className="bg-white border border-zinc-200 rounded-[3rem] w-full max-w-7xl h-[90vh] shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-8 border-b border-zinc-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Edit3 size={24} /></div>
                 <div>
-                  <h3 className="text-2xl font-black italic tracking-tighter uppercase">Precision Visual Editor</h3>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">CUT #{String(project.scenes.findIndex(s => s.id === editingScene.id) + 1).padStart(2, '0')} • {project.aspect_ratio || '16:9'} Aspect Ratio Refinement</p>
+                  <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">Precision Visual Editor</h3>
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">CUT #{String(project.scenes.findIndex(s => s.id === editingScene.id) + 1).padStart(2, '0')} • {project.aspect_ratio || '16:9'} Aspect Ratio Refinement</p>
                 </div>
               </div>
-              <button onClick={() => setEditingScene(null)} className="p-3 hover:bg-white/5 rounded-full transition-colors"><X size={24} /></button>
+              <button onClick={() => setEditingScene(null)} className="p-3 hover:bg-zinc-100 rounded-full transition-colors"><X size={24} /></button>
             </div>
             
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
               {/* Center: Image Editor (Cropper) */}
-              <div className="flex-[1.5] bg-black/40 relative flex flex-col border-r border-white/5">
+              <div className="flex-[1.5] bg-zinc-50 relative flex flex-col border-r border-zinc-100">
                 <div className="relative flex-1 bg-black">
                   {editingScene.image_url ? (
                     <Cropper
@@ -1133,7 +1133,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       onZoomChange={setZoom}
                     />
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white/5 gap-4">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-200 gap-4">
                       <ImageIcon size={64} />
                       <p className="text-xs font-bold uppercase">No Image to Edit</p>
                     </div>
@@ -1152,18 +1152,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                           {t('assembly.editor.previewNew')}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-4 bg-secondary/95 backdrop-blur-xl border-t border-white/10">
+                      <div className="flex items-center gap-3 p-4 bg-white backdrop-blur-xl border-t border-zinc-100">
                         <button
                           type="button"
                           onClick={handleDiscardPreview}
-                          className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all text-gray-300"
+                          className="flex-1 py-3 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 transition-all text-zinc-700"
                         >
                           <X size={14} /> {t('assembly.editor.previewDiscard')}
                         </button>
                         <button
                           type="button"
                           onClick={handleApplyPreview}
-                          className="flex-[2] py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all text-white shadow-[0_0_20px_rgba(0,87,255,0.3)]"
+                          className="flex-[2] py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all text-white shadow-[0_0_20px_rgba(109,40,217,0.25)]"
                         >
                           <Check size={16} /> {t('assembly.editor.previewApply')}
                         </button>
@@ -1173,13 +1173,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                 </div>
 
                 {/* Cropper Toolbar */}
-                <div className="p-6 bg-secondary/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-between gap-8 shrink-0">
+                <div className="p-6 bg-zinc-50 backdrop-blur-xl border-t border-zinc-100 flex items-center justify-between gap-8 shrink-0">
                   <div className="flex items-center gap-4 flex-1">
-                    <ZoomIn size={18} className="text-gray-500" />
+                    <ZoomIn size={18} className="text-zinc-400" />
                     <button
                       type="button"
                       onClick={() => setZoom(Math.max(1, +(zoom - 0.05).toFixed(2)))}
-                      className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all"
+                      className="p-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg transition-all"
                     >
                       <Minus size={14} />
                     </button>
@@ -1191,30 +1191,30 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       step={0.05}
                       aria-labelledby="Zoom"
                       onChange={(e) => setZoom(Number(e.target.value))}
-                      className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                      className="w-full h-1 bg-zinc-200 rounded-lg appearance-none cursor-pointer accent-primary"
                     />
                     <button
                       type="button"
                       onClick={() => setZoom(Math.min(3, +(zoom + 0.05).toFixed(2)))}
-                      className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all"
+                      className="p-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg transition-all"
                     >
                       <Plus size={14} />
                     </button>
-                    <span className="text-[10px] font-bold text-gray-400 w-12">{zoom.toFixed(2)}x</span>
+                    <span className="text-[10px] font-bold text-zinc-500 w-12">{zoom.toFixed(2)}x</span>
                   </div>
                   <div className="flex gap-3">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={handleApplyCrop}
                       disabled={isLoading || !editingScene.image_url}
-                      className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all disabled:opacity-50"
+                      className="px-6 py-3 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all disabled:opacity-50"
                     >
                       <Scissors size={14} /> {t('assembly.editor.trimArtifacts')}
                     </button>
                     <button
                       type="button"
                       onClick={() => modalFileRef.current?.click()}
-                      className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all"
+                      className="px-6 py-3 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all"
                     >
                       <Upload size={14} /> {t('assembly.editor.swapImage')}
                     </button>
@@ -1229,7 +1229,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                         link.click();
                       }}
                       disabled={!editingScene?.image_url}
-                      className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all disabled:opacity-50"
+                      className="px-6 py-3 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-black uppercase flex items-center gap-2 transition-all disabled:opacity-50"
                     >
                       <Download size={14} /> {t('assembly.editor.downloadImage')}
                     </button>
@@ -1238,79 +1238,79 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               </div>
 
               {/* Right: Data & AI Generation Form */}
-              <div className="flex-1 flex flex-col overflow-hidden bg-secondary">
+              <div className="flex-1 flex flex-col overflow-hidden bg-white">
                 <form onSubmit={handleSaveSceneEdit} className="flex-1 p-8 space-y-6 overflow-y-auto custom-scrollbar">
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> {t('planning.editModal.visualContentKr')}</label>
-                      <textarea value={editingScene.content_kr} onChange={(e) => setEditingScene({...editingScene, content_kr: e.target.value})} className="w-full h-20 bg-black/50 border border-white/10 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-white" />
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> {t('planning.editModal.visualContentKr')}</label>
+                      <textarea value={editingScene.content_kr} onChange={(e) => setEditingScene({...editingScene, content_kr: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> {t('planning.editModal.visualContentEn')}</label>
-                      <textarea value={editingScene.content_en || ''} onChange={(e) => setEditingScene({...editingScene, content_en: e.target.value})} className="w-full h-20 bg-black/50 border border-white/10 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-white" />
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> {t('planning.editModal.visualContentEn')}</label>
+                      <textarea value={editingScene.content_en || ''} onChange={(e) => setEditingScene({...editingScene, content_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center justify-between">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center justify-between">
                          <span className="flex items-center gap-2"><Type size={12} /> {t('planning.editModal.imagePromptEn')}</span>
                          <button type="button" onClick={() => handleTranslate('visual')} className="text-primary hover:text-primary/80 flex items-center gap-1"><RefreshCw size={10} /> Auto-Sync</button>
                       </label>
-                      <textarea value={editingScene.image_prompt_en} onChange={(e) => setEditingScene({...editingScene, image_prompt_en: e.target.value})} className="w-full h-20 bg-black/50 border border-white/10 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-white font-mono" />
+                      <textarea value={editingScene.image_prompt_en} onChange={(e) => setEditingScene({...editingScene, image_prompt_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900 font-mono" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Layers size={12} /> {t('planning.editModal.audioScriptKr')}</label>
-                        <textarea value={editingScene.script_kr} onChange={(e) => setEditingScene({...editingScene, script_kr: e.target.value})} className="w-full h-20 bg-black/50 border border-white/10 rounded-[1.2rem] p-4 text-xs focus:border-primary focus:outline-none resize-none text-white" />
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Layers size={12} /> {t('planning.editModal.audioScriptKr')}</label>
+                        <textarea value={editingScene.script_kr} onChange={(e) => setEditingScene({...editingScene, script_kr: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-xs focus:border-primary focus:outline-none resize-none text-zinc-900" />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><Layers size={12} /> {t('planning.editModal.audioScriptEn')}</label>
-                        <textarea value={editingScene.script_en} onChange={(e) => setEditingScene({...editingScene, script_en: e.target.value})} className="w-full h-20 bg-black/50 border border-white/10 rounded-[1.2rem] p-4 text-xs focus:border-primary focus:outline-none resize-none text-white" />
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Layers size={12} /> {t('planning.editModal.audioScriptEn')}</label>
+                        <textarea value={editingScene.script_en} onChange={(e) => setEditingScene({...editingScene, script_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-xs focus:border-primary focus:outline-none resize-none text-zinc-900" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('assembly.editModal.motionKr')}</label>
-                        <input value={editingScene.video_motion_kr || ''} onChange={(e) => setEditingScene({...editingScene, video_motion_kr: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-primary focus:outline-none transition-all font-bold text-white" placeholder={t('planning.editModal.motionKrPlaceholder')} />
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('assembly.editModal.motionKr')}</label>
+                        <input value={editingScene.video_motion_kr || ''} onChange={(e) => setEditingScene({...editingScene, video_motion_kr: e.target.value})} className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs focus:border-primary focus:outline-none transition-all font-bold text-zinc-900" placeholder={t('planning.editModal.motionKrPlaceholder')} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('planning.editModal.motionEn')}</label>
-                        <input value={editingScene.video_motion_en} onChange={(e) => setEditingScene({...editingScene, video_motion_en: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-xs focus:border-primary focus:outline-none transition-all font-bold uppercase tracking-tighter text-white" />
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('planning.editModal.motionEn')}</label>
+                        <input value={editingScene.video_motion_en} onChange={(e) => setEditingScene({...editingScene, video_motion_en: e.target.value})} className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs focus:border-primary focus:outline-none transition-all font-bold uppercase tracking-tighter text-zinc-900" />
                       </div>
                     </div>
                   </div>
                   
-                  <div className="pt-6 border-t border-white/5 space-y-5">
+                  <div className="pt-6 border-t border-zinc-100 space-y-5">
                     {/* Reference Toggle */}
-                    <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/10">
+                    <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-200">
                       <button
                         type="button"
                         onClick={() => setUseExistingAsRef(!useExistingAsRef)}
-                        className={`w-11 h-6 rounded-full transition-all relative flex items-center px-1 shrink-0 ${useExistingAsRef ? 'bg-primary shadow-[0_0_12px_rgba(0,87,255,0.5)]' : 'bg-gray-700'}`}
+                        className={`w-11 h-6 rounded-full transition-all relative flex items-center px-1 shrink-0 ${useExistingAsRef ? 'bg-primary shadow-[0_0_12px_rgba(109,40,217,0.3)]' : 'bg-zinc-300'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-all ${useExistingAsRef ? 'translate-x-5' : 'translate-x-0'}`} />
                       </button>
-                      <span className="text-xs font-bold text-white">{t('assembly.existingRefStyle')}</span>
+                      <span className="text-xs font-bold text-zinc-700">{t('assembly.existingRefStyle')}</span>
                     </div>
 
                     {/* Edit Instruction */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('assembly.editor.editInstruction')}</label>
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('assembly.editor.editInstruction')}</label>
                       <textarea
                         value={editInstruction}
                         onChange={(e) => setEditInstruction(e.target.value)}
                         placeholder={t('assembly.editor.editInstructionPlaceholder')}
-                        className="w-full h-16 bg-black/50 border border-white/10 rounded-xl p-3 text-xs focus:border-primary focus:outline-none resize-none text-white placeholder:text-gray-600"
+                        className="w-full h-16 bg-white border border-zinc-200 rounded-xl p-3 text-xs focus:border-primary focus:outline-none resize-none text-zinc-900 placeholder:text-zinc-400"
                       />
                     </div>
 
                     {/* Additional References */}
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                         <span>{t('assembly.additionalRefs', { count: localRefImages.length })}</span>
                         {localRefImages.length < 5 && (
                           <button
                             type="button"
                             onClick={() => modalRefUploadRef.current?.click()}
-                            className="w-6 h-6 flex items-center justify-center rounded-md border border-primary/50 text-primary hover:bg-primary/20 hover:border-primary transition-all shadow-[0_0_8px_rgba(0,87,255,0.2)]"
+                            className="w-6 h-6 flex items-center justify-center rounded-md border border-primary/50 text-primary hover:bg-primary/20 hover:border-primary transition-all shadow-[0_0_8px_rgba(109,40,217,0.15)]"
                           >
                             <Plus size={12} strokeWidth={3} />
                           </button>
@@ -1319,7 +1319,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       {localRefImages.length > 0 && (
                         <div className="grid grid-cols-3 gap-2">
                           {localRefImages.map((img, i) => (
-                            <div key={i} className="aspect-square rounded-xl overflow-hidden relative group border border-white/10">
+                            <div key={i} className="aspect-square rounded-xl overflow-hidden relative group border border-zinc-200">
                               <img src={img} className="w-full h-full object-cover" />
                               <button type="button" onClick={() => removeLocalRef(i)} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"><X size={14} /></button>
                             </div>
@@ -1334,7 +1334,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       type="button"
                       onClick={handleGenerateLocalImage}
                       disabled={isLoading}
-                      className="w-full py-5 bg-primary/20 border border-primary/40 rounded-2xl font-black flex items-center justify-center gap-4 hover:bg-primary transition-all text-white uppercase italic disabled:opacity-50"
+                      className="w-full py-5 bg-primary/20 border border-primary/40 rounded-2xl font-black flex items-center justify-center gap-4 hover:bg-primary transition-all text-primary hover:text-white uppercase disabled:opacity-50"
                     >
                       {isLoading
                         ? <><RefreshCw size={18} className="animate-spin" /> <span className="text-sm">{t('assembly.editor.processing')}</span></>
@@ -1342,7 +1342,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       }
                     </button>
 
-                    <button type="submit" className="w-full py-5 bg-primary rounded-2xl text-sm font-black shadow-[0_10px_30px_rgba(0,87,255,0.3)] flex items-center justify-center gap-3 hover:scale-[1.02] transition-all text-white uppercase italic tracking-tighter mt-2">
+                    <button type="submit" className="w-full py-5 bg-primary rounded-full text-sm font-black shadow-[0_8px_20px_rgba(109,40,217,0.25)] flex items-center justify-center gap-3 hover:bg-[#5B21B6] transition-all text-white uppercase mt-2">
                       <Save size={18} /> {t('assembly.editor.updateStoryboard')}
                     </button>
                   </div>

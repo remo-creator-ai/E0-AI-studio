@@ -95,12 +95,12 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-zinc-900/40 backdrop-blur-md flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
       {/* Modal panel */}
       <div
-        className="bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-white border border-zinc-200 rounded-[2.5rem] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
         style={{
           animation: 'refineModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both',
         }}
@@ -108,18 +108,18 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
         {/* ------------------------------------------------------------------ */}
         {/* HEADER                                                               */}
         {/* ------------------------------------------------------------------ */}
-        <div className="shrink-0 p-6 md:p-8 border-b border-white/5">
+        <div className="shrink-0 p-6 md:p-8 border-b border-zinc-100">
           <div className="flex items-start justify-between gap-4">
             {/* Left: icon + title */}
             <div className="flex items-start gap-4 min-w-0">
-              <div className="shrink-0 w-10 h-10 rounded-2xl bg-[#00D1FF]/10 border border-[#00D1FF]/20 flex items-center justify-center mt-0.5">
-                <Wand2 size={18} className="text-[#00D1FF]" />
+              <div className="shrink-0 w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center mt-0.5">
+                <Wand2 size={18} className="text-indigo-600" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-black italic uppercase tracking-wider text-white leading-tight">
+                <h2 className="text-base font-extrabold tracking-tight text-zinc-900 leading-tight">
                   {t('assembly.refineModal.title')}
                 </h2>
-                <p className="text-xs text-gray-500 mt-1 font-medium">
+                <p className="text-xs text-zinc-400 mt-1 font-medium">
                   {t('assembly.refineModal.subtitle')}
                 </p>
               </div>
@@ -132,7 +132,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 type="button"
                 onClick={acceptAll}
                 disabled={allAccepted}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#00D1FF]/[0.12] hover:bg-[#00D1FF]/20 border border-[#00D1FF]/20 hover:border-[#00D1FF]/40 rounded-xl text-[11px] font-black uppercase tracking-wide text-[#00D1FF] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 rounded-xl text-[11px] font-black uppercase tracking-wide text-indigo-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <CheckCheck size={12} />
                 {t('assembly.refineModal.acceptAll')}
@@ -143,15 +143,15 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 type="button"
                 onClick={rejectAll}
                 disabled={noneAccepted}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-[11px] font-black uppercase tracking-wide text-gray-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 hover:border-zinc-300 rounded-xl text-[11px] font-black uppercase tracking-wide text-zinc-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <XCircle size={12} />
                 {t('assembly.refineModal.rejectAll')}
               </button>
 
               {/* Selected badge */}
-              <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
-                <span className="text-[11px] font-black tabular-nums text-gray-300">
+              <div className="px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl">
+                <span className="text-[11px] font-black tabular-nums text-zinc-600">
                   {t('assembly.refineModal.selectedCount', {
                     count: acceptedCount,
                     total: originalScenes.length,
@@ -163,7 +163,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-95"
+                className="w-9 h-9 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-500 hover:text-zinc-900 transition-all active:scale-95"
                 aria-label={t('common.cancel')}
               >
                 <X size={15} />
@@ -177,7 +177,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
               type="button"
               onClick={acceptAll}
               disabled={allAccepted}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00D1FF]/[0.12] border border-[#00D1FF]/20 rounded-xl text-[11px] font-black uppercase tracking-wide text-[#00D1FF] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] font-black uppercase tracking-wide text-indigo-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <CheckCheck size={12} />
               {t('assembly.refineModal.acceptAll')}
@@ -186,7 +186,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
               type="button"
               onClick={rejectAll}
               disabled={noneAccepted}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black uppercase tracking-wide text-gray-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-xl text-[11px] font-black uppercase tracking-wide text-zinc-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <XCircle size={12} />
               {t('assembly.refineModal.rejectAll')}
@@ -197,7 +197,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
         {/* ------------------------------------------------------------------ */}
         {/* SCENE LIST                                                           */}
         {/* ------------------------------------------------------------------ */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-200">
           {originalScenes.map((scene, index) => {
             const result = refinedResults[index];
             const isAccepted = accepted[index] ?? true;
@@ -209,8 +209,8 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 key={scene.id}
                 className={`rounded-2xl border transition-all duration-200 ${
                   isAccepted
-                    ? 'bg-white/[0.03] border-[#00D1FF]/20'
-                    : 'bg-white/[0.01] border-white/5 opacity-50'
+                    ? 'bg-indigo-50 border-indigo-200'
+                    : 'bg-zinc-50 border-zinc-100 opacity-50'
                 }`}
               >
                 {/* DESKTOP layout (md+): horizontal row */}
@@ -224,43 +224,43 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                         className="w-16 h-16 rounded-xl object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <span className="text-[10px] font-black text-gray-600 uppercase">IMG</span>
+                      <div className="w-16 h-16 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase">IMG</span>
                       </div>
                     )}
-                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                       {t('assembly.cutLabel', { number: scene.order })}
                     </span>
                   </div>
 
                   {/* BEFORE column */}
                   <div className="flex-1 min-w-0 space-y-2">
-                    <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                       {t('assembly.refineModal.before')}
                     </span>
-                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
+                    <p className="text-xs text-zinc-500 leading-relaxed line-clamp-3">
                       {getOriginalContent(scene)}
                     </p>
                     {getOriginalScript(scene) && (
-                      <p className="text-xs text-gray-500 italic leading-relaxed line-clamp-2">
+                      <p className="text-xs text-zinc-500 italic leading-relaxed line-clamp-2">
                         {getOriginalScript(scene)}
                       </p>
                     )}
                   </div>
 
                   {/* Divider */}
-                  <div className="shrink-0 w-px bg-white/5 self-stretch" />
+                  <div className="shrink-0 w-px bg-zinc-100 self-stretch" />
 
                   {/* AFTER column */}
                   <div className="flex-1 min-w-0 space-y-2 pr-12">
-                    <span className="block text-[10px] font-black text-[#00D1FF] uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">
                       {t('assembly.refineModal.after')}
                     </span>
                     <p
                       className={`text-xs leading-relaxed line-clamp-3 transition-all ${
                         isAccepted
-                          ? 'text-white'
-                          : 'text-gray-500 line-through'
+                          ? 'text-zinc-900'
+                          : 'text-zinc-400 line-through'
                       }`}
                     >
                       {getRefinedContent(result)}
@@ -269,8 +269,8 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                       <p
                         className={`text-xs italic leading-relaxed line-clamp-2 transition-all ${
                           isAccepted
-                            ? 'text-white'
-                            : 'text-gray-500 line-through'
+                            ? 'text-zinc-900'
+                            : 'text-zinc-400 line-through'
                         }`}
                       >
                         {getRefinedScript(result)}
@@ -285,8 +285,8 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                       onClick={() => toggleScene(index)}
                       className={`w-10 h-5 rounded-full transition-all relative flex items-center px-0.5 shrink-0 ${
                         isAccepted
-                          ? 'bg-[#00D1FF] shadow-[0_0_10px_rgba(0,209,255,0.4)]'
-                          : 'bg-gray-700'
+                          ? 'bg-primary shadow-[0_0_10px_rgba(109,40,217,0.3)]'
+                          : 'bg-zinc-300'
                       }`}
                       aria-label={isAccepted ? 'Accepted' : 'Rejected'}
                     >
@@ -311,11 +311,11 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                           className="w-12 h-12 rounded-xl object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                          <span className="text-[9px] font-black text-gray-600 uppercase">IMG</span>
+                        <div className="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center shrink-0">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase">IMG</span>
                         </div>
                       )}
-                      <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
                         {t('assembly.cutLabel', { number: scene.order })}
                       </span>
                     </div>
@@ -326,8 +326,8 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                       onClick={() => toggleScene(index)}
                       className={`w-10 h-5 rounded-full transition-all relative flex items-center px-0.5 shrink-0 ${
                         isAccepted
-                          ? 'bg-[#00D1FF] shadow-[0_0_10px_rgba(0,209,255,0.4)]'
-                          : 'bg-gray-700'
+                          ? 'bg-primary shadow-[0_0_10px_rgba(109,40,217,0.3)]'
+                          : 'bg-zinc-300'
                       }`}
                       aria-label={isAccepted ? 'Accepted' : 'Rejected'}
                     >
@@ -341,30 +341,30 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
 
                   {/* Before section */}
                   <div className="space-y-1.5">
-                    <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                       {t('assembly.refineModal.before')}
                     </span>
-                    <p className="text-xs text-gray-500 leading-relaxed">
+                    <p className="text-xs text-zinc-500 leading-relaxed">
                       {getOriginalContent(scene)}
                     </p>
                     {getOriginalScript(scene) && (
-                      <p className="text-xs text-gray-500 italic leading-relaxed">
+                      <p className="text-xs text-zinc-500 italic leading-relaxed">
                         {getOriginalScript(scene)}
                       </p>
                     )}
                   </div>
 
                   {/* Separator */}
-                  <div className="h-px bg-white/5" />
+                  <div className="h-px bg-zinc-100" />
 
                   {/* After section */}
                   <div className="space-y-1.5">
-                    <span className="block text-[10px] font-black text-[#00D1FF] uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">
                       {t('assembly.refineModal.after')}
                     </span>
                     <p
                       className={`text-xs leading-relaxed transition-all ${
-                        isAccepted ? 'text-white' : 'text-gray-500 line-through'
+                        isAccepted ? 'text-zinc-900' : 'text-zinc-400 line-through'
                       }`}
                     >
                       {getRefinedContent(result)}
@@ -372,7 +372,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                     {getRefinedScript(result) && (
                       <p
                         className={`text-xs italic leading-relaxed transition-all ${
-                          isAccepted ? 'text-white' : 'text-gray-500 line-through'
+                          isAccepted ? 'text-zinc-900' : 'text-zinc-400 line-through'
                         }`}
                       >
                         {getRefinedScript(result)}
@@ -388,10 +388,10 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
         {/* ------------------------------------------------------------------ */}
         {/* FOOTER                                                               */}
         {/* ------------------------------------------------------------------ */}
-        <div className="shrink-0 p-6 md:p-8 border-t border-white/5">
+        <div className="shrink-0 p-6 md:p-8 border-t border-zinc-100">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Left: summary text */}
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-zinc-500 font-medium">
               {noneAccepted
                 ? t('assembly.refineModal.noScenesSelected')
                 : t('assembly.refineModal.selectedCount', {
@@ -406,7 +406,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 sm:flex-none px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-all active:scale-95"
+                className="flex-1 sm:flex-none px-8 py-3 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-full text-xs font-bold text-zinc-700 hover:text-zinc-900 transition-all active:scale-95"
               >
                 {t('common.cancel')}
               </button>
@@ -416,7 +416,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 type="button"
                 onClick={() => onApply(accepted)}
                 disabled={noneAccepted}
-                className="flex-1 sm:flex-none px-8 py-3 bg-[#0057FF] hover:bg-[#0057FF]/80 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95 shadow-[0_8px_24px_rgba(0,87,255,0.3)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex-1 sm:flex-none px-8 py-3 bg-primary hover:bg-[#5B21B6] rounded-full text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95 shadow-[0_8px_24px_rgba(109,40,217,0.25)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {t('assembly.refineModal.applySelected')}
               </button>

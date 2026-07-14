@@ -44,6 +44,7 @@ import { useAuthStore } from '../store/authStore';
 import { useCreditStore, CREDIT_COSTS } from '../store/creditStore';
 import { useModal } from './ui/ModalProvider';
 import { generateSceneVideo } from '../services/geminiService';
+import { getAdminConfig } from '../services/adminConfigService';
 import { sceneImageToBlob } from '../services/imageUtils';
 import { Scene, BatchSceneStatus, BatchQueueItem, ProjectStep } from '../types';
 import { supabase } from '../lib/supabase';
@@ -96,9 +97,9 @@ export const ProductionStep: React.FC = () => {
 
   useEffect(() => {
     const checkKey = async () => {
-      // If Gemini API key is configured via env, no need for AI Studio key selector
-      const envKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-      if (envKey && envKey !== 'your_gemini_api_key_here') {
+      // Gemini 키는 admin_config(DB)에 저장됨 — 설정돼 있으면 AI Studio 키 선택기 불필요
+      const configuredKey = await getAdminConfig('gemini_api_key');
+      if (configuredKey && configuredKey !== 'your_gemini_api_key_here') {
         setHasKey(true);
         return;
       }
@@ -124,30 +125,30 @@ export const ProductionStep: React.FC = () => {
     return (
       <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
         {/* Production Dashboard Header Frame */}
-        <div className="relative group overflow-hidden bg-secondary border border-white/10 rounded-[3rem] p-10 shadow-2xl">
+        <div className="relative group overflow-hidden bg-white border border-zinc-200 rounded-[3rem] p-10 shadow-2xl">
           <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 blur-[100px]"></div>
           <div className="flex flex-col items-center justify-center gap-8 relative z-10 py-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
               <Film size={12} /> REMO V-ENGINE PRODUCTION
             </div>
-            <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none text-center">
+            <h1 className="text-5xl font-extrabold tracking-tight leading-none text-center text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
             </h1>
 
             {/* Empty State Content */}
             <div className="flex flex-col items-center gap-6 mt-4">
-              <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center">
-                <Video size={36} className="text-gray-600" />
+              <div className="w-20 h-20 rounded-3xl bg-zinc-50 border border-zinc-200 flex items-center justify-center">
+                <Video size={36} className="text-zinc-400" />
               </div>
               <div className="text-center space-y-2">
-                <p className="text-xl font-black italic uppercase tracking-tighter text-white">{t('production.noProject')}</p>
-                <p className="text-sm text-gray-500 whitespace-pre-line leading-relaxed">
+                <p className="text-xl font-extrabold tracking-tight text-zinc-900">{t('production.noProject')}</p>
+                <p className="text-sm text-zinc-400 whitespace-pre-line leading-relaxed">
                   {t('production.noProjectDesc')}
                 </p>
               </div>
               <button
                 onClick={() => setStep(ProjectStep.DASHBOARD)}
-                className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black italic uppercase text-sm flex items-center gap-3 shadow-[0_8px_30px_rgba(0,87,255,0.3)] hover:scale-105 active:scale-95 transition-all"
+                className="px-8 py-4 bg-primary hover:bg-[#5B21B6] text-white rounded-full font-black uppercase text-sm flex items-center gap-3 shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:scale-105 active:scale-95 transition-all"
               >
                 <Home size={18} />
                 {t('production.goToDashboard')}
@@ -159,21 +160,21 @@ export const ProductionStep: React.FC = () => {
         {/* Placeholder Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-secondary rounded-[2.5rem] border border-dashed border-white/10 overflow-hidden flex flex-col opacity-30">
-              <div className="aspect-video bg-black/40 flex items-center justify-center">
-                <Film size={32} className="text-gray-700" />
+            <div key={i} className="bg-white rounded-[2.5rem] border border-dashed border-zinc-200 overflow-hidden flex flex-col opacity-30">
+              <div className="aspect-video bg-zinc-100 flex items-center justify-center">
+                <Film size={32} className="text-zinc-400" />
               </div>
               <div className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <div className="h-2 bg-white/5 rounded-full w-1/3" />
-                  <div className="h-3 bg-white/5 rounded-full w-full" />
-                  <div className="h-3 bg-white/5 rounded-full w-2/3" />
+                  <div className="h-2 bg-zinc-100 rounded-full w-1/3" />
+                  <div className="h-3 bg-zinc-100 rounded-full w-full" />
+                  <div className="h-3 bg-zinc-100 rounded-full w-2/3" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-2 bg-white/5 rounded-full w-1/4" />
-                  <div className="h-3 bg-white/5 rounded-full w-3/4" />
+                  <div className="h-2 bg-zinc-100 rounded-full w-1/4" />
+                  <div className="h-3 bg-zinc-100 rounded-full w-3/4" />
                 </div>
-                <div className="h-12 bg-white/5 rounded-2xl mt-4" />
+                <div className="h-12 bg-zinc-100 rounded-2xl mt-4" />
               </div>
             </div>
           ))}
@@ -434,7 +435,7 @@ export const ProductionStep: React.FC = () => {
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Production Dashboard Header */}
-      <div className="relative group overflow-hidden bg-secondary border border-white/10 rounded-[3rem] p-10 shadow-2xl">
+      <div className="relative group overflow-hidden bg-white border border-zinc-200 rounded-[3rem] p-10 shadow-2xl">
         <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 blur-[100px] group-hover:bg-primary/30 transition-all duration-1000"></div>
 
         <div className="flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
@@ -442,23 +443,23 @@ export const ProductionStep: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
               <Film size={12} /> REMO V-ENGINE PRODUCTION
             </div>
-            <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
+            <h1 className="text-5xl font-extrabold tracking-tight leading-none text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
             </h1>
 
             {/* Engine Selection */}
             <div className="flex items-center gap-4 pt-2">
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select Engine:</span>
-              <div className="flex bg-black/40 p-1 rounded-2xl border border-white/5">
+              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Select Engine:</span>
+              <div className="flex bg-zinc-100 p-1 rounded-2xl border border-zinc-200">
                 <button
                   onClick={() => setEngine('kling')}
-                  className={`px-6 py-2 rounded-xl text-xs font-black italic transition-all flex items-center gap-2 ${engine === 'kling' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${engine === 'kling' ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}
                 >
                   <Cpu size={14} /> KLING (Budget)
                 </button>
                 <button
                   onClick={() => setEngine('veo31')}
-                  className={`px-6 py-2 rounded-xl text-xs font-black italic transition-all flex items-center gap-2 ${engine === 'veo31' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                  className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${engine === 'veo31' ? 'bg-primary text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-900'}`}
                 >
                   <Sparkles size={14} /> VEO 3.1 (High-End)
                 </button>
@@ -470,33 +471,33 @@ export const ProductionStep: React.FC = () => {
             {!hasKey ? (
               <button
                 onClick={handleOpenKeySelector}
-                className="group px-10 py-5 bg-white text-black rounded-[2rem] font-black italic text-lg flex items-center gap-3 shadow-[0_20px_50px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all"
+                className="group px-10 py-5 bg-primary text-white rounded-full font-black text-lg flex items-center gap-3 shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:bg-[#5B21B6] hover:scale-105 active:scale-95 transition-all"
               >
                 <Lock size={20} className="group-hover:animate-bounce" />
                 UNLOCK V-ENGINE
               </button>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] flex items-center gap-8 shadow-inner">
+                <div className="bg-zinc-50 border border-zinc-200 p-6 rounded-[2.5rem] flex items-center gap-8 shadow-inner">
                   <div className="flex flex-col items-center">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Progress</span>
-                    <div className="text-4xl font-black italic text-primary">{progress}%</div>
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Total Progress</span>
+                    <div className="text-4xl font-black text-primary">{progress}%</div>
                   </div>
-                  <div className="h-12 w-[1px] bg-white/10" />
+                  <div className="h-12 w-[1px] bg-zinc-200" />
                   <div className="text-center">
-                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Assets Ready</div>
-                    <div className="text-xl font-black">{videoScenesCount} / {project.scenes.length}</div>
+                    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Assets Ready</div>
+                    <div className="text-xl font-black text-zinc-900">{videoScenesCount} / {project.scenes.length}</div>
                   </div>
                 </div>
                 <button
                   onClick={handleOpenKeySelector}
-                  className="text-[9px] font-black text-gray-500 hover:text-primary flex items-center gap-1 transition-colors uppercase tracking-widest hover:underline"
+                  className="text-[9px] font-black text-zinc-400 hover:text-primary flex items-center gap-1 transition-colors uppercase tracking-widest hover:underline"
                 >
                   <Key size={10} /> Change Project API Key
                 </button>
               </div>
             )}
-            <p className="text-[9px] text-gray-500 font-bold uppercase text-center">
+            <p className="text-[9px] text-zinc-400 font-bold uppercase text-center">
               * Requires Paid API Key for high-res production
             </p>
           </div>
@@ -504,16 +505,16 @@ export const ProductionStep: React.FC = () => {
       </div>
 
       {/* Batch Control Bar */}
-      <div className="bg-secondary border border-white/10 rounded-[2rem] p-6 space-y-4">
+      <div className="bg-white border border-zinc-200 rounded-[2rem] p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-4">
           {/* Batch Mode Toggle */}
           <button
             onClick={() => { setIsSelectionMode(!isSelectionMode); if (isSelectionMode) deselectAll(); }}
             disabled={isBatchActive}
-            className={`px-5 py-2.5 rounded-xl text-[11px] font-black italic uppercase tracking-tight transition-all flex items-center gap-2 border ${
+            className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 border ${
               isSelectionMode
                 ? 'bg-primary text-white border-primary shadow-lg'
-                : 'bg-black/40 text-gray-400 border-white/10 hover:border-primary/40 hover:text-white'
+                : 'bg-zinc-50 text-zinc-500 border-zinc-200 hover:border-primary/40 hover:text-zinc-900'
             } disabled:opacity-30`}
           >
             <LayoutGrid size={14} />
@@ -522,55 +523,55 @@ export const ProductionStep: React.FC = () => {
 
           {isSelectionMode && (
             <>
-              <div className="h-6 w-[1px] bg-white/10" />
+              <div className="h-6 w-[1px] bg-zinc-200" />
 
               {/* Quick Select Buttons */}
-              <button onClick={selectAll} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-primary/40 transition-all">
+              <button onClick={selectAll} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-50 border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-primary/40 transition-all">
                 Select All
               </button>
-              <button onClick={deselectAll} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-primary/40 transition-all">
+              <button onClick={deselectAll} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-50 border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-primary/40 transition-all">
                 Deselect All
               </button>
-              <button onClick={selectMissing} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:border-primary/40 transition-all flex items-center gap-1.5">
+              <button onClick={selectMissing} className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-50 border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-primary/40 transition-all flex items-center gap-1.5">
                 <ListChecks size={12} /> Select Missing
               </button>
 
-              <div className="h-6 w-[1px] bg-white/10" />
+              <div className="h-6 w-[1px] bg-zinc-200" />
 
               {/* Range Selector */}
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Range:</span>
+                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Range:</span>
                 <select
                   value={rangeStart}
                   onChange={(e) => setRangeStart(Number(e.target.value))}
-                  className="bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] font-bold text-white focus:outline-none focus:border-primary"
+                  className="bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-zinc-900 focus:outline-none focus:border-primary"
                 >
                   {project.scenes.map((_, i) => (
                     <option key={i} value={i}>Cut #{String(i + 1).padStart(2, '0')}</option>
                   ))}
                 </select>
-                <span className="text-gray-500 text-xs">~</span>
+                <span className="text-zinc-400 text-xs">~</span>
                 <select
                   value={rangeEnd}
                   onChange={(e) => setRangeEnd(Number(e.target.value))}
-                  className="bg-black/60 border border-white/10 rounded-lg px-2 py-1.5 text-[11px] font-bold text-white focus:outline-none focus:border-primary"
+                  className="bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-[11px] font-bold text-zinc-900 focus:outline-none focus:border-primary"
                 >
                   {project.scenes.map((_, i) => (
                     <option key={i} value={i}>Cut #{String(i + 1).padStart(2, '0')}</option>
                   ))}
                 </select>
-                <button onClick={applyRange} className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-primary/40 transition-all">
+                <button onClick={applyRange} className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase bg-zinc-50 border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-primary/40 transition-all">
                   Apply
                 </button>
               </div>
 
-              <div className="h-6 w-[1px] bg-white/10" />
+              <div className="h-6 w-[1px] bg-zinc-200" />
 
               {/* Generate Selected Button */}
               <button
                 onClick={handleStartBatch}
                 disabled={selectedSceneIds.size === 0}
-                className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-[11px] font-black italic uppercase tracking-tight transition-all flex items-center gap-2 shadow-lg disabled:opacity-30 active:scale-95"
+                className="px-6 py-2.5 bg-primary hover:bg-[#5B21B6] text-white rounded-full text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:opacity-30 active:scale-95"
               >
                 <Rocket size={14} />
                 Generate Selected ({selectedSceneIds.size})
@@ -582,33 +583,33 @@ export const ProductionStep: React.FC = () => {
 
       {/* Batch Dashboard Panel */}
       {batchQueue.length > 0 && (
-        <div className="bg-secondary border border-white/10 rounded-[2rem] overflow-hidden">
+        <div className="bg-white border border-zinc-200 rounded-[2rem] overflow-hidden">
           {/* Dashboard Header */}
           <button
             onClick={() => setIsDashboardExpanded(!isDashboardExpanded)}
-            className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-all"
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-zinc-100 transition-all"
           >
             <div className="flex items-center gap-4">
               <div className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
                 <Film size={14} /> BATCH PROGRESS
               </div>
-              <div className="text-sm font-black italic">
+              <div className="text-sm font-black">
                 {batchDone ? (
-                  <span className="text-green-400">{batchCompleted} completed{batchFailed > 0 ? `, ${batchFailed} failed` : ''}</span>
+                  <span className="text-green-700">{batchCompleted} completed{batchFailed > 0 ? `, ${batchFailed} failed` : ''}</span>
                 ) : (
-                  <span className="text-white">Generating {batchCompleted + batchFailed} / {batchTotal}...</span>
+                  <span className="text-zinc-900">Generating {batchCompleted + batchFailed} / {batchTotal}...</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-2xl font-black italic text-primary">{batchProgress}%</div>
-              {isDashboardExpanded ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+              <div className="text-2xl font-black text-primary">{batchProgress}%</div>
+              {isDashboardExpanded ? <ChevronUp size={16} className="text-zinc-400" /> : <ChevronDown size={16} className="text-zinc-400" />}
             </div>
           </button>
 
           {/* Progress Bar */}
           <div className="px-6 pb-2">
-            <div className="h-1.5 bg-black/60 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${batchProgress}%` }}
@@ -629,11 +630,11 @@ export const ProductionStep: React.FC = () => {
                       key={item.sceneId}
                       title={item.error ? `Cut #${idx + 1}: ${item.error}` : `Cut #${idx + 1}`}
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-[9px] font-black border transition-all ${
-                        item.status === 'queued' ? 'bg-gray-800 border-gray-700 text-gray-500' :
+                        item.status === 'queued' ? 'bg-zinc-100 border-zinc-200 text-zinc-400' :
                         item.status === 'generating' ? 'bg-primary/20 border-primary text-primary batch-pulse' :
-                        item.status === 'completed' ? 'bg-green-500/20 border-green-500/50 text-green-400' :
-                        item.status === 'failed' ? 'bg-red-500/20 border-red-500/50 text-red-400' :
-                        'bg-gray-800 border-gray-700 text-gray-500'
+                        item.status === 'completed' ? 'bg-green-50 border-green-200 text-green-700' :
+                        item.status === 'failed' ? 'bg-red-50 border-red-200 text-red-700' :
+                        'bg-zinc-100 border-zinc-200 text-zinc-400'
                       }`}
                     >
                       {item.status === 'queued' && <Clock size={14} />}
@@ -650,7 +651,7 @@ export const ProductionStep: React.FC = () => {
                 {isBatchActive && (
                   <button
                     onClick={handleCancelBatch}
-                    className="px-5 py-2.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[11px] font-black italic uppercase tracking-tight hover:bg-red-500/30 transition-all flex items-center gap-2"
+                    className="px-5 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[11px] font-black uppercase tracking-tight hover:bg-red-100 transition-all flex items-center gap-2"
                   >
                     <StopCircle size={14} /> Cancel Batch
                   </button>
@@ -658,13 +659,13 @@ export const ProductionStep: React.FC = () => {
                 {batchDone && (
                   <button
                     onClick={handleClearQueue}
-                    className="px-5 py-2.5 bg-white/5 text-gray-400 border border-white/10 rounded-xl text-[11px] font-black italic uppercase tracking-tight hover:text-white hover:border-primary/40 transition-all flex items-center gap-2"
+                    className="px-5 py-2.5 bg-zinc-50 text-zinc-500 border border-zinc-200 rounded-xl text-[11px] font-black uppercase tracking-tight hover:text-zinc-900 hover:border-primary/40 transition-all flex items-center gap-2"
                   >
                     <X size={14} /> Clear Queue
                   </button>
                 )}
                 {batchDone && batchFailed > 0 && (
-                  <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
+                  <span className="text-[10px] font-bold text-zinc-400 flex items-center gap-1">
                     <AlertCircle size={12} /> {t('production.batchRetryHint')}
                   </span>
                 )}
@@ -672,10 +673,10 @@ export const ProductionStep: React.FC = () => {
 
               {/* Completion Summary */}
               {batchDone && (
-                <div className="bg-black/40 rounded-xl p-4 text-center">
-                  <p className="text-sm font-black italic">
-                    {t('production.batchComplete')}: <span className="text-green-400">{batchCompleted} {t('production.batchSuccess')}</span>
-                    {batchFailed > 0 && <>, <span className="text-red-400">{batchFailed} {t('production.batchFailed')}</span></>}
+                <div className="bg-zinc-50 rounded-xl p-4 text-center">
+                  <p className="text-sm font-black">
+                    {t('production.batchComplete')}: <span className="text-green-700">{batchCompleted} {t('production.batchSuccess')}</span>
+                    {batchFailed > 0 && <>, <span className="text-red-700">{batchFailed} {t('production.batchFailed')}</span></>}
                   </p>
                 </div>
               )}
@@ -687,15 +688,15 @@ export const ProductionStep: React.FC = () => {
       {/* Grid of Scenes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {project.scenes.map((scene, idx) => (
-          <div key={scene.id} className="group relative bg-secondary rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col hover:border-primary/40 transition-all duration-500 shadow-xl">
+          <div key={scene.id} className="group relative bg-white rounded-[2.5rem] border border-zinc-100 overflow-hidden flex flex-col hover:border-primary/40 transition-all duration-500 shadow-xl">
             {/* Header / Order */}
-            <div className="absolute top-4 left-4 z-20 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-black italic uppercase">
+            <div className="absolute top-4 left-4 z-20 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full border border-zinc-200 text-[10px] font-black uppercase text-zinc-900">
               Cut #{String(idx + 1).padStart(2, '0')}
             </div>
 
             <button
               onClick={() => setEditingScene(scene)}
-              className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10 text-gray-400 hover:text-primary transition-all opacity-0 group-hover:opacity-100"
+              className="absolute top-4 right-4 z-20 bg-white/80 backdrop-blur-md p-2 rounded-full border border-zinc-200 text-zinc-400 hover:text-primary transition-all opacity-0 group-hover:opacity-100"
             >
               <Edit3 size={16} />
             </button>
@@ -709,12 +710,12 @@ export const ProductionStep: React.FC = () => {
                 {selectedSceneIds.has(scene.id) ? (
                   <CheckSquare size={24} className="text-primary drop-shadow-lg" />
                 ) : (
-                  <Square size={24} className="text-gray-500 hover:text-white drop-shadow-lg" />
+                  <Square size={24} className="text-zinc-400 hover:text-zinc-700 drop-shadow-lg" />
                 )}
               </button>
             )}
 
-            {/* Media Area */}
+            {/* Media Area — keep dark as actual media player surface */}
             <div className="aspect-video bg-black relative group/media overflow-hidden">
               {scene.video_url ? (
                 <video
@@ -728,7 +729,7 @@ export const ProductionStep: React.FC = () => {
               ) : scene.image_url ? (
                 <img src={scene.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover/media:scale-110" />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 gap-2">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 gap-2">
                   <AlertCircle size={32} className="opacity-20" />
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-20">No Image Asset</span>
                 </div>
@@ -741,8 +742,8 @@ export const ProductionStep: React.FC = () => {
                     <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                   </div>
-                  <p className="text-xs font-black italic uppercase tracking-tighter text-white animate-pulse mb-2">Rendering...</p>
-                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest h-8">{LOADING_MESSAGES[loadingMsgIdx]}</p>
+                  <p className="text-xs font-black uppercase tracking-tighter text-white animate-pulse mb-2">Rendering...</p>
+                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest h-8">{LOADING_MESSAGES[loadingMsgIdx]}</p>
                 </div>
               )}
 
@@ -753,14 +754,14 @@ export const ProductionStep: React.FC = () => {
                     <div className="w-16 h-16 border-4 border-primary/20 rounded-full"></div>
                     <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
                   </div>
-                  <p className="text-xs font-black italic uppercase tracking-tighter text-white animate-pulse mb-2">Batch Rendering...</p>
-                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{LOADING_MESSAGES[loadingMsgIdx]}</p>
+                  <p className="text-xs font-black uppercase tracking-tighter text-white animate-pulse mb-2">Batch Rendering...</p>
+                  <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">{LOADING_MESSAGES[loadingMsgIdx]}</p>
                 </div>
               )}
               {getSceneBatchStatus(scene.id) === 'queued' && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center">
-                  <Clock size={32} className="text-gray-400 mb-2" />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Queued</p>
+                  <Clock size={32} className="text-zinc-500 mb-2" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Queued</p>
                 </div>
               )}
               {getSceneBatchStatus(scene.id) === 'failed' && !scene.video_url && (
@@ -796,19 +797,19 @@ export const ProductionStep: React.FC = () => {
             {/* Content Info */}
             <div className="p-6 space-y-4 flex-1 flex flex-col">
               <div className="space-y-1">
-                <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                   <MonitorPlay size={12} className="text-primary" /> Visual Prompt
                 </div>
-                <p className="text-[11px] font-medium text-gray-400 line-clamp-2 leading-relaxed italic">
+                <p className="text-[11px] font-medium text-zinc-500 line-clamp-2 leading-relaxed italic">
                   {scene.image_prompt_en}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <div className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                   <Zap size={12} className="text-primary" /> Motion Detail
                 </div>
-                <p className="text-[11px] font-black text-white italic uppercase tracking-tighter">
+                <p className="text-[11px] font-black text-zinc-900 italic uppercase tracking-tighter">
                   {scene.video_motion_en}
                 </p>
               </div>
@@ -817,14 +818,14 @@ export const ProductionStep: React.FC = () => {
                 <button
                   onClick={() => handleGenerateVideo(scene.id)}
                   disabled={isLoading || !scene.image_url || isBatchActive}
-                  className="flex-1 py-3.5 bg-primary hover:bg-primary/90 text-white rounded-2xl text-[11px] font-black italic uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-lg"
+                  className="flex-1 py-3.5 bg-primary hover:bg-[#5B21B6] text-white rounded-full text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-[0_8px_20px_rgba(109,40,217,0.25)]"
                 >
                   {scene.video_url ? <><RefreshCw size={14} /> Re-Render</> : <><Rocket size={14} /> Render Video</>}
                 </button>
                 {scene.video_url && (
                   <button
                     onClick={() => updateScene(scene.id, { video_url: undefined })}
-                    className="p-3.5 bg-black/40 hover:bg-red-500/20 text-gray-600 hover:text-red-500 border border-white/5 rounded-2xl transition-all"
+                    className="p-3.5 bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-100 rounded-2xl transition-all"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -837,22 +838,22 @@ export const ProductionStep: React.FC = () => {
 
       {/* Production Request 2-Step Modal */}
       {showComingSoonModal && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-md">
+          <div className="bg-white border border-zinc-200 rounded-[2.5rem] w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
             {modalStep === 'main' ? (
               <>
                 {/* Header */}
                 <div className="p-8 text-center space-y-4">
-                  <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto">
-                    <Rocket size={36} className="text-amber-400" />
+                  <div className="w-20 h-20 bg-amber-50 border border-amber-200 rounded-full flex items-center justify-center mx-auto">
+                    <Rocket size={36} className="text-amber-600" />
                   </div>
                   <div className="space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
-                      <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Coming Soon</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full">
+                      <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Coming Soon</span>
                     </div>
-                    <h3 className="text-2xl font-black italic tracking-tighter uppercase">{t('production.comingSoonTitle')}</h3>
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('production.comingSoonTitle')}</h3>
+                    <p className="text-sm text-zinc-500 leading-relaxed">
                       {t('production.comingSoonDesc1')}<br />
                       {t('production.comingSoonDesc2')}
                     </p>
@@ -878,8 +879,8 @@ export const ProductionStep: React.FC = () => {
                         }}
                         className={`w-full py-4 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-3 transition-all border ${
                           storyboardDownloaded
-                            ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                            ? 'bg-green-50 border-green-200 text-green-700'
+                            : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700'
                         }`}
                       >
                         {storyboardDownloaded ? <Check size={18} /> : <FileDown size={18} />}
@@ -915,8 +916,8 @@ export const ProductionStep: React.FC = () => {
                         }}
                         className={`w-full py-4 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-3 transition-all border ${
                           assetsDownloaded
-                            ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                            ? 'bg-green-50 border-green-200 text-green-700'
+                            : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700'
                         }`}
                       >
                         {assetsDownloaded ? <Check size={18} /> : <Download size={18} />}
@@ -929,7 +930,7 @@ export const ProductionStep: React.FC = () => {
                   <div className="pt-2 space-y-3">
                     <button
                       onClick={() => setModalStep('form')}
-                      className="w-full py-4 bg-primary hover:bg-primary/90 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_rgba(0,87,255,0.3)] active:scale-95 text-white"
+                      className="w-full py-4 bg-primary hover:bg-[#5B21B6] rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 text-white"
                     >
                       <Mail size={18} /> {t('production.requestProduction')}
                     </button>
@@ -949,7 +950,7 @@ export const ProductionStep: React.FC = () => {
                       setShowComingSoonModal(false);
                       setStep(ProjectStep.ASSEMBLY);
                     }}
-                    className="w-full py-3 text-xs font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest"
+                    className="w-full py-3 text-xs font-bold text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-widest"
                   >
                     {t('common.close')}
                   </button>
@@ -958,15 +959,15 @@ export const ProductionStep: React.FC = () => {
             ) : (
               <div className="flex flex-col max-h-[80vh]">
                 {/* Form Header */}
-                <div className="p-6 border-b border-white/5">
+                <div className="p-6 border-b border-zinc-100">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setModalStep('main')}
-                      className="p-2 hover:bg-white/5 rounded-xl transition-colors text-gray-400 hover:text-white"
+                      className="p-2 hover:bg-zinc-100 rounded-xl transition-colors text-zinc-400 hover:text-zinc-900"
                     >
                       <ChevronLeft size={20} />
                     </button>
-                    <h3 className="text-xl font-black italic tracking-tighter uppercase">{t('production.requestFormTitle')}</h3>
+                    <h3 className="text-xl font-extrabold tracking-tight text-zinc-900">{t('production.requestFormTitle')}</h3>
                   </div>
                 </div>
 
@@ -974,87 +975,87 @@ export const ProductionStep: React.FC = () => {
                 <div className="p-6 space-y-5 overflow-y-auto flex-1">
                   {/* Requester Name */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.requesterName')} <span className="text-red-400">*</span></label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.requesterName')} <span className="text-red-400">*</span></label>
                     <input
                       value={requesterName}
                       onChange={(e) => setRequesterName(e.target.value)}
                       placeholder={t('production.request.namePlaceholder')}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary placeholder:text-gray-600"
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:border-primary placeholder:text-zinc-400"
                     />
                   </div>
 
                   {/* Project Name */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.projectName')}</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.projectName')}</label>
                     <input
                       value={project?.title || ''}
                       readOnly
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-500 focus:outline-none"
                     />
-                    <p className="text-[9px] text-gray-600">{t('production.request.autoFilled')}</p>
+                    <p className="text-[9px] text-zinc-400">{t('production.request.autoFilled')}</p>
                   </div>
 
                   {/* Email */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.email')}</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.email')}</label>
                     <input
                       value={user?.email || ''}
                       readOnly
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-300 focus:outline-none"
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-500 focus:outline-none"
                     />
-                    <p className="text-[9px] text-gray-600">{t('production.request.googleAccount')}</p>
+                    <p className="text-[9px] text-zinc-400">{t('production.request.googleAccount')}</p>
                   </div>
 
                   {/* Purpose */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.purpose')} <span className="text-red-400">*</span></label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.purpose')} <span className="text-red-400">*</span></label>
                     <select
                       value={requestPurpose}
                       onChange={(e) => setRequestPurpose(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary cursor-pointer appearance-none"
+                      className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:border-primary cursor-pointer appearance-none"
                     >
-                      <option value="" className="bg-[#1A1A1A]">{t('production.request.selectPurpose')}</option>
-                      <option value="광고/프로모션" className="bg-[#1A1A1A]">{t('production.request.purposeAd')}</option>
-                      <option value="브랜드 콘텐츠" className="bg-[#1A1A1A]">{t('production.request.purposeBrand')}</option>
-                      <option value="SNS 콘텐츠" className="bg-[#1A1A1A]">{t('production.request.purposeSNS')}</option>
-                      <option value="제품 소개" className="bg-[#1A1A1A]">{t('production.request.purposeProduct')}</option>
-                      <option value="교육/튜토리얼" className="bg-[#1A1A1A]">{t('production.request.purposeEducation')}</option>
-                      <option value="기타" className="bg-[#1A1A1A]">{t('production.request.purposeOther')}</option>
+                      <option value="" className="bg-white">{t('production.request.selectPurpose')}</option>
+                      <option value="광고/프로모션" className="bg-white">{t('production.request.purposeAd')}</option>
+                      <option value="브랜드 콘텐츠" className="bg-white">{t('production.request.purposeBrand')}</option>
+                      <option value="SNS 콘텐츠" className="bg-white">{t('production.request.purposeSNS')}</option>
+                      <option value="제품 소개" className="bg-white">{t('production.request.purposeProduct')}</option>
+                      <option value="교육/튜토리얼" className="bg-white">{t('production.request.purposeEducation')}</option>
+                      <option value="기타" className="bg-white">{t('production.request.purposeOther')}</option>
                     </select>
                   </div>
 
                   {/* Additional Notes */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.additionalNotes')}</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.additionalNotes')}</label>
                     <textarea
                       value={additionalNotes}
                       onChange={(e) => setAdditionalNotes(e.target.value)}
                       placeholder={t('production.request.notesPlaceholder')}
-                      className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary resize-none placeholder:text-gray-600"
+                      className="w-full h-24 bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:border-primary resize-none placeholder:text-zinc-400"
                     />
                   </div>
 
                   {/* File Checklist + Additional Upload */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{t('production.request.attachment')} <span className="text-red-400">*</span></label>
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.attachment')} <span className="text-red-400">*</span></label>
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
                       {/* Auto-generated files */}
-                      <div className={`flex items-center gap-3 text-sm ${storyboardDownloaded ? 'text-green-400' : 'text-gray-500'}`}>
+                      <div className={`flex items-center gap-3 text-sm ${storyboardDownloaded ? 'text-green-700' : 'text-zinc-400'}`}>
                         {storyboardDownloaded ? <Check size={16} /> : <X size={16} />}
                         <span>{project?.title?.replace(/\s+/g, '-') || 'project'}.storyboard</span>
                       </div>
-                      <div className={`flex items-center gap-3 text-sm ${assetsDownloaded ? 'text-green-400' : 'text-gray-500'}`}>
+                      <div className={`flex items-center gap-3 text-sm ${assetsDownloaded ? 'text-green-700' : 'text-zinc-400'}`}>
                         {assetsDownloaded ? <Check size={16} /> : <X size={16} />}
                         <span>{project?.title?.replace(/\s+/g, '-') || 'project'}-assets.zip</span>
                       </div>
 
                       {/* Extra uploaded files */}
                       {extraFiles.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm text-blue-400">
+                        <div key={idx} className="flex items-center justify-between text-sm text-indigo-600">
                           <div className="flex items-center gap-3">
                             <Paperclip size={16} />
                             <span className="truncate max-w-[200px]">{file.name}</span>
-                            <span className="text-[9px] text-gray-500">({(file.size / 1024 / 1024).toFixed(1)}MB)</span>
+                            <span className="text-[9px] text-zinc-400">({(file.size / 1024 / 1024).toFixed(1)}MB)</span>
                           </div>
                           <button
                             onClick={() => setExtraFiles(prev => prev.filter((_, i) => i !== idx))}
@@ -1068,7 +1069,7 @@ export const ProductionStep: React.FC = () => {
                       {/* Upload button */}
                       <button
                         onClick={() => extraFileInputRef.current?.click()}
-                        className="w-full py-2.5 border border-dashed border-white/20 rounded-lg text-xs text-gray-400 hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-2.5 border border-dashed border-zinc-200 rounded-lg text-xs text-zinc-400 hover:text-primary hover:border-primary/50 transition-all flex items-center justify-center gap-2"
                       >
                         <Paperclip size={14} /> {t('production.request.addFile')}
                       </button>
@@ -1093,13 +1094,13 @@ export const ProductionStep: React.FC = () => {
                       />
                     </div>
                     {(!storyboardDownloaded || !assetsDownloaded) && (
-                      <p className="text-[9px] text-amber-400 font-bold">* {t('production.request.downloadFirst')}</p>
+                      <p className="text-[9px] text-amber-600 font-bold">* {t('production.request.downloadFirst')}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Submit Button */}
-                <div className="p-6 border-t border-white/5">
+                <div className="p-6 border-t border-zinc-100">
                   <button
                     onClick={async () => {
                       if (!requesterName.trim()) {
@@ -1220,7 +1221,7 @@ export const ProductionStep: React.FC = () => {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-50 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_rgba(0,87,255,0.3)] active:scale-95 text-white"
+                    className="w-full py-4 bg-primary hover:bg-[#5B21B6] disabled:opacity-50 rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 text-white"
                   >
                     {isSubmitting ? (
                       <>
@@ -1241,35 +1242,35 @@ export const ProductionStep: React.FC = () => {
 
       {/* Prompt Edit Modal */}
       {editingScene && (
-        <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-secondary border border-white/10 rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl">
-             <div className="p-8 border-b border-white/5 flex items-center justify-between">
+        <div className="fixed inset-0 z-[150] bg-zinc-900/40 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white border border-zinc-200 rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl">
+             <div className="p-8 border-b border-zinc-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Edit3 className="text-primary" />
-                  <h3 className="text-xl font-black italic uppercase tracking-tighter">Refine Scene Prompt</h3>
+                  <h3 className="text-xl font-extrabold tracking-tight text-zinc-900">Refine Scene Prompt</h3>
                 </div>
-                <button onClick={() => setEditingScene(null)} className="p-2 hover:bg-white/5 rounded-full"><X size={20} /></button>
+                <button onClick={() => setEditingScene(null)} className="p-2 hover:bg-zinc-100 rounded-full"><X size={20} /></button>
              </div>
              <form onSubmit={handleSavePromptEdit} className="p-8 space-y-6">
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Image Content Prompt (English)</label>
+                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Image Content Prompt (English)</label>
                    <textarea
                     value={editingScene.image_prompt_en}
                     onChange={(e) => setEditingScene({...editingScene, image_prompt_en: e.target.value})}
-                    className="w-full h-32 bg-black border border-white/10 rounded-2xl p-4 text-sm focus:border-primary focus:outline-none resize-none"
+                    className="w-full h-32 bg-white border border-zinc-200 rounded-2xl p-4 text-sm text-zinc-900 focus:border-primary focus:outline-none resize-none"
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Camera Motion Prompt (English)</label>
+                   <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Camera Motion Prompt (English)</label>
                    <input
                     value={editingScene.video_motion_en}
                     onChange={(e) => setEditingScene({...editingScene, video_motion_en: e.target.value})}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary focus:outline-none font-bold italic uppercase"
+                    className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 focus:border-primary focus:outline-none font-bold uppercase"
                    />
                 </div>
                 <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setEditingScene(null)} className="flex-1 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all text-sm">Cancel</button>
-                  <button type="submit" className="flex-1 py-4 bg-primary text-white rounded-2xl font-black italic uppercase shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => setEditingScene(null)} className="flex-1 py-4 bg-zinc-50 hover:bg-zinc-100 rounded-2xl font-bold transition-all text-sm text-zinc-700">Cancel</button>
+                  <button type="submit" className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
                     <Save size={18} /> Update Data
                   </button>
                 </div>
@@ -1278,7 +1279,7 @@ export const ProductionStep: React.FC = () => {
         </div>
       )}
 
-      {/* Fullscreen Video Modal */}
+      {/* Fullscreen Video Modal — keep dark as dedicated video player */}
       {activeVideoUrl && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-4 lg:p-20" onClick={() => setActiveVideoUrl(null)}>
            <div className="relative w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)]" onClick={e => e.stopPropagation()}>

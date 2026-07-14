@@ -1,0 +1,76 @@
+import type { User, Session } from '@supabase/supabase-js';
+
+// =============================================================
+//  디자인(가계정) 모드 — Supabase/.env 없이 인증 화면을 보기 위한 목 인증
+//
+//  활성 조건:
+//    VITE_MOCK_AUTH='true'  → 강제 ON
+//    VITE_MOCK_AUTH='false' → 강제 OFF
+//    (미지정)               → VITE_SUPABASE_URL 이 없으면 자동 ON
+//
+//  → 나중에 .env 에 VITE_SUPABASE_URL 을 넣으면 자동으로 실제 인증으로 전환됩니다.
+//  ⚠️ 실제 백엔드(로그인/DB/크레딧 차감)는 동작하지 않으며 UI 확인 전용입니다.
+// =============================================================
+
+const env = import.meta.env;
+
+export const MOCK_MODE: boolean =
+  env.VITE_MOCK_AUTH === 'true'
+    ? true
+    : env.VITE_MOCK_AUTH === 'false'
+      ? false
+      : !env.VITE_SUPABASE_URL;
+
+export type MockRole = 'master' | 'user';
+
+const ROLE_KEY = 'mock-auth-role';
+
+/** 새로고침 후에도 가계정 세션이 유지되도록 role 을 localStorage 에 보관 */
+export function getMockRole(): MockRole | null {
+  const v = localStorage.getItem(ROLE_KEY);
+  return v === 'master' || v === 'user' ? v : null;
+}
+
+export function setMockRole(role: MockRole | null): void {
+  if (role) localStorage.setItem(ROLE_KEY, role);
+  else localStorage.removeItem(ROLE_KEY);
+}
+
+const MOCK_CREATED_AT = '2026-01-01T00:00:00.000Z';
+
+export function buildMockUser(role: MockRole): User {
+  const isMaster = role === 'master';
+  return {
+    id: isMaster
+      ? 'mock-master-0000-0000-0000-000000000000'
+      : 'mock-user-0000-0000-0000-000000000000',
+    aud: 'authenticated',
+    role: 'authenticated',
+    email: isMaster ? 'master@sodam.local' : 'demo@sodam.local',
+    app_metadata: { provider: 'mock' },
+    user_metadata: {
+      full_name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 발급계정 (가계정)',
+      name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 발급계정 (가계정)',
+      login_id: isMaster ? 'openknowl' : 'demo',
+      role,
+    },
+    created_at: MOCK_CREATED_AT,
+  } as unknown as User;
+}
+
+export function buildMockSession(user: User): Session {
+  return {
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: 9999999999,
+    user,
+  } as unknown as Session;
+}
+
+/** 가계정 크레딧 (디자인 확인용 표시값) */
+export const MOCK_CREDITS: Record<MockRole, { balance: number; maxCredits: number }> = {
+  master: { balance: 48, maxCredits: 60 },
+  user: { balance: 45, maxCredits: 60 },
+};

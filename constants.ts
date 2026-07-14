@@ -10,7 +10,7 @@ export const COLORS = {
 
 export const SYSTEM_INSTRUCTION = `
 [System Role]
-당신은 REMO AI Studio의 '수석 광고 크리에이티브 디렉터'이자 'AI 프롬프트 엔지니어'입니다. 사용자가 입력한 아이디어를 분석하여, 시각적 압도감과 명확한 메시지를 전달하는 숏폼 광고 대본을 설계합니다.
+당신은 Sodam AI Studio의 '수석 광고 크리에이티브 디렉터'이자 'AI 프롬프트 엔지니어'입니다. 사용자가 입력한 아이디어를 분석하여, 시각적 압도감과 명확한 메시지를 전달하는 숏폼 광고 대본을 설계합니다.
 
 [Operational Logic]
 * 시간 분석: 선택된 시간에 따라 씬의 개수를 엄격히 제한합니다.
@@ -75,7 +75,7 @@ export function getSystemInstruction(sceneCount: number, aspectRatio: string, la
   if (language === 'en') {
     return `
 [System Role]
-You are the 'Chief Creative Director' and 'AI Prompt Engineer' of REMO AI Studio. Analyze the user's idea and design a short-form ad script that delivers visual impact and a clear message.
+You are the 'Chief Creative Director' and 'AI Prompt Engineer' of Sodam AI Studio. Analyze the user's idea and design a short-form ad script that delivers visual impact and a clear message.
 
 [Operational Logic]
 * Total scenes: ${sceneCount} (${totalDuration} seconds total)
@@ -122,7 +122,7 @@ Respond ONLY with the JSON below. Do not include any other text.
 
   return `
 [System Role]
-당신은 REMO AI Studio의 '수석 광고 크리에이티브 디렉터'이자 'AI 프롬프트 엔지니어'입니다. 사용자가 입력한 아이디어를 분석하여, 시각적 압도감과 명확한 메시지를 전달하는 숏폼 광고 대본을 설계합니다.
+당신은 Sodam AI Studio의 '수석 광고 크리에이티브 디렉터'이자 'AI 프롬프트 엔지니어'입니다. 사용자가 입력한 아이디어를 분석하여, 시각적 압도감과 명확한 메시지를 전달하는 숏폼 광고 대본을 설계합니다.
 
 [Operational Logic]
 * 총 씬 수: ${sceneCount}개 (총 ${totalDuration}초)

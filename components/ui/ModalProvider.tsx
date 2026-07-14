@@ -45,10 +45,10 @@ export const useModal = (): ModalContextValue => {
 // ---------------------------------------------------------------------------
 
 const iconMap: Record<ModalType, { icon: React.ElementType; color: string; bg: string }> = {
-  success: { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
-  error:   { icon: AlertCircle,  color: 'text-red-400',   bg: 'bg-red-500/10 border-red-500/20' },
-  warning: { icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-  info:    { icon: Info,          color: 'text-blue-400',  bg: 'bg-blue-500/10 border-blue-500/20' },
+  success: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
+  error:   { icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50 border-red-200' },
+  warning: { icon: AlertTriangle, color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200' },
+  info:    { icon: Info,          color: 'text-violet-600', bg: 'bg-violet-50 border-violet-200' },
 };
 
 // ---------------------------------------------------------------------------
@@ -136,12 +136,12 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <div
           ref={backdropRef}
           onClick={handleBackdropClick}
-          className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl transition-opacity duration-200 ${
+          className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-md transition-opacity duration-200 ${
             visible ? 'opacity-100' : 'opacity-0'
           }`}
         >
           <div
-            className={`bg-[#0A0A0A] border border-white/10 rounded-[2rem] w-full max-w-md shadow-2xl transition-all duration-200 ${
+            className={`bg-white border border-zinc-200 rounded-[2rem] w-full max-w-md shadow-2xl transition-all duration-200 ${
               visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
           >
@@ -157,7 +157,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               )}
 
               {/* Message */}
-              <p className="text-center text-base text-gray-200 leading-relaxed whitespace-pre-line font-medium">
+              <p className="text-center text-base text-zinc-900 leading-relaxed whitespace-pre-line font-medium">
                 {modal.message}
               </p>
             </div>
@@ -167,14 +167,14 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {modal.kind === 'confirm' && (
                 <button
                   onClick={() => close(false)}
-                  className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-sm text-gray-400 transition-all active:scale-95"
+                  className="flex-1 py-3.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-full font-bold text-sm text-zinc-700 transition-all active:scale-95"
                 >
                   {modal.cancelText}
                 </button>
               )}
               <button
                 onClick={() => close(modal.kind === 'confirm' ? true : true)}
-                className="flex-1 py-3.5 bg-primary hover:bg-primary/90 rounded-xl font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,87,255,0.3)]"
+                className="flex-1 py-3.5 bg-primary hover:bg-[#5B21B6] rounded-full font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(109,40,217,0.25)]"
               >
                 {modal.confirmText}
               </button>
