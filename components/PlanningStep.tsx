@@ -290,7 +290,7 @@ export const PlanningStep: React.FC = () => {
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
                       aspectRatio === AspectRatio.LANDSCAPE
-                        ? 'border-primary bg-violet-50 text-primary'
+                        ? 'border-primary bg-[#EEF0F6] text-primary'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -309,7 +309,7 @@ export const PlanningStep: React.FC = () => {
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
                       aspectRatio === AspectRatio.PORTRAIT
-                        ? 'border-primary bg-violet-50 text-primary'
+                        ? 'border-primary bg-[#EEF0F6] text-primary'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -349,7 +349,7 @@ export const PlanningStep: React.FC = () => {
               data-tour="planning-generate-btn"
               onClick={handleGenerate}
               disabled={isLoading || !idea}
-              className="w-full py-4 bg-primary hover:bg-[#5B21B6] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95"
+              className="w-full py-4 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -379,7 +379,7 @@ export const PlanningStep: React.FC = () => {
               <span>스토리보드 업로드 (JSON)</span>
             </button>
 
-            <div className="p-4 bg-violet-50 border border-violet-200 rounded-2xl flex gap-3 text-xs leading-relaxed">
+            <div className="p-4 bg-[#EEF0F6] border border-[#CBD2E4] rounded-2xl flex gap-3 text-xs leading-relaxed">
               <AlertCircle className="text-primary shrink-0" size={16} />
               <p className="text-zinc-600">
                 <span className="text-primary font-bold">REMO Tip:</span> {t('planning.tip')}
@@ -678,7 +678,7 @@ export const PlanningStep: React.FC = () => {
 
               <div className="flex gap-4 justify-end pt-8 border-t border-zinc-100">
                 <button type="button" onClick={() => setEditingScene(null)} className="px-8 py-3 rounded-2xl text-sm font-bold bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-all">{t('common.cancel')}</button>
-                <button type="submit" className="px-10 py-3 bg-primary rounded-full text-sm font-black text-white shadow-[0_8px_20px_rgba(109,40,217,0.25)] flex items-center gap-2 hover:bg-[#5B21B6] hover:scale-105 transition-all">
+                <button type="submit" className="px-10 py-3 bg-primary rounded-full text-sm font-black text-white shadow-[0_8px_20px_rgba(41,52,99,0.25)] flex items-center gap-2 hover:bg-[#1E2650] hover:scale-105 transition-all">
                   <Save size={18} /> {t('planning.editModal.saveChanges')}
                 </button>
               </div>

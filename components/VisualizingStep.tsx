@@ -174,7 +174,7 @@ export const VisualizingStep: React.FC = () => {
         </div>
         <button
           onClick={() => importTxtRef.current?.click()}
-          className="px-10 py-4 rounded-full bg-primary text-white flex items-center gap-2 font-black hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] transition-all"
+          className="px-10 py-4 rounded-full bg-primary text-white flex items-center gap-2 font-black hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] transition-all"
         >
           <FileUp size={20} /> <span>{t('visualizing.importTxt')}</span>
         </button>
@@ -549,18 +549,18 @@ CRITICAL RULES:
       {/* ── Project Info Bar (read-only) ── */}
       <div className="bg-white rounded-2xl border border-zinc-200 px-6 py-4 flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          {isPortrait ? <Smartphone size={16} className="text-indigo-500" /> : <Monitor size={16} className="text-indigo-500" />}
+          {isPortrait ? <Smartphone size={16} className="text-[#B7791F]" /> : <Monitor size={16} className="text-[#B7791F]" />}
           <span className="font-bold">{project.aspect_ratio || '16:9'}</span>
           <span className="text-zinc-400">{isPortrait ? t('visualizing.portrait') : t('visualizing.landscape')}</span>
         </div>
         <div className="w-px h-5 bg-zinc-200" />
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          <Film size={16} className="text-indigo-500" />
+          <Film size={16} className="text-[#B7791F]" />
           <span className="font-bold">{t('common.cuts', { count: project.scene_count || 9 })}</span>
         </div>
         <div className="w-px h-5 bg-zinc-200" />
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          <Clock size={16} className="text-indigo-500" />
+          <Clock size={16} className="text-[#B7791F]" />
           <span className="font-bold">{projectDuration}s</span>
         </div>
       </div>
@@ -616,7 +616,7 @@ CRITICAL RULES:
                   onClick={() => setSelectedModel(model)}
                   className={`flex-1 flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                     isSelected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(109,40,217,0.15)]'
+                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(41,52,99,0.15)]'
                       : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50'
                   }`}
                 >
@@ -673,7 +673,7 @@ CRITICAL RULES:
             <button
               onClick={handleGenerateAndApply}
               disabled={isLoading}
-              className="px-8 py-3.5 bg-primary hover:bg-[#5B21B6] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white text-sm transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 group"
+              className="px-8 py-3.5 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white text-sm transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 group"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -788,7 +788,7 @@ CRITICAL RULES:
             </button>
             <button
               onClick={handleApplyToStoryboard}
-              className="px-10 py-4 bg-primary text-white font-black rounded-full flex items-center gap-3 hover:bg-[#5B21B6] transition-all active:scale-95 shadow-[0_8px_20px_rgba(109,40,217,0.25)] whitespace-nowrap"
+              className="px-10 py-4 bg-primary text-white font-black rounded-full flex items-center gap-3 hover:bg-[#1E2650] transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)] whitespace-nowrap"
             >
               <Scissors size={18} />
               <span>{t('visualizing.applyCuts')}</span>
@@ -829,7 +829,7 @@ CRITICAL RULES:
                     }}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                       isSelected
-                        ? 'border-primary bg-violet-50 shadow-[0_0_20px_rgba(109,40,217,0.2)]'
+                        ? 'border-primary bg-[#EEF0F6] shadow-[0_0_20px_rgba(41,52,99,0.2)]'
                         : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                     }`}
                   >

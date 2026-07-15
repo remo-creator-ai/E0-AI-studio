@@ -148,7 +148,7 @@ export const ProductionStep: React.FC = () => {
               </div>
               <button
                 onClick={() => setStep(ProjectStep.DASHBOARD)}
-                className="px-8 py-4 bg-primary hover:bg-[#5B21B6] text-white rounded-full font-black uppercase text-sm flex items-center gap-3 shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:scale-105 active:scale-95 transition-all"
+                className="px-8 py-4 bg-primary hover:bg-[#1E2650] text-white rounded-full font-black uppercase text-sm flex items-center gap-3 shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:scale-105 active:scale-95 transition-all"
               >
                 <Home size={18} />
                 {t('production.goToDashboard')}
@@ -471,7 +471,7 @@ export const ProductionStep: React.FC = () => {
             {!hasKey ? (
               <button
                 onClick={handleOpenKeySelector}
-                className="group px-10 py-5 bg-primary text-white rounded-full font-black text-lg flex items-center gap-3 shadow-[0_8px_20px_rgba(109,40,217,0.25)] hover:bg-[#5B21B6] hover:scale-105 active:scale-95 transition-all"
+                className="group px-10 py-5 bg-primary text-white rounded-full font-black text-lg flex items-center gap-3 shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:bg-[#1E2650] hover:scale-105 active:scale-95 transition-all"
               >
                 <Lock size={20} className="group-hover:animate-bounce" />
                 UNLOCK V-ENGINE
@@ -571,7 +571,7 @@ export const ProductionStep: React.FC = () => {
               <button
                 onClick={handleStartBatch}
                 disabled={selectedSceneIds.size === 0}
-                className="px-6 py-2.5 bg-primary hover:bg-[#5B21B6] text-white rounded-full text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:opacity-30 active:scale-95"
+                className="px-6 py-2.5 bg-primary hover:bg-[#1E2650] text-white rounded-full text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-30 active:scale-95"
               >
                 <Rocket size={14} />
                 Generate Selected ({selectedSceneIds.size})
@@ -818,7 +818,7 @@ export const ProductionStep: React.FC = () => {
                 <button
                   onClick={() => handleGenerateVideo(scene.id)}
                   disabled={isLoading || !scene.image_url || isBatchActive}
-                  className="flex-1 py-3.5 bg-primary hover:bg-[#5B21B6] text-white rounded-full text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-[0_8px_20px_rgba(109,40,217,0.25)]"
+                  className="flex-1 py-3.5 bg-primary hover:bg-[#1E2650] text-white rounded-full text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
                 >
                   {scene.video_url ? <><RefreshCw size={14} /> Re-Render</> : <><Rocket size={14} /> Render Video</>}
                 </button>
@@ -930,7 +930,7 @@ export const ProductionStep: React.FC = () => {
                   <div className="pt-2 space-y-3">
                     <button
                       onClick={() => setModalStep('form')}
-                      className="w-full py-4 bg-primary hover:bg-[#5B21B6] rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 text-white"
+                      className="w-full py-4 bg-primary hover:bg-[#1E2650] rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 text-white"
                     >
                       <Mail size={18} /> {t('production.requestProduction')}
                     </button>
@@ -1051,7 +1051,7 @@ export const ProductionStep: React.FC = () => {
 
                       {/* Extra uploaded files */}
                       {extraFiles.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm text-indigo-600">
+                        <div key={idx} className="flex items-center justify-between text-sm text-[#B7791F]">
                           <div className="flex items-center gap-3">
                             <Paperclip size={16} />
                             <span className="truncate max-w-[200px]">{file.name}</span>
@@ -1221,7 +1221,7 @@ export const ProductionStep: React.FC = () => {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="w-full py-4 bg-primary hover:bg-[#5B21B6] disabled:opacity-50 rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(109,40,217,0.25)] active:scale-95 text-white"
+                    className="w-full py-4 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 text-white"
                   >
                     {isSubmitting ? (
                       <>

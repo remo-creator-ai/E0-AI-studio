@@ -1,33 +1,39 @@
 @import "tailwindcss";
 
 /* =====================================================================
-   Sodam AI Studio — Design System v1 (라이트 · 바이올렛 포털)
-   근거: docs/Design Guide (standalone).html
+   Sodam AI Studio — Design System v2 (소담이 · 네이비·골드·레드)
+   근거: design/guide/소담이-디자인가이드.html · 소담이 캐릭터 가이드 PDF
    ===================================================================== */
 :root {
-    /* Brand — violet */
-    --primary: #6D28D9;        /* violet-700 · 브랜드 메인 */
-    --primary-strong: #5B21B6; /* hover/press */
-    --primary-ink: #4338CA;    /* indigo · 진한 강조 */
-    --primary-tint: #EDE9FE;   /* violet-100 · 연한 배경 */
-    --primary-tint-2: #F3EEFF;
-    --accent: #4338CA;
+    /* Brand — 소담이 (네이비 primary · 골드 accent · 레드 point) */
+    --primary: #293463;        /* 네이비 (옷 색) · 브랜드 메인 */
+    --primary-strong: #1E2650; /* hover/press */
+    --primary-ink: #3A4A8A;    /* 네이비-인디고 · 그라디언트 파트너 */
+    --primary-tint: #E7E9F1;   /* 연한 네이비 배경 */
+    --primary-tint-2: #EEF0F6;
+    --accent: #F9CB5D;         /* 골드 (머리장식·단추) */
+    --accent-strong: #F0B93A;
+    --accent-tint: #FEF3D6;
+    --point: #FA3E3D;          /* 레드 (머리기둥·강조) */
+    --point-strong: #E22E2D;
+    --gold: #F9CB5D; --red: #FA3E3D;
+    --cream: #F3DDD1;          /* 크림 서브 서피스 (얼굴 톤) */
 
-    /* Surfaces & text — zinc scale */
-    --bg: #FAFAFB;             /* 페이지 배경 */
+    /* Surfaces & text — warm neutral */
+    --bg: #F7F4F1;             /* 웜 오프화이트 배경 */
     --surface: #FFFFFF;        /* 카드/패널 */
-    --border: #E4E4E7;         /* zinc-200 테두리 */
-    --border-strong: #D4D4D8;
-    --secondary: #F1F1F3;      /* 보조 배경 */
-    --text: #18181B;          /* zinc-900 본문 */
-    --text-2: #52525B;        /* zinc-600 보조 */
-    --text-muted: #A1A1AA;    /* zinc-400 흐린 */
+    --border: #E7E1DC;         /* 웜 그레이 테두리 */
+    --border-strong: #D8D0C9;
+    --secondary: #F1EEEB;      /* 보조 배경 */
+    --text: #262626;          /* 잉크 본문 */
+    --text-2: #5B554F;        /* 보조 */
+    --text-muted: #9B938C;    /* 흐린 */
 
     /* Status tints */
-    --ok: #059669; --ok-bg: #D1FAE5;
-    --warn: #B45309; --warn-bg: #FEF3C7;
-    --info: #2563EB; --info-bg: #DBEAFE;
-    --danger: #DC2626; --danger-bg: #FEE2E2;
+    --ok: #2F9E63; --ok-bg: #E3F4EA;
+    --warn: #B7791F; --warn-bg: #FEF3D6;
+    --info: #293463; --info-bg: #E7E9F1;
+    --danger: #E22E2D; --danger-bg: #FEE5E4;
 }
 
 /* Base Styles */
@@ -95,14 +101,14 @@ h1 span, h2 span, h3 span {
     border-radius: 999px; padding: 10px 20px;
     font-weight: 700; font-size: 14px;
     transition: background .15s ease, box-shadow .15s ease;
-    box-shadow: 0 6px 16px rgba(109, 40, 217, .18);
+    box-shadow: 0 6px 16px rgba(41, 52, 99, .18);
 }
 .btn-pill:hover { background: var(--primary-strong); }
 .btn-pill.ghost {
     background: var(--primary-tint); color: var(--primary);
     box-shadow: none;
 }
-.btn-pill.ghost:hover { background: #E2D9FB; }
+.btn-pill.ghost:hover { background: #D8DCEC; }
 /* Chip / badge */
 .sd-chip {
     display: inline-flex; align-items: center; gap: 5px;
@@ -271,7 +277,7 @@ h1 span, h2 span, h3 span {
   border: 1px solid var(--border) !important;
   border-radius: 1.5rem !important;
   color: var(--text) !important;
-  box-shadow: 0 20px 60px rgba(24, 24, 27, 0.18), 0 0 40px rgba(109, 40, 217, 0.10) !important;
+  box-shadow: 0 20px 60px rgba(24, 24, 27, 0.18), 0 0 40px rgba(41, 52, 99, 0.10) !important;
   max-width: 360px !important;
   padding: 0 !important;
 }
@@ -337,7 +343,7 @@ h1 span, h2 span, h3 span {
   font-size: 0.75rem !important;
   padding: 0.625rem 1.25rem !important;
   text-shadow: none !important;
-  box-shadow: 0 8px 20px rgba(109, 40, 217, 0.28) !important;
+  box-shadow: 0 8px 20px rgba(41, 52, 99, 0.28) !important;
   transition: all 0.2s !important;
   border: none !important;
 }

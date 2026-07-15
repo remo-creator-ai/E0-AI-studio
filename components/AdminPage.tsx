@@ -79,10 +79,10 @@ export const AdminPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAFB] text-zinc-900 p-8 overflow-y-auto">
+    <div className="min-h-screen bg-[#F7F4F1] text-zinc-900 p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-violet-50 border border-violet-200 rounded-[2rem] p-8">
+        <div className="bg-[#EEF0F6] border border-[#CBD2E4] rounded-[2rem] p-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-primary" />
@@ -192,7 +192,7 @@ const DashboardTab: React.FC = () => {
           </div>
         </div>
         <div className="h-2.5 rounded-full bg-zinc-100 overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(109,40,217,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(41,52,99,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
         <p className="text-[11px] text-zinc-400 mt-2">
           <b className="text-primary">부여 누계 방식</b> — 지금까지 부여한 총합이 한도를 초과할 수 없음(계정이 소진해도 회복 없음). 한도 변경은 <b className="text-zinc-600">리모와 협의</b> 후 조정.
@@ -272,7 +272,7 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
         <button
           onClick={() => setCreateOpen(true)}
           disabled={atCap}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-bold text-sm transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-bold text-sm transition-all"
         >
           <Plus className="w-4 h-4" /> 계정 생성
         </button>
@@ -385,7 +385,7 @@ const CreateAccountModal: React.FC<{ onClose: () => void; onCreated: (msg: strin
       </Field>
       {error && <p className="text-[12px] font-bold text-red-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
+        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 생성
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">취소</button>
@@ -432,7 +432,7 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
       </Field>
       {error && <p className="text-[12px] font-bold text-red-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
+        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 적용
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">닫기</button>
@@ -460,7 +460,7 @@ const RevealModal: React.FC<{ login: string; pw: string; onClose: () => void }> 
         <li className="flex gap-2"><span className="text-primary font-black">1</span> 이 비밀번호를 복사해 해당 발급계정에 전달하세요.</li>
         <li className="flex gap-2"><span className="text-primary font-black">2</span> 창을 닫으면 다시 볼 수 없습니다 (재발급만 가능).</li>
       </ol>
-      <button onClick={onClose} className="w-full py-3 rounded-full bg-primary text-white hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] font-black text-sm">확인 (닫기)</button>
+      <button onClick={onClose} className="w-full py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] font-black text-sm">확인 (닫기)</button>
     </ModalShell>
   );
 };
@@ -637,7 +637,7 @@ const RequestsTab: React.FC = () => {
                 </>
               )}
               <div className="flex gap-2 mt-4">
-                <button onClick={() => setStatus(selected, 'completed')} className="flex-1 py-2.5 rounded-full bg-primary hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] text-white font-bold text-xs">완료 처리</button>
+                <button onClick={() => setStatus(selected, 'completed')} className="flex-1 py-2.5 rounded-full bg-primary hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] text-white font-bold text-xs">완료 처리</button>
                 <button onClick={() => setStatus(selected, 'cancelled')} className="px-4 py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-xs">취소</button>
               </div>
             </div>
@@ -701,7 +701,7 @@ const ApiKeysTab: React.FC = () => {
                 </button>
               </div>
               <button onClick={() => save(field.key)} disabled={saving === field.key || !values[field.key]?.trim()}
-                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#5B21B6] shadow-[0_8px_20px_rgba(109,40,217,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
+                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
                 {saving === field.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common.save')}
               </button>
             </div>
