@@ -11,7 +11,17 @@
 | `assets/` | 로고·스크린샷 — `img-sodam-logo02.svg`(현재 로고 원본), `old-remo-logo.png`(구 REMO) 등 |
 
 ## 디자인 버전
-- **v1 — 라이트 · 바이올렛** (적용 완료): 소담스퀘어 포털 스타일. 바이올렛 #6D28D9 + Zinc 그레이 + Pretendard. 근거: `guide/Design Guide (standalone).html`
-- **v2 — 소담이 캐릭터 컬러** (진행 예정): 소담스퀘어 마스코트 '소담이' 캐릭터 컬러 시안 기반.
+- **v1 — 라이트 · 바이올렛** (앱 적용 완료): 소담스퀘어 포털 스타일. 바이올렛 #6D28D9 + Zinc 그레이 + Pretendard. 근거: `guide/Design Guide (standalone).html`
+- **v2 — 소담이 캐릭터 컬러** (가이드 완성, 앱 적용 예정): 마스코트 '소담이' 캐릭터 컬러 기반 **네이비 #293463 · 골드 #F9CB5D · 레드 #FA3E3D** 3색 시스템.
+  - 가이드: `guide/소담이-디자인가이드.html`
+  - 근거: `sodami/guide/소담이 캐릭터 가이드(복장디자인 포함).pdf`, 캐릭터 이미지 `sodami/characters/`
+
+## sodami/ (소담이 브랜드 자산)
+| 폴더 | 내용 | git |
+|------|------|-----|
+| `sodami/characters/` | 소담이 표정별 PNG (기본·놀람·배시시·설렘) | 추적 |
+| `sodami/guide/` | 캐릭터 가이드 PDF (컬러·복장디자인) | 추적 |
+| `sodami/video/` | 예시 영상 MP4 | **gitignore**(로컬) |
+| `sodami/3d/` | 3D 소스(FBX·C4D·zip) | **gitignore**(로컬) |
 
 > 실제 적용 토큰은 `styles.css`(`:root` 변수)에 있습니다. 새 버전 작업 시 이 폴더의 시안·가이드를 근거로 토큰을 교체합니다.

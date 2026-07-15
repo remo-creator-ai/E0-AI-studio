@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>소담이 디자인 시스템 v2 — Sodam AI Studio</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    /* ── 캐릭터 원본 컬러 (소담이 캐릭터 가이드 PDF) ── */
+    --c-base:#F3EEEC; --c-head:#F9CB5D; --c-cloth:#293463; --c-button:#FFCF4A;
+    --c-stick:#FA3E3D; --c-muzzle:#F3DDD1; --c-tongue:#B43135; --c-blush:#E9766E;
+    --c-brow:#262626; --c-eye:#0D1C1C;
+
+    /* ── UI 시맨틱 토큰 (원본 → 앱) ── */
+    --navy:#293463; --navy-strong:#1E2650; --navy-tint:#E7E9F1;
+    --gold:#F9CB5D; --gold-strong:#F0B93A; --gold-tint:#FEF3D6;
+    --red:#FA3E3D; --red-strong:#E22E2D; --red-tint:#FEE5E4;
+    --coral:#E9766E;
+    --bg:#F7F4F1;            /* 베이스 오프화이트(웜) */
+    --surface:#FFFFFF;
+    --cream:#F3DDD1;         /* 크림 서브 서피스 */
+    --line:#E7E1DC; --line-2:#D8D0C9;
+    --ink:#262626; --ink-2:#5B554F; --muted:#9B938C;
+
+    --ok:#2F9E63; --ok-bg:#E3F4EA; --warn:#B7791F; --warn-bg:#FEF3D6;
+    --danger:#E22E2D; --danger-bg:#FEE5E4; --info:#293463; --info-bg:#E7E9F1;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px;}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,var(--navy) 0%,#31407A 100%);color:#fff;border-radius:0 0 40px 40px;
+    padding:56px 40px 64px;display:flex;align-items:center;gap:40px;flex-wrap:wrap;position:relative;overflow:hidden;}
+  .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;
+    background:radial-gradient(circle,rgba(249,203,93,.25),transparent 70%);}
+  .hero img{width:200px;height:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.35));position:relative;z-index:1;}
+  .hero .txt{flex:1;min-width:280px;position:relative;z-index:1;}
+  .hero .kick{font-size:12px;font-weight:800;letter-spacing:.18em;color:var(--gold);text-transform:uppercase;}
+  .hero h1{font-size:40px;font-weight:900;letter-spacing:-.02em;margin:10px 0 6px;line-height:1.1;}
+  .hero h1 .s1{color:#fff} .hero h1 .s2{color:var(--gold)} .hero h1 .s3{color:var(--red)}
+  .hero p{font-size:15px;color:#D8DCEC;max-width:520px;}
+  .hero .ver{display:inline-block;margin-top:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    border-radius:999px;padding:6px 16px;font-size:12px;font-weight:800;}
+
+  section{margin-top:64px;}
+  .cap{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;}
+  .cap .n{background:var(--navy);color:#fff;font-weight:900;font-size:14px;width:30px;height:30px;border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .cap h2{font-size:22px;font-weight:800;letter-spacing:-.01em;}
+  .cap .sub{color:var(--muted);font-size:13px;margin-left:auto;}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:26px;}
+  .intro{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:760px){.intro{grid-template-columns:1fr}}
+  .intro .who{background:var(--cream);border:none;}
+  .intro h3{font-size:16px;font-weight:800;margin-bottom:8px;}
+  .intro p{font-size:14px;color:var(--ink-2);}
+  .faces{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;}
+  .faces figure{flex:1;min-width:120px;text-align:center;background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;padding:14px;}
+  .faces img{width:100%;max-width:130px;height:auto;}
+  .faces figcaption{font-size:12px;font-weight:700;color:var(--ink-2);margin-top:6px;}
+
+  /* Swatches */
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .sw{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);}
+  .sw .chip{height:78px;}
+  .sw .meta{padding:10px 12px;}
+  .sw .role{font-size:12px;font-weight:800;}
+  .sw .hex{font-size:11px;color:var(--muted);font-family:'Cascadia Code',Consolas,monospace;margin-top:2px;text-transform:uppercase;}
+  .sw .use{font-size:11px;color:var(--ink-2);margin-top:3px;}
+
+  /* Semantic token rows */
+  .tok{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .tok:last-child{border-bottom:none;}
+  .tok .dot{width:40px;height:40px;border-radius:11px;flex-shrink:0;border:1px solid rgba(0,0,0,.06);}
+  .tok .name{font-weight:800;font-size:14px;min-width:130px;}
+  .tok .val{font-family:'Cascadia Code',Consolas,monospace;font-size:12px;color:var(--muted);min-width:90px;}
+  .tok .desc{font-size:13px;color:var(--ink-2);}
+
+  /* Typography */
+  .type-row{display:flex;align-items:baseline;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .type-row:last-child{border-bottom:none;}
+  .type-row .lbl{font-size:11px;color:var(--muted);font-weight:700;width:150px;font-family:'Cascadia Code',monospace;}
+
+  /* Components */
+  .btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;font-family:inherit;
+    border-radius:999px;padding:11px 22px;font-size:14px;font-weight:800;transition:.15s;}
+  .btn.navy{background:var(--navy);color:#fff;box-shadow:0 8px 18px rgba(41,52,99,.22);}
+  .btn.navy:hover{background:var(--navy-strong);}
+  .btn.gold{background:var(--gold);color:var(--navy);}
+  .btn.gold:hover{background:var(--gold-strong);}
+  .btn.red{background:var(--red);color:#fff;box-shadow:0 8px 18px rgba(250,62,61,.22);}
+  .btn.red:hover{background:var(--red-strong);}
+  .btn.ghost{background:var(--surface);border:1px solid var(--line-2);color:var(--ink);}
+  .btn.ghost:hover{background:#faf7f4;}
+  .comp-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px;}
+
+  .chip-tag{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:800;}
+  .t-navy{background:var(--navy-tint);color:var(--navy);} .t-gold{background:var(--gold-tint);color:var(--warn);}
+  .t-red{background:var(--red-tint);color:var(--danger);} .t-ok{background:var(--ok-bg);color:var(--ok);}
+  .t-cream{background:var(--cream);color:#8a5a3f;}
+
+  .demo-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;max-width:300px;}
+  .demo-card .badge{display:inline-block;background:var(--gold-tint);color:var(--warn);font-size:11px;font-weight:800;
+    border-radius:999px;padding:3px 10px;}
+  .demo-card h4{font-size:16px;font-weight:800;margin:10px 0 4px;}
+  .demo-card p{font-size:13px;color:var(--ink-2);}
+  .inp{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:11px 14px;
+    font-size:14px;font-family:inherit;color:var(--ink);margin-top:10px;}
+  .inp:focus{outline:none;border-color:var(--navy);}
+
+  pre{background:#1E2650;color:#E7E9F1;border-radius:16px;padding:20px 22px;overflow-x:auto;font-size:12.5px;
+    font-family:'Cascadia Code',Consolas,monospace;line-height:1.7;}
+  pre .c1{color:var(--gold);} pre .c2{color:#9DB0E8;} pre .c3{color:#7C8AA8;}
+
+  .note{background:var(--gold-tint);border-left:4px solid var(--gold);border-radius:0 12px 12px 0;
+    padding:14px 18px;font-size:13.5px;color:#6b5316;margin-top:16px;}
+  .note b{color:var(--ink);}
+  footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="../sodami/characters/소담이-기본-앞.png" alt="소담이" />
+  <div class="txt">
+    <div class="kick">Sodam AI Studio · Design System</div>
+    <h1><span class="s1">소</span><span class="s2">담</span><span class="s3">이</span> 디자인 시스템</h1>
+    <p>소담스퀘어 마스코트 ‘소담이’의 캐릭터 컬러를 기반으로 한 v2 디자인 시스템입니다. 네이비·골드·레드 3색의 따뜻하고 친근한 아이덴티티로 소상공인의 꿈을 함께합니다.</p>
+    <span class="ver">v2 · 소담이 캐릭터 컬러 기반 · 2026-07</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- 1. 캐릭터 소개 -->
+  <section>
+    <div class="cap"><span class="n">1</span><h2>소담이 소개</h2><span class="sub">캐릭터 가이드 기반</span></div>
+    <div class="intro">
+      <div class="card who">
+        <h3>소담이는?</h3>
+        <p>소담스퀘어의 이름을 딴 <b>‘소담이’</b>는 소상공인의 다양한 꿈을 함께 이뤄나가는 친구입니다. 활발하고 행복한 표정으로 보는 모두를 기분 좋게 만들어 줍니다. <b>“소담이가 소상공인들의 꿈을 같이 이뤄나갑니다.”</b></p>
+      </div>
+      <div class="card">
+        <h3>머리 위 네모 뿔 🟨</h3>
+        <p>소담이 머리 위의 <b>네모 뿔(골드)</b>은 소담이의 <b>기분을 나타내는</b> 상징입니다. 조끼에는 이름표 ‘소담이’와 소담스퀘어 배지를 달고 있습니다. UI에서는 이 골드를 <b>포인트/하이라이트</b>로 활용합니다.</p>
+      </div>
+    </div>
+    <div class="faces">
+      <figure><img src="../sodami/characters/소담이-기본-앞.png" alt="기본"><figcaption>기본</figcaption></figure>
+      <figure><img src="../sodami/characters/소담이-놀람-앞.png" alt="놀람"><figcaption>놀람</figcaption></figure>
+      <figure><img src="../sodami/characters/소담이-배시시-앞.png" alt="배시시"><figcaption>배시시</figcaption></figure>
+      <figure><img src="../sodami/characters/소담이 설렘-앞.png" alt="설렘"><figcaption>설렘</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 2. 원본 캐릭터 컬러 -->
+  <section>
+    <div class="cap"><span class="n">2</span><h2>캐릭터 원본 컬러</h2><span class="sub">소담이 캐릭터 가이드 PDF · 디자인 컬러</span></div>
+    <div class="swgrid">
+      <div class="sw"><div class="chip" style="background:#F3EEEC"></div><div class="meta"><div class="role">베이스</div><div class="hex">#F3EEEC</div><div class="use">몸통·배경</div></div></div>
+      <div class="sw"><div class="chip" style="background:#293463"></div><div class="meta"><div class="role" style="color:#293463">옷 색</div><div class="hex">#293463</div><div class="use">조끼 · 메인</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F9CB5D"></div><div class="meta"><div class="role">머리장식</div><div class="hex">#F9CB5D</div><div class="use">네모 뿔</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFCF4A"></div><div class="meta"><div class="role">단추색</div><div class="hex">#FFCF4A</div><div class="use">단추</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FA3E3D"></div><div class="meta"><div class="role" style="color:#FA3E3D">머리 기둥</div><div class="hex">#FA3E3D</div><div class="use">깃발 기둥</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F3DDD1"></div><div class="meta"><div class="role">콧대</div><div class="hex">#F3DDD1</div><div class="use">얼굴 크림</div></div></div>
+      <div class="sw"><div class="chip" style="background:#B43135"></div><div class="meta"><div class="role" style="color:#B43135">혀</div><div class="hex">#B43135</div><div class="use">다크 레드</div></div></div>
+      <div class="sw"><div class="chip" style="background:#E9766E"></div><div class="meta"><div class="role">볼 붉어짐</div><div class="hex">#E9766E</div><div class="use">코럴 블러시</div></div></div>
+      <div class="sw"><div class="chip" style="background:#262626"></div><div class="meta"><div class="role" style="color:#262626">눈썹</div><div class="hex">#262626</div><div class="use">잉크</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0D1C1C"></div><div class="meta"><div class="role" style="color:#0D1C1C">눈·코·입</div><div class="hex">#0D1C1C</div><div class="use">딥 잉크</div></div></div>
+    </div>
+  </section>
+
+  <!-- 3. UI 시맨틱 팔레트 -->
+  <section>
+    <div class="cap"><span class="n">3</span><h2>UI 시맨틱 팔레트</h2><span class="sub">원본 → 앱 토큰 매핑</span></div>
+    <div class="card">
+      <div class="tok"><span class="dot" style="background:#293463"></span><span class="name">Primary · 네이비</span><span class="val">#293463</span><span class="desc">주요 액션·내비 활성·헤더. 소담이 ‘옷 색’ = 브랜드 메인(신뢰).</span></div>
+      <div class="tok"><span class="dot" style="background:#F9CB5D"></span><span class="name">Accent · 골드</span><span class="val">#F9CB5D</span><span class="desc">하이라이트·보조 CTA·뱃지. 머리장식/단추 = 따뜻함·에너지.</span></div>
+      <div class="tok"><span class="dot" style="background:#FA3E3D"></span><span class="name">Point · 레드</span><span class="val">#FA3E3D</span><span class="desc">강조·알림·삭제. 절제해서 사용(소담이 ‘이’ 글자의 생기).</span></div>
+      <div class="tok"><span class="dot" style="background:#F7F4F1;border-color:#E7E1DC"></span><span class="name">Base · 배경</span><span class="val">#F7F4F1</span><span class="desc">페이지 배경(웜 오프화이트). 원본 베이스 #F3EEEC 계열.</span></div>
+      <div class="tok"><span class="dot" style="background:#FFFFFF;border-color:#E7E1DC"></span><span class="name">Surface · 카드</span><span class="val">#FFFFFF</span><span class="desc">카드·패널.</span></div>
+      <div class="tok"><span class="dot" style="background:#F3DDD1"></span><span class="name">Cream · 서브</span><span class="val">#F3DDD1</span><span class="desc">부드러운 강조 패널·인용. 소담이 얼굴 크림톤.</span></div>
+      <div class="tok"><span class="dot" style="background:#E9766E"></span><span class="name">Coral · 소프트</span><span class="val">#E9766E</span><span class="desc">감성 포인트·일러스트 액센트(블러시).</span></div>
+      <div class="tok"><span class="dot" style="background:#262626"></span><span class="name">Ink · 텍스트</span><span class="val">#262626</span><span class="desc">본문. 보조 #5B554F · 흐림 #9B938C.</span></div>
+    </div>
+    <div class="note"><b>대비 규칙:</b> 네이비/레드 배경 위에는 <b>흰 글씨</b>, <b>골드 배경 위에는 네이비 글씨</b>(골드는 밝아 흰 글씨 대비 부족). 골드는 넓은 면적보다 포인트로 사용.</div>
+  </section>
+
+  <!-- 4. 타이포그래피 -->
+  <section>
+    <div class="cap"><span class="n">4</span><h2>타이포그래피</h2><span class="sub">Pretendard · 굵기 대비로 위계</span></div>
+    <div class="card">
+      <div class="type-row"><span class="lbl">Display / 900</span><span style="font-size:34px;font-weight:900;letter-spacing:-.02em">소담이와 함께</span></div>
+      <div class="type-row"><span class="lbl">Title / 800</span><span style="font-size:24px;font-weight:800">화면 제목 Heading</span></div>
+      <div class="type-row"><span class="lbl">Subtitle / 700</span><span style="font-size:18px;font-weight:700">섹션 부제목</span></div>
+      <div class="type-row"><span class="lbl">Body / 400</span><span style="font-size:15px">본문 텍스트입니다. 읽기 편한 크기와 줄간격.</span></div>
+      <div class="type-row"><span class="lbl">Caption / 700</span><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">OVERLINE LABEL</span></div>
+    </div>
+  </section>
+
+  <!-- 5. 컴포넌트 -->
+  <section>
+    <div class="cap"><span class="n">5</span><h2>컴포넌트</h2><span class="sub">버튼 · 뱃지 · 카드 · 입력</span></div>
+    <div class="card">
+      <h3 style="font-size:14px;font-weight:800;margin-bottom:12px;color:var(--ink-2)">버튼</h3>
+      <div class="comp-row">
+        <button class="btn navy">주요 액션</button>
+        <button class="btn gold">보조 · 골드</button>
+        <button class="btn red">강조 · 레드</button>
+        <button class="btn ghost">보조 · 고스트</button>
+      </div>
+      <h3 style="font-size:14px;font-weight:800;margin:8px 0 12px;color:var(--ink-2)">뱃지 · 칩</h3>
+      <div class="comp-row">
+        <span class="chip-tag t-navy">● 진행 중</span>
+        <span class="chip-tag t-gold">★ 신규</span>
+        <span class="chip-tag t-red">! 대기</span>
+        <span class="chip-tag t-ok">✓ 완료</span>
+        <span class="chip-tag t-cream">크림 태그</span>
+      </div>
+      <h3 style="font-size:14px;font-weight:800;margin:8px 0 12px;color:var(--ink-2)">카드 · 입력</h3>
+      <div class="comp-row" style="align-items:flex-start">
+        <div class="demo-card">
+          <span class="badge">MASTER</span>
+          <h4>소담-강남점</h4>
+          <p>발급계정 · 크레딧 320 · 활성</p>
+          <input class="inp" placeholder="아이디를 입력하세요" />
+          <button class="btn navy" style="width:100%;justify-content:center;margin-top:12px">로그인</button>
+        </div>
+        <div class="demo-card" style="background:var(--cream);border:none">
+          <h4 style="margin-top:0">크림 패널</h4>
+          <p>부드러운 안내·인용에 사용하는 웜 크림 서피스입니다. 소담이의 따뜻한 톤을 담습니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. 적용 -->
+  <section>
+    <div class="cap"><span class="n">6</span><h2>앱 적용 (styles.css 토큰)</h2><span class="sub">v1 바이올렛 → v2 소담이 교체</span></div>
+    <pre><span class="c3">/* :root — 소담이 v2 (네이비·골드·레드) */</span>
+<span class="c2">--primary</span>:        <span class="c1">#293463</span>;  <span class="c3">/* 네이비 (옷 색) — 메인 */</span>
+<span class="c2">--primary-strong</span>: <span class="c1">#1E2650</span>;
+<span class="c2">--primary-tint</span>:   <span class="c1">#E7E9F1</span>;
+<span class="c2">--accent</span>:         <span class="c1">#F9CB5D</span>;  <span class="c3">/* 골드 (머리장식·단추) */</span>
+<span class="c2">--point</span>:          <span class="c1">#FA3E3D</span>;  <span class="c3">/* 레드 (머리 기둥·강조) */</span>
+<span class="c2">--bg</span>:             <span class="c1">#F7F4F1</span>;  <span class="c3">/* 웜 오프화이트 */</span>
+<span class="c2">--surface</span>:        <span class="c1">#FFFFFF</span>;
+<span class="c2">--cream</span>:          <span class="c1">#F3DDD1</span>;  <span class="c3">/* 크림 서브 서피스 */</span>
+<span class="c2">--text</span>:           <span class="c1">#262626</span>;
+<span class="c2">--text-2</span>:         <span class="c1">#5B554F</span>;
+<span class="c2">--border</span>:         <span class="c1">#E7E1DC</span>;</pre>
+    <div class="note"><b>적용 방식:</b> v1과 동일하게 <b>styles.css의 <code>:root</code> 토큰만 교체</b>하면 <code>bg-primary</code>·<code>text-primary</code> 계열이 자동 반영됩니다. 다만 v1은 <b>단색 바이올렛</b>이라 primary 하나로 충분했지만, 소담이는 <b>3색 시스템</b>이라 골드(<code>accent</code>)·레드(<code>point</code>)를 <b>보조 CTA·뱃지·강조</b>에 의도적으로 배치해야 캐릭터 아이덴티티가 살아납니다.</div>
+  </section>
+
+  <footer>
+    소담이 디자인 시스템 v2 · 근거: <code>design/sodami/guide/소담이 캐릭터 가이드(복장디자인 포함).pdf</code> · 캐릭터 컬러 10종 + UI 시맨틱 매핑<br>
+    Sodam AI Studio · 소담스퀘어 in Gangwon
+  </footer>
+
+</div>
+</body>
+</html>

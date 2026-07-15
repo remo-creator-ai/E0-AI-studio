@@ -33,6 +33,10 @@ output/
 # Supabase CLI local state
 supabase/.temp/
 
+# 소담이 대용량 소스 (로컬 보관 · git/배포 제외)
+design/sodami/3d/
+design/sodami/video/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
