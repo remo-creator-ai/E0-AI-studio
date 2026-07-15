@@ -14,3 +14,6 @@ output/
 .omc/
 .claude/
 .env.local.backup
+
+# 디자인/기획 자료 (배포 불필요)
+design/
