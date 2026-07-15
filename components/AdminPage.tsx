@@ -39,7 +39,7 @@ const API_KEY_FIELDS: ApiKeyField[] = [
 type AdminTab = 'dashboard' | 'accounts' | 'usage' | 'requests' | 'api-keys';
 
 const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }> = {
-  pending: { label: '대기', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  pending: { label: '대기', cls: 'bg-[#FEE5E4] text-[#E22E2D] border-[#FBC9C7]' },
   in_progress: { label: '진행', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
   completed: { label: '완료', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   cancelled: { label: '취소', cls: 'bg-zinc-100 text-zinc-500 border-zinc-200' },
@@ -167,7 +167,7 @@ const DashboardTab: React.FC = () => {
         <StatCard
           label="발급 계정"
           value={<>{stats.issuedCount}<span className="text-lg text-zinc-400"> / {stats.maxSlots}</span></>}
-          sub={<><b className="text-emerald-600">활성 {stats.activeCount}</b> · <span className="text-amber-600">정지 {stats.suspendedCount}</span></>}
+          sub={<><b className="text-emerald-600">활성 {stats.activeCount}</b> · <span className="text-[#E22E2D]">정지 {stats.suspendedCount}</span></>}
         />
         <StatCard
           label="크레딧 부여 한도"
@@ -300,7 +300,7 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
                   <td className="px-3 py-3">
                     {a.status === 'active'
                       ? <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">활성</span>
-                      : <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-zinc-100 text-zinc-500 border border-zinc-200">정지</span>}
+                      : <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FEE5E4] text-[#E22E2D] border border-[#FBC9C7]">정지</span>}
                   </td>
                   <td className="px-3 py-3 text-zinc-400">{a.last_active ?? '—'}</td>
                   <td className="px-3 py-3">

@@ -32,7 +32,7 @@ const REQUEST_STATUS_LABELS_KR: Record<RequestStatus, string> = {
 };
 
 const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
-  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  pending: 'bg-[#FEE5E4] text-[#E22E2D] border-[#FBC9C7]',
   in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
   completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200',
@@ -300,7 +300,7 @@ export const Dashboard: React.FC = () => {
                 {/* Info */}
                 <div className="p-6 space-y-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 bg-[#EEF0F6] border border-[#CBD2E4] rounded-full text-[10px] font-bold text-primary uppercase">
+                    <span className="px-3 py-1 bg-[#FEF3D6] border border-[#F5E1B0] rounded-full text-[10px] font-bold text-[#B7791F] uppercase">
                       {project.style}
                     </span>
                     <span className="px-3 py-1 bg-zinc-100 border border-zinc-200 rounded-full text-[10px] font-bold text-zinc-500 uppercase">

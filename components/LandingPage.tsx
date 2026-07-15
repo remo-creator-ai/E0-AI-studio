@@ -296,7 +296,7 @@ const useCaseTemplates = [
     titleKey: 'landing.useCases.creatorTitle',
     descKey: 'landing.useCases.creatorDesc',
     chips: ['landing.useCases.creatorChip1', 'landing.useCases.creatorChip2', 'landing.useCases.creatorChip3'],
-    gradient: 'from-[#3A4A8A] to-[#EC4899]',
+    gradient: 'from-[#3A4A8A] to-[#FA3E3D]',
   },
   {
     icon: Building2,
@@ -310,7 +310,7 @@ const useCaseTemplates = [
     titleKey: 'landing.useCases.freelanceTitle',
     descKey: 'landing.useCases.freelanceDesc',
     chips: ['landing.useCases.freelanceChip1', 'landing.useCases.freelanceChip2', 'landing.useCases.freelanceChip3'],
-    gradient: 'from-[#10B981] to-[#3A4A8A]',
+    gradient: 'from-[#F9CB5D] to-[#3A4A8A]',
   },
 ];
 
@@ -419,7 +419,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <img src="/logo.svg" alt="소담스퀘어" className="w-8 h-8 rounded-lg shrink-0 object-contain" />
+              <img src="/sodami.png" alt="소담이" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
               <span className="text-lg font-extrabold tracking-tight hidden sm:block">
                 Sodam AI Studio
               </span>
@@ -1337,7 +1337,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 {t('landing.roadmap.title')}{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(135deg, #3A4A8A, #EC4899)',
+                    background: 'linear-gradient(135deg, #3A4A8A, #FA3E3D)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -1385,7 +1385,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       {/* Top gradient accent line */}
                       <div
                         className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-50 transition-opacity duration-500"
-                        style={{ background: 'linear-gradient(90deg, #3A4A8A, #EC4899)' }}
+                        style={{ background: 'linear-gradient(90deg, #3A4A8A, #FA3E3D)' }}
                       />
 
                       {/* Hover glow */}
@@ -1399,7 +1399,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                         <span
                           className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white"
                           style={{
-                            background: 'linear-gradient(135deg, #3A4A8A, #EC4899)',
+                            background: 'linear-gradient(135deg, #3A4A8A, #FA3E3D)',
                             animation: 'lp-badge-pulse 2.5s ease-in-out infinite',
                           }}
                         >
@@ -1415,7 +1415,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                           border: '1px solid rgba(58,74,138,0.2)',
                         }}
                       >
-                        <Icon size={26} style={{ color: '#EC4899' }} />
+                        <Icon size={26} style={{ color: '#FA3E3D' }} />
                       </div>
 
                       {/* Title */}
@@ -1544,13 +1544,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               {/* Logo */}
               <div className="text-center space-y-5 mb-8">
                 <img
-                  src="/logo.svg"
-                  alt="소담스퀘어"
-                  className="w-24 h-24 rounded-3xl object-contain bg-white mx-auto"
+                  src="/sodami.png"
+                  alt="소담이"
+                  className="w-28 h-28 rounded-3xl object-cover bg-white mx-auto"
                   style={{ boxShadow: '0 0 50px rgba(41,52,99,0.2)' }}
                 />
                 <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">
-                  SODAM AI STUDIO
+                  SODAM <span style={{ color: '#E0A82E' }}>AI</span> STUDIO
                 </h2>
                 <div className="space-y-1">
                   <p className="text-zinc-600 text-sm font-medium">
@@ -1562,8 +1562,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </div>
               </div>
 
-              {/* Credit Offer */}
-              <p className="text-center text-sm font-black mb-5" style={{ color: '#3A4A8A' }}>
+              {/* Credit Offer — 골드(크레딧=보상) */}
+              <p className="text-center text-sm font-black mb-5" style={{ color: '#B7791F' }}>
                 {t('landing.login.creditOffer')}
               </p>
 

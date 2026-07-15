@@ -103,8 +103,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-[60] w-72 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-3 px-2">
-          <img src="/logo.svg" alt="소담스퀘어" className="w-9 h-9 rounded-xl shrink-0 object-contain" />
-          <h1 className="text-lg font-extrabold tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-primary">AI</span> Studio</h1>
+          <img src="/sodami.png" alt="소담이" className="w-9 h-9 rounded-xl shrink-0 object-cover" />
+          <h1 className="text-lg font-extrabold tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-[#E0A82E]">AI</span> Studio</h1>
         </div>
 
         <nav className="flex-1 flex flex-col gap-2">
@@ -180,18 +180,18 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           </button>
         )}
 
-        {/* Credit Balance */}
-        <div data-tour="sidebar-credits" className="px-4 py-3 bg-[#EEF0F6] border border-[#CBD2E4] rounded-2xl">
+        {/* Credit Balance — 골드 (크레딧=가치/보상) */}
+        <div data-tour="sidebar-credits" className="px-4 py-3 bg-[#FEF3D6] border border-[#F5E1B0] rounded-2xl">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('common.credits')}</span>
-            <Coins size={14} className="text-primary" />
+            <span className="text-[10px] font-bold text-[#B7791F] uppercase tracking-widest">{t('common.credits')}</span>
+            <Coins size={14} className="text-[#E0A82E]" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className={`text-2xl font-black ${balance <= 10 ? 'text-red-500' : 'text-primary'}`}>{balance}</span>
-            <span className="text-[10px] font-bold text-zinc-400">/ {maxCredits}</span>
+            <span className={`text-2xl font-black ${balance <= 10 ? 'text-[#FA3E3D]' : 'text-[#B7791F]'}`}>{balance}</span>
+            <span className="text-[10px] font-bold text-[#C9A35A]">/ {maxCredits}</span>
           </div>
-          <div className="mt-2 h-1.5 bg-[#DDE1EF] rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
+          <div className="mt-2 h-1.5 bg-[#F3E3B8] rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#FA3E3D]' : 'bg-[#E0A82E]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
           </div>
         </div>
 
