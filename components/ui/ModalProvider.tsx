@@ -45,10 +45,10 @@ export const useModal = (): ModalContextValue => {
 // ---------------------------------------------------------------------------
 
 const iconMap: Record<ModalType, { icon: React.ElementType; color: string; bg: string }> = {
-  success: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
-  error:   { icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50 border-red-200' },
-  warning: { icon: AlertTriangle, color: 'text-amber-600',  bg: 'bg-amber-50 border-amber-200' },
-  info:    { icon: Info,          color: 'text-[#293463]', bg: 'bg-[#EEF0F6] border-[#CBD2E4]' },
+  success: { icon: CheckCircle2, color: 'text-[#0050BF]', bg: 'bg-[#E5EDFA] border-[#C0D4F0]' },
+  error:   { icon: AlertCircle,  color: 'text-zinc-600',     bg: 'bg-zinc-100 border-zinc-200' },
+  warning: { icon: AlertTriangle, color: 'text-[#0050BF]',  bg: 'bg-[#E5EDFA] border-[#C0D4F0]' },
+  info:    { icon: Info,          color: 'text-[#0050BF]', bg: 'bg-[#EEF3FC] border-[#C0D4F0]' },
 };
 
 // ---------------------------------------------------------------------------
@@ -174,7 +174,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               )}
               <button
                 onClick={() => close(modal.kind === 'confirm' ? true : true)}
-                className="flex-1 py-3.5 bg-primary hover:bg-[#1E2650] rounded-full font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
+                className="flex-1 py-3.5 bg-primary hover:bg-[#003E99] rounded-full font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
               >
                 {modal.confirmText}
               </button>

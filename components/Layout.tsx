@@ -36,12 +36,12 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) =
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
       active
-        ? 'bg-primary text-white shadow-[0_6px_18px_rgba(41,52,99,0.25)]'
+        ? 'bg-primary text-white shadow-[0_6px_18px_rgba(0,80,191,0.25)]'
         : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
     }`}
   >
     <Icon size={20} />
-    <span className="font-semibold">{label}</span>
+    <span className="font-bold">{label}</span>
     {active && <ChevronRight size={16} className="ml-auto" />}
   </button>
 );
@@ -99,12 +99,12 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   }, [closeSidebar]);
 
   return (
-    <div id="app-layout" className="flex h-screen overflow-hidden bg-[#F7F4F1] text-zinc-900">
+    <div id="app-layout" className="flex h-screen overflow-hidden bg-[#F5F7FA] text-zinc-900">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-[60] w-72 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[60] w-80 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-3 px-2">
           <img src="/sodami.png" alt="소담이" className="w-9 h-9 rounded-xl shrink-0 object-cover" />
-          <h1 className="text-lg font-extrabold tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-[#E0A82E]">AI</span> Studio</h1>
+          <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-primary">AI</span> Studio</h1>
         </div>
 
         <nav className="flex-1 flex flex-col gap-2">
@@ -116,7 +116,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           />
           <div className="h-[1px] bg-zinc-200 my-4" />
           <div data-tour="sidebar-workflow" className="space-y-2">
-          <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-2">{t('nav.workflow')}</div>
+          <div className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.workflow')}</div>
           <SidebarItem
             icon={PenTool}
             label={t('nav.planning')}
@@ -143,7 +143,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           />
           </div>
 
-          <div className="mt-8 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-2">{t('nav.settings')}</div>
+          <div className="mt-8 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.settings')}</div>
           <SidebarItem
             icon={Settings}
             label={t('nav.settings')}
@@ -154,7 +154,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           {isAdmin(user?.email ?? undefined) && (
             <>
               <div className="h-[1px] bg-zinc-200 my-4" />
-              <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 px-2">{t('nav.admin')}</div>
+              <div className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.admin')}</div>
               <SidebarItem
                 icon={Shield}
                 label={t('nav.adminSettings')}
@@ -181,17 +181,17 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
         )}
 
         {/* Credit Balance — 골드 (크레딧=가치/보상) */}
-        <div data-tour="sidebar-credits" className="px-4 py-3 bg-[#FEF3D6] border border-[#F5E1B0] rounded-2xl">
+        <div data-tour="sidebar-credits" className="px-4 py-3 bg-[#E5EDFA] border border-[#C0D4F0] rounded-2xl">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold text-[#B7791F] uppercase tracking-widest">{t('common.credits')}</span>
-            <Coins size={14} className="text-[#E0A82E]" />
+            <span className="text-[10px] font-bold text-[#0050BF] uppercase tracking-widest">{t('common.credits')}</span>
+            <Coins size={14} className="text-[#0050BF]" />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className={`text-2xl font-black ${balance <= 10 ? 'text-[#FA3E3D]' : 'text-[#B7791F]'}`}>{balance}</span>
-            <span className="text-[10px] font-bold text-[#C9A35A]">/ {maxCredits}</span>
+            <span className={`text-2xl font-black ${balance <= 10 ? 'text-[#64748B]' : 'text-[#0050BF]'}`}>{balance}</span>
+            <span className="text-[10px] font-bold text-[#7B93B8]">/ {maxCredits}</span>
           </div>
-          <div className="mt-2 h-1.5 bg-[#F3E3B8] rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#FA3E3D]' : 'bg-[#E0A82E]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
+          <div className="mt-2 h-1.5 bg-[#D6E3F7] rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
           </div>
         </div>
 
@@ -201,7 +201,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             {user?.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-[#3A4A8A] shrink-0" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-[#1E6FD9] shrink-0" />
             )}
             <div className="flex flex-col items-start overflow-hidden flex-1">
               <div className="text-sm font-bold truncate w-full text-zinc-900">
@@ -209,7 +209,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
               </div>
               <button
                 onClick={signOut}
-                className="text-[10px] text-zinc-500 hover:text-red-500 flex items-center gap-1 transition-colors hover:underline"
+                className="text-[10px] text-zinc-500 hover:text-zinc-500 flex items-center gap-1 transition-colors hover:underline"
               >
                 <LogOut size={10} /> {t('common.logout')}
               </button>
@@ -253,11 +253,11 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                     </button>
 
                     {currentStep === ProjectStep.DASHBOARD ? (
-                      <span className="text-zinc-900 font-extrabold text-base tracking-tight">{t('nav.myProjects')}</span>
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.myProjects')}</span>
                     ) : currentStep === ProjectStep.SETTINGS ? (
-                      <span className="text-zinc-900 font-extrabold text-base tracking-tight">{t('nav.settingsTitle')}</span>
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.settingsTitle')}</span>
                     ) : currentStep === ProjectStep.ADMIN ? (
-                      <span className="text-zinc-900 font-extrabold text-base tracking-tight">{t('nav.adminTitle')}</span>
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.adminTitle')}</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button
@@ -267,7 +267,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                           {t('nav.projects')}
                         </button>
                         <ChevronRight size={14} className="text-zinc-300" />
-                        <span className="text-zinc-900 font-extrabold text-base truncate max-w-[200px]">
+                        <span className="text-zinc-900 font-black text-base truncate max-w-[200px]">
                           {project?.title || t('nav.untitled')}
                         </span>
                       </div>
@@ -288,18 +288,18 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       </div>
                     )}
                     {saveStatus === 'saved' && (
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-green-500 uppercase tracking-widest">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#0050BF] uppercase tracking-widest">
                         <CheckCircle2 size={12} /> {t('common.saved')}
                       </div>
                     )}
                     {saveStatus === 'error' && (
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                         <AlertCircle size={12} /> {t('common.saveFailed')}
                       </div>
                     )}
                     {saveStatus === 'forbidden' && (
-                      <span className="text-yellow-500 text-xs flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
+                      <span className="text-[#0050BF] text-xs flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-[#0050BF] rounded-full" />
                         {t('common.readOnly')}
                       </span>
                     )}
@@ -316,7 +316,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       return (
                         <React.Fragment key={ws.step}>
                           {i > 0 && (
-                            <div className={`h-[1px] w-6 ${isPast ? 'bg-emerald-400' : 'bg-zinc-200'}`} />
+                            <div className={`h-[1px] w-6 ${isPast ? 'bg-[#0050BF]' : 'bg-zinc-200'}`} />
                           )}
                           <button
                             onClick={() => handleNavigate(ws.step)}
@@ -324,12 +324,12 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                               isCurrent
                                 ? 'text-primary bg-primary/10'
                                 : isPast
-                                ? 'text-emerald-600 hover:bg-zinc-100'
+                                ? 'text-[#0050BF] hover:bg-zinc-100'
                                 : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
                             }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full ${
-                              isCurrent ? 'bg-primary' : isPast ? 'bg-emerald-500' : 'bg-zinc-300'
+                              isCurrent ? 'bg-primary' : isPast ? 'bg-[#E5EDFA]0' : 'bg-zinc-300'
                             }`} />
                             {ws.label}
                           </button>

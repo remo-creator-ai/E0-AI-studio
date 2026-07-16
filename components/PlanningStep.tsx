@@ -256,7 +256,7 @@ export const PlanningStep: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900">{t('planning.title')} <span className="text-primary">{t('planning.titleHighlight')}</span></h1>
+        <h1 className="text-4xl font-black tracking-tight text-zinc-900">{t('planning.title')} <span className="text-primary">{t('planning.titleHighlight')}</span></h1>
         <p className="text-zinc-500">{t('planning.subtitle')}</p>
       </div>
 
@@ -290,7 +290,7 @@ export const PlanningStep: React.FC = () => {
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
                       aspectRatio === AspectRatio.LANDSCAPE
-                        ? 'border-primary bg-[#EEF0F6] text-primary'
+                        ? 'border-primary bg-[#EEF3FC] text-primary'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -309,7 +309,7 @@ export const PlanningStep: React.FC = () => {
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-bold transition-all ${
                       aspectRatio === AspectRatio.PORTRAIT
-                        ? 'border-primary bg-[#EEF0F6] text-primary'
+                        ? 'border-primary bg-[#EEF3FC] text-primary'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -349,7 +349,7 @@ export const PlanningStep: React.FC = () => {
               data-tour="planning-generate-btn"
               onClick={handleGenerate}
               disabled={isLoading || !idea}
-              className="w-full py-4 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95"
+              className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)] active:scale-95"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -379,7 +379,7 @@ export const PlanningStep: React.FC = () => {
               <span>스토리보드 업로드 (JSON)</span>
             </button>
 
-            <div className="p-4 bg-[#EEF0F6] border border-[#CBD2E4] rounded-2xl flex gap-3 text-xs leading-relaxed">
+            <div className="p-4 bg-[#EEF3FC] border border-[#C0D4F0] rounded-2xl flex gap-3 text-xs leading-relaxed">
               <AlertCircle className="text-primary shrink-0" size={16} />
               <p className="text-zinc-600">
                 <span className="text-primary font-bold">REMO Tip:</span> {t('planning.tip')}
@@ -404,7 +404,7 @@ export const PlanningStep: React.FC = () => {
                 <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin absolute inset-0"></div>
               </div>
               <div className="text-center space-y-3">
-                <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('planning.loadingTitle')}</h3>
+                <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('planning.loadingTitle')}</h3>
                 <p className="text-zinc-500 text-sm">{t('planning.loadingSubtitle')}</p>
               </div>
             </div>
@@ -414,7 +414,7 @@ export const PlanningStep: React.FC = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between px-4">
                 <div className="flex items-center gap-4">
-                  <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('planning.timelineTitle')}</h3>
+                  <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('planning.timelineTitle')}</h3>
                   <span className="px-3 py-1 bg-zinc-100 rounded-full text-[10px] font-black text-zinc-500 border border-zinc-200 uppercase tracking-widest">{t('planning.cutsCount', { count: project.scenes.length })}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -453,7 +453,7 @@ export const PlanningStep: React.FC = () => {
                         <div className="h-6 w-[1px] bg-zinc-200 mx-2" />
                         <button onClick={() => moveScene(idx, 'up')} className="p-2.5 bg-zinc-100 hover:bg-zinc-200 rounded-xl text-zinc-500 hover:text-zinc-900 transition-all"><ArrowUp size={16} /></button>
                         <button onClick={() => moveScene(idx, 'down')} className="p-2.5 bg-zinc-100 hover:bg-zinc-200 rounded-xl text-zinc-500 hover:text-zinc-900 transition-all"><ArrowDown size={16} /></button>
-                        <button onClick={() => removeScene(scene.id)} className="p-2.5 bg-zinc-100 hover:bg-red-50 rounded-xl text-zinc-500 hover:text-red-500 transition-all ml-2"><Trash2 size={16} /></button>
+                        <button onClick={() => removeScene(scene.id)} className="p-2.5 bg-zinc-100 hover:bg-zinc-100 rounded-xl text-zinc-500 hover:text-zinc-500 transition-all ml-2"><Trash2 size={16} /></button>
                       </div>
                     </div>
 
@@ -577,7 +577,7 @@ export const PlanningStep: React.FC = () => {
                   <Edit3 size={24} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('planning.editModal.title')}</h3>
+                  <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('planning.editModal.title')}</h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('planning.editModal.subtitle')}</p>
                 </div>
               </div>
@@ -678,7 +678,7 @@ export const PlanningStep: React.FC = () => {
 
               <div className="flex gap-4 justify-end pt-8 border-t border-zinc-100">
                 <button type="button" onClick={() => setEditingScene(null)} className="px-8 py-3 rounded-2xl text-sm font-bold bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-all">{t('common.cancel')}</button>
-                <button type="submit" className="px-10 py-3 bg-primary rounded-full text-sm font-black text-white shadow-[0_8px_20px_rgba(41,52,99,0.25)] flex items-center gap-2 hover:bg-[#1E2650] hover:scale-105 transition-all">
+                <button type="submit" className="px-10 py-3 bg-primary rounded-full text-sm font-black text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)] flex items-center gap-2 hover:bg-[#003E99] hover:scale-105 transition-all">
                   <Save size={18} /> {t('planning.editModal.saveChanges')}
                 </button>
               </div>

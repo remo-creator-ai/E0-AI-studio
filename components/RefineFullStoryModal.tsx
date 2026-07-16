@@ -112,11 +112,11 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
           <div className="flex items-start justify-between gap-4">
             {/* Left: icon + title */}
             <div className="flex items-start gap-4 min-w-0">
-              <div className="shrink-0 w-10 h-10 rounded-2xl bg-[#FEF3D6] border border-[#F5E1B0] flex items-center justify-center mt-0.5">
-                <Wand2 size={18} className="text-[#B7791F]" />
+              <div className="shrink-0 w-10 h-10 rounded-2xl bg-[#E5EDFA] border border-[#C0D4F0] flex items-center justify-center mt-0.5">
+                <Wand2 size={18} className="text-[#0050BF]" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base font-extrabold tracking-tight text-zinc-900 leading-tight">
+                <h2 className="text-base font-black tracking-tight text-zinc-900 leading-tight">
                   {t('assembly.refineModal.title')}
                 </h2>
                 <p className="text-xs text-zinc-400 mt-1 font-medium">
@@ -132,7 +132,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 type="button"
                 onClick={acceptAll}
                 disabled={allAccepted}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#FEF3D6] hover:bg-[#FBEBC4] border border-[#F5E1B0] hover:border-[#F0C96A] rounded-xl text-[11px] font-black uppercase tracking-wide text-[#B7791F] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#E5EDFA] hover:bg-[#E5EDFA] border border-[#C0D4F0] hover:border-[#C0D4F0] rounded-xl text-[11px] font-black uppercase tracking-wide text-[#0050BF] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <CheckCheck size={12} />
                 {t('assembly.refineModal.acceptAll')}
@@ -177,7 +177,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
               type="button"
               onClick={acceptAll}
               disabled={allAccepted}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FEF3D6] border border-[#F5E1B0] rounded-xl text-[11px] font-black uppercase tracking-wide text-[#B7791F] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E5EDFA] border border-[#C0D4F0] rounded-xl text-[11px] font-black uppercase tracking-wide text-[#0050BF] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <CheckCheck size={12} />
               {t('assembly.refineModal.acceptAll')}
@@ -209,7 +209,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 key={scene.id}
                 className={`rounded-2xl border transition-all duration-200 ${
                   isAccepted
-                    ? 'bg-[#FEF3D6] border-[#F5E1B0]'
+                    ? 'bg-[#E5EDFA] border-[#C0D4F0]'
                     : 'bg-zinc-50 border-zinc-100 opacity-50'
                 }`}
               >
@@ -253,7 +253,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
 
                   {/* AFTER column */}
                   <div className="flex-1 min-w-0 space-y-2 pr-12">
-                    <span className="block text-[10px] font-black text-[#B7791F] uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-[#0050BF] uppercase tracking-widest">
                       {t('assembly.refineModal.after')}
                     </span>
                     <p
@@ -285,7 +285,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                       onClick={() => toggleScene(index)}
                       className={`w-10 h-5 rounded-full transition-all relative flex items-center px-0.5 shrink-0 ${
                         isAccepted
-                          ? 'bg-primary shadow-[0_0_10px_rgba(41,52,99,0.3)]'
+                          ? 'bg-primary shadow-[0_0_10px_rgba(0,80,191,0.3)]'
                           : 'bg-zinc-300'
                       }`}
                       aria-label={isAccepted ? 'Accepted' : 'Rejected'}
@@ -326,7 +326,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                       onClick={() => toggleScene(index)}
                       className={`w-10 h-5 rounded-full transition-all relative flex items-center px-0.5 shrink-0 ${
                         isAccepted
-                          ? 'bg-primary shadow-[0_0_10px_rgba(41,52,99,0.3)]'
+                          ? 'bg-primary shadow-[0_0_10px_rgba(0,80,191,0.3)]'
                           : 'bg-zinc-300'
                       }`}
                       aria-label={isAccepted ? 'Accepted' : 'Rejected'}
@@ -359,7 +359,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
 
                   {/* After section */}
                   <div className="space-y-1.5">
-                    <span className="block text-[10px] font-black text-[#B7791F] uppercase tracking-widest">
+                    <span className="block text-[10px] font-black text-[#0050BF] uppercase tracking-widest">
                       {t('assembly.refineModal.after')}
                     </span>
                     <p
@@ -416,7 +416,7 @@ export const RefineFullStoryModal: React.FC<RefineFullStoryModalProps> = ({
                 type="button"
                 onClick={() => onApply(accepted)}
                 disabled={noneAccepted}
-                className="flex-1 sm:flex-none px-8 py-3 bg-primary hover:bg-[#1E2650] rounded-full text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95 shadow-[0_8px_24px_rgba(41,52,99,0.25)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex-1 sm:flex-none px-8 py-3 bg-primary hover:bg-[#003E99] rounded-full text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95 shadow-[0_8px_24px_rgba(0,80,191,0.25)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {t('assembly.refineModal.applySelected')}
               </button>

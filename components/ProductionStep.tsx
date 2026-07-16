@@ -131,7 +131,7 @@ export const ProductionStep: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
               <Film size={12} /> REMO V-ENGINE PRODUCTION
             </div>
-            <h1 className="text-5xl font-extrabold tracking-tight leading-none text-center text-zinc-900">
+            <h1 className="text-5xl font-black tracking-tight leading-none text-center text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
             </h1>
 
@@ -141,14 +141,14 @@ export const ProductionStep: React.FC = () => {
                 <Video size={36} className="text-zinc-400" />
               </div>
               <div className="text-center space-y-2">
-                <p className="text-xl font-extrabold tracking-tight text-zinc-900">{t('production.noProject')}</p>
+                <p className="text-xl font-black tracking-tight text-zinc-900">{t('production.noProject')}</p>
                 <p className="text-sm text-zinc-400 whitespace-pre-line leading-relaxed">
                   {t('production.noProjectDesc')}
                 </p>
               </div>
               <button
                 onClick={() => setStep(ProjectStep.DASHBOARD)}
-                className="px-8 py-4 bg-primary hover:bg-[#1E2650] text-white rounded-full font-black uppercase text-sm flex items-center gap-3 shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:scale-105 active:scale-95 transition-all"
+                className="px-8 py-4 bg-primary hover:bg-[#003E99] text-white rounded-full font-black uppercase text-sm flex items-center gap-3 shadow-[0_8px_20px_rgba(0,80,191,0.25)] hover:scale-105 active:scale-95 transition-all"
               >
                 <Home size={18} />
                 {t('production.goToDashboard')}
@@ -443,7 +443,7 @@ export const ProductionStep: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
               <Film size={12} /> REMO V-ENGINE PRODUCTION
             </div>
-            <h1 className="text-5xl font-extrabold tracking-tight leading-none text-zinc-900">
+            <h1 className="text-5xl font-black tracking-tight leading-none text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
             </h1>
 
@@ -471,7 +471,7 @@ export const ProductionStep: React.FC = () => {
             {!hasKey ? (
               <button
                 onClick={handleOpenKeySelector}
-                className="group px-10 py-5 bg-primary text-white rounded-full font-black text-lg flex items-center gap-3 shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:bg-[#1E2650] hover:scale-105 active:scale-95 transition-all"
+                className="group px-10 py-5 bg-primary text-white rounded-full font-black text-lg flex items-center gap-3 shadow-[0_8px_20px_rgba(0,80,191,0.25)] hover:bg-[#003E99] hover:scale-105 active:scale-95 transition-all"
               >
                 <Lock size={20} className="group-hover:animate-bounce" />
                 UNLOCK V-ENGINE
@@ -571,7 +571,7 @@ export const ProductionStep: React.FC = () => {
               <button
                 onClick={handleStartBatch}
                 disabled={selectedSceneIds.size === 0}
-                className="px-6 py-2.5 bg-primary hover:bg-[#1E2650] text-white rounded-full text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-30 active:scale-95"
+                className="px-6 py-2.5 bg-primary hover:bg-[#003E99] text-white rounded-full text-[11px] font-black uppercase tracking-tight transition-all flex items-center gap-2 shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:opacity-30 active:scale-95"
               >
                 <Rocket size={14} />
                 Generate Selected ({selectedSceneIds.size})
@@ -595,7 +595,7 @@ export const ProductionStep: React.FC = () => {
               </div>
               <div className="text-sm font-black">
                 {batchDone ? (
-                  <span className="text-green-700">{batchCompleted} completed{batchFailed > 0 ? `, ${batchFailed} failed` : ''}</span>
+                  <span className="text-[#003E99]">{batchCompleted} completed{batchFailed > 0 ? `, ${batchFailed} failed` : ''}</span>
                 ) : (
                   <span className="text-zinc-900">Generating {batchCompleted + batchFailed} / {batchTotal}...</span>
                 )}
@@ -632,8 +632,8 @@ export const ProductionStep: React.FC = () => {
                       className={`w-10 h-10 rounded-lg flex items-center justify-center text-[9px] font-black border transition-all ${
                         item.status === 'queued' ? 'bg-zinc-100 border-zinc-200 text-zinc-400' :
                         item.status === 'generating' ? 'bg-primary/20 border-primary text-primary batch-pulse' :
-                        item.status === 'completed' ? 'bg-green-50 border-green-200 text-green-700' :
-                        item.status === 'failed' ? 'bg-red-50 border-red-200 text-red-700' :
+                        item.status === 'completed' ? 'bg-[#E5EDFA] border-[#C0D4F0] text-[#003E99]' :
+                        item.status === 'failed' ? 'bg-zinc-100 border-zinc-200 text-zinc-700' :
                         'bg-zinc-100 border-zinc-200 text-zinc-400'
                       }`}
                     >
@@ -651,7 +651,7 @@ export const ProductionStep: React.FC = () => {
                 {isBatchActive && (
                   <button
                     onClick={handleCancelBatch}
-                    className="px-5 py-2.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-[11px] font-black uppercase tracking-tight hover:bg-red-100 transition-all flex items-center gap-2"
+                    className="px-5 py-2.5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-xl text-[11px] font-black uppercase tracking-tight hover:bg-zinc-200 transition-all flex items-center gap-2"
                   >
                     <StopCircle size={14} /> Cancel Batch
                   </button>
@@ -675,8 +675,8 @@ export const ProductionStep: React.FC = () => {
               {batchDone && (
                 <div className="bg-zinc-50 rounded-xl p-4 text-center">
                   <p className="text-sm font-black">
-                    {t('production.batchComplete')}: <span className="text-green-700">{batchCompleted} {t('production.batchSuccess')}</span>
-                    {batchFailed > 0 && <>, <span className="text-red-700">{batchFailed} {t('production.batchFailed')}</span></>}
+                    {t('production.batchComplete')}: <span className="text-[#003E99]">{batchCompleted} {t('production.batchSuccess')}</span>
+                    {batchFailed > 0 && <>, <span className="text-zinc-700">{batchFailed} {t('production.batchFailed')}</span></>}
                   </p>
                 </div>
               )}
@@ -765,11 +765,11 @@ export const ProductionStep: React.FC = () => {
                 </div>
               )}
               {getSceneBatchStatus(scene.id) === 'failed' && !scene.video_url && (
-                <div className="absolute inset-0 bg-red-900/30 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
-                  <XCircle size={32} className="text-red-400 mb-2" />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-red-400">Failed</p>
+                <div className="absolute inset-0 bg-zinc-800/30 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+                  <XCircle size={32} className="text-zinc-400 mb-2" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Failed</p>
                   {getSceneBatchError(scene.id) && (
-                    <p className="text-[8px] text-red-400/60 mt-1 px-4 text-center">{getSceneBatchError(scene.id)}</p>
+                    <p className="text-[8px] text-zinc-400/60 mt-1 px-4 text-center">{getSceneBatchError(scene.id)}</p>
                   )}
                 </div>
               )}
@@ -818,14 +818,14 @@ export const ProductionStep: React.FC = () => {
                 <button
                   onClick={() => handleGenerateVideo(scene.id)}
                   disabled={isLoading || !scene.image_url || isBatchActive}
-                  className="flex-1 py-3.5 bg-primary hover:bg-[#1E2650] text-white rounded-full text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
+                  className="flex-1 py-3.5 bg-primary hover:bg-[#003E99] text-white rounded-full text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-30 active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
                 >
                   {scene.video_url ? <><RefreshCw size={14} /> Re-Render</> : <><Rocket size={14} /> Render Video</>}
                 </button>
                 {scene.video_url && (
                   <button
                     onClick={() => updateScene(scene.id, { video_url: undefined })}
-                    className="p-3.5 bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-100 rounded-2xl transition-all"
+                    className="p-3.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-400 hover:text-zinc-500 border border-zinc-100 rounded-2xl transition-all"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -844,15 +844,15 @@ export const ProductionStep: React.FC = () => {
               <>
                 {/* Header */}
                 <div className="p-8 text-center space-y-4">
-                  <div className="w-20 h-20 bg-amber-50 border border-amber-200 rounded-full flex items-center justify-center mx-auto">
-                    <Rocket size={36} className="text-amber-600" />
+                  <div className="w-20 h-20 bg-[#E5EDFA] border border-[#C0D4F0] rounded-full flex items-center justify-center mx-auto">
+                    <Rocket size={36} className="text-[#0050BF]" />
                   </div>
                   <div className="space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full">
-                      <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-700">Coming Soon</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E5EDFA] border border-[#C0D4F0] rounded-full">
+                      <span className="w-2 h-2 bg-[#E5EDFA]0 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#003E99]">Coming Soon</span>
                     </div>
-                    <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('production.comingSoonTitle')}</h3>
+                    <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('production.comingSoonTitle')}</h3>
                     <p className="text-sm text-zinc-500 leading-relaxed">
                       {t('production.comingSoonDesc1')}<br />
                       {t('production.comingSoonDesc2')}
@@ -879,7 +879,7 @@ export const ProductionStep: React.FC = () => {
                         }}
                         className={`w-full py-4 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-3 transition-all border ${
                           storyboardDownloaded
-                            ? 'bg-green-50 border-green-200 text-green-700'
+                            ? 'bg-[#E5EDFA] border-[#C0D4F0] text-[#003E99]'
                             : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700'
                         }`}
                       >
@@ -916,7 +916,7 @@ export const ProductionStep: React.FC = () => {
                         }}
                         className={`w-full py-4 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-3 transition-all border ${
                           assetsDownloaded
-                            ? 'bg-green-50 border-green-200 text-green-700'
+                            ? 'bg-[#E5EDFA] border-[#C0D4F0] text-[#003E99]'
                             : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700'
                         }`}
                       >
@@ -930,7 +930,7 @@ export const ProductionStep: React.FC = () => {
                   <div className="pt-2 space-y-3">
                     <button
                       onClick={() => setModalStep('form')}
-                      className="w-full py-4 bg-primary hover:bg-[#1E2650] rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 text-white"
+                      className="w-full py-4 bg-primary hover:bg-[#003E99] rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)] active:scale-95 text-white"
                     >
                       <Mail size={18} /> {t('production.requestProduction')}
                     </button>
@@ -939,7 +939,7 @@ export const ProductionStep: React.FC = () => {
                       href="https://buymeacoffee.com/remoimagevo"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full py-4 bg-[#FFDD00] hover:bg-[#FFDD00]/90 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 text-black text-center shadow-[0_10px_30px_rgba(255,221,0,0.15)]"
+                      className="block w-full py-4 bg-[#0050BF] hover:bg-[#0050BF]/90 rounded-2xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all active:scale-95 text-white text-center shadow-[0_10px_30px_rgba(0,80,191,0.15)]"
                     >
                       <span className="text-lg">🍕</span> {t('production.buyPizza')}
                     </a>
@@ -967,7 +967,7 @@ export const ProductionStep: React.FC = () => {
                     >
                       <ChevronLeft size={20} />
                     </button>
-                    <h3 className="text-xl font-extrabold tracking-tight text-zinc-900">{t('production.requestFormTitle')}</h3>
+                    <h3 className="text-xl font-black tracking-tight text-zinc-900">{t('production.requestFormTitle')}</h3>
                   </div>
                 </div>
 
@@ -975,7 +975,7 @@ export const ProductionStep: React.FC = () => {
                 <div className="p-6 space-y-5 overflow-y-auto flex-1">
                   {/* Requester Name */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.requesterName')} <span className="text-red-400">*</span></label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.requesterName')} <span className="text-zinc-400">*</span></label>
                     <input
                       value={requesterName}
                       onChange={(e) => setRequesterName(e.target.value)}
@@ -1008,7 +1008,7 @@ export const ProductionStep: React.FC = () => {
 
                   {/* Purpose */}
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.purpose')} <span className="text-red-400">*</span></label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.purpose')} <span className="text-zinc-400">*</span></label>
                     <select
                       value={requestPurpose}
                       onChange={(e) => setRequestPurpose(e.target.value)}
@@ -1037,21 +1037,21 @@ export const ProductionStep: React.FC = () => {
 
                   {/* File Checklist + Additional Upload */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.attachment')} <span className="text-red-400">*</span></label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('production.request.attachment')} <span className="text-zinc-400">*</span></label>
                     <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 space-y-3">
                       {/* Auto-generated files */}
-                      <div className={`flex items-center gap-3 text-sm ${storyboardDownloaded ? 'text-green-700' : 'text-zinc-400'}`}>
+                      <div className={`flex items-center gap-3 text-sm ${storyboardDownloaded ? 'text-[#003E99]' : 'text-zinc-400'}`}>
                         {storyboardDownloaded ? <Check size={16} /> : <X size={16} />}
                         <span>{project?.title?.replace(/\s+/g, '-') || 'project'}.storyboard</span>
                       </div>
-                      <div className={`flex items-center gap-3 text-sm ${assetsDownloaded ? 'text-green-700' : 'text-zinc-400'}`}>
+                      <div className={`flex items-center gap-3 text-sm ${assetsDownloaded ? 'text-[#003E99]' : 'text-zinc-400'}`}>
                         {assetsDownloaded ? <Check size={16} /> : <X size={16} />}
                         <span>{project?.title?.replace(/\s+/g, '-') || 'project'}-assets.zip</span>
                       </div>
 
                       {/* Extra uploaded files */}
                       {extraFiles.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm text-[#B7791F]">
+                        <div key={idx} className="flex items-center justify-between text-sm text-[#0050BF]">
                           <div className="flex items-center gap-3">
                             <Paperclip size={16} />
                             <span className="truncate max-w-[200px]">{file.name}</span>
@@ -1059,7 +1059,7 @@ export const ProductionStep: React.FC = () => {
                           </div>
                           <button
                             onClick={() => setExtraFiles(prev => prev.filter((_, i) => i !== idx))}
-                            className="p-1 hover:text-red-400 transition-colors"
+                            className="p-1 hover:text-zinc-400 transition-colors"
                           >
                             <X size={14} />
                           </button>
@@ -1094,7 +1094,7 @@ export const ProductionStep: React.FC = () => {
                       />
                     </div>
                     {(!storyboardDownloaded || !assetsDownloaded) && (
-                      <p className="text-[9px] text-amber-600 font-bold">* {t('production.request.downloadFirst')}</p>
+                      <p className="text-[9px] text-[#0050BF] font-bold">* {t('production.request.downloadFirst')}</p>
                     )}
                   </div>
                 </div>
@@ -1221,7 +1221,7 @@ export const ProductionStep: React.FC = () => {
                       }
                     }}
                     disabled={isSubmitting}
-                    className="w-full py-4 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 text-white"
+                    className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:opacity-50 rounded-full text-sm font-black uppercase flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)] active:scale-95 text-white"
                   >
                     {isSubmitting ? (
                       <>
@@ -1247,7 +1247,7 @@ export const ProductionStep: React.FC = () => {
              <div className="p-8 border-b border-zinc-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Edit3 className="text-primary" />
-                  <h3 className="text-xl font-extrabold tracking-tight text-zinc-900">Refine Scene Prompt</h3>
+                  <h3 className="text-xl font-black tracking-tight text-zinc-900">Refine Scene Prompt</h3>
                 </div>
                 <button onClick={() => setEditingScene(null)} className="p-2 hover:bg-zinc-100 rounded-full"><X size={20} /></button>
              </div>

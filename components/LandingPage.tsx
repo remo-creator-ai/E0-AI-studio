@@ -85,7 +85,7 @@ const animationStyles = `
     to { stroke-dashoffset: 0; }
   }
   @keyframes lp-badge-pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(58,74,138,0.3); }
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(30,111,217,0.3); }
     50% { opacity: 0.85; box-shadow: 0 0 20px rgba(236,72,153,0.5); }
   }
   @keyframes lp-modal-in {
@@ -207,7 +207,7 @@ const workflowSteps = [
     title: 'Planning',
     titleKr: 'AI 스크립트 생성',
     description: '브리프를 입력하면 Gemini AI가 장면별 스크립트, 나레이션, 이미지 프롬프트를 자동으로 생성합니다.',
-    color: '#293463',
+    color: '#0050BF',
   },
   {
     icon: Layers,
@@ -215,7 +215,7 @@ const workflowSteps = [
     title: 'Visualizing',
     titleKr: 'AI 이미지 생성',
     description: 'Gemini Imagen이 각 장면의 이미지를 생성합니다. 스타일과 분위기를 자유롭게 제어할 수 있습니다.',
-    color: '#3A4A8A',
+    color: '#1E6FD9',
   },
   {
     icon: LayoutDashboard,
@@ -223,7 +223,7 @@ const workflowSteps = [
     title: 'Assembly',
     titleKr: '스토리보드 조립',
     description: '생성된 장면들을 그리드 매트릭스로 배열하고 A4 규격의 프로 스토리보드로 조립합니다.',
-    color: '#3A4A8A',
+    color: '#1E6FD9',
   },
   {
     icon: Video,
@@ -231,7 +231,7 @@ const workflowSteps = [
     title: 'Production',
     titleKr: 'AI 영상 생성',
     description: 'Gemini VEO와 Kling AI가 각 장면을 영상으로 변환합니다. 모션과 카메라 워크를 AI가 제어합니다.',
-    color: '#F9CB5D',
+    color: '#0050BF',
   },
 ];
 
@@ -245,7 +245,7 @@ const aiCapabilities = [
     subtitle: 'Script Engine',
     description: '광고 기획 의도를 이해하고 장면별 스크립트, 나레이션, 이미지 프롬프트를 한번에 생성하는 AI 엔진',
     tag: 'Text Generation',
-    gradient: 'from-[#293463] to-[#3A4A8A]',
+    gradient: 'from-[#0050BF] to-[#1E6FD9]',
   },
   {
     icon: ImageIcon,
@@ -253,7 +253,7 @@ const aiCapabilities = [
     subtitle: 'Image Generation',
     description: '프롬프트 기반 고품질 이미지 생성. 광고 스타일에 최적화된 비주얼을 즉시 만들어냅니다.',
     tag: 'Image AI',
-    gradient: 'from-[#3A4A8A] to-[#3A4A8A]',
+    gradient: 'from-[#1E6FD9] to-[#1E6FD9]',
   },
   {
     icon: Film,
@@ -261,7 +261,7 @@ const aiCapabilities = [
     subtitle: 'Video Generation',
     description: 'Google의 최신 비디오 생성 AI. 이미지를 기반으로 자연스러운 모션의 영상 클립을 생성합니다.',
     tag: 'Video AI',
-    gradient: 'from-[#3A4A8A] to-[#F9CB5D]',
+    gradient: 'from-[#1E6FD9] to-[#0050BF]',
   },
   {
     icon: Wand2,
@@ -269,7 +269,7 @@ const aiCapabilities = [
     subtitle: 'Video Production',
     description: '고급 영상 생성 AI. 이미지-to-비디오 변환으로 역동적인 카메라 워크와 모션을 구현합니다.',
     tag: 'Video AI',
-    gradient: 'from-[#F9CB5D] to-[#FA3E3D]',
+    gradient: 'from-[#0050BF] to-[#64748B]',
   },
 ];
 
@@ -289,28 +289,28 @@ const useCaseTemplates = [
     titleKey: 'landing.useCases.marketingTitle',
     descKey: 'landing.useCases.marketingDesc',
     chips: ['landing.useCases.marketingChip1', 'landing.useCases.marketingChip2', 'landing.useCases.marketingChip3'],
-    gradient: 'from-[#293463] to-[#3A4A8A]',
+    gradient: 'from-[#0050BF] to-[#1E6FD9]',
   },
   {
     icon: Users,
     titleKey: 'landing.useCases.creatorTitle',
     descKey: 'landing.useCases.creatorDesc',
     chips: ['landing.useCases.creatorChip1', 'landing.useCases.creatorChip2', 'landing.useCases.creatorChip3'],
-    gradient: 'from-[#3A4A8A] to-[#FA3E3D]',
+    gradient: 'from-[#1E6FD9] to-[#64748B]',
   },
   {
     icon: Building2,
     titleKey: 'landing.useCases.localTitle',
     descKey: 'landing.useCases.localDesc',
     chips: ['landing.useCases.localChip1', 'landing.useCases.localChip2', 'landing.useCases.localChip3'],
-    gradient: 'from-[#F9CB5D] to-[#FA3E3D]',
+    gradient: 'from-[#0050BF] to-[#64748B]',
   },
   {
     icon: UserCircle,
     titleKey: 'landing.useCases.freelanceTitle',
     descKey: 'landing.useCases.freelanceDesc',
     chips: ['landing.useCases.freelanceChip1', 'landing.useCases.freelanceChip2', 'landing.useCases.freelanceChip3'],
-    gradient: 'from-[#F9CB5D] to-[#3A4A8A]',
+    gradient: 'from-[#0050BF] to-[#1E6FD9]',
   },
 ];
 
@@ -401,7 +401,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
       {/* Inject keyframes */}
       <style>{animationStyles}</style>
 
-      <div className="min-h-screen bg-[#F7F4F1] text-zinc-900 overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
+      <div className="min-h-screen bg-[#F5F7FA] text-zinc-900 overflow-x-hidden" style={{ scrollBehavior: 'smooth' }}>
 
         {/* ============================================================ */}
         {/*  NAVIGATION BAR                                               */}
@@ -420,7 +420,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img src="/sodami.png" alt="소담이" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
-              <span className="text-lg font-extrabold tracking-tight hidden sm:block">
+              <span className="text-lg font-black tracking-tight hidden sm:block">
                 Sodam AI Studio
               </span>
             </div>
@@ -527,7 +527,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             className="absolute w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full pointer-events-none"
             style={{
               top: '20%', left: '15%',
-              background: 'radial-gradient(circle, rgba(41,52,99,0.4) 0%, rgba(41,52,99,0.1) 50%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0,80,191,0.4) 0%, rgba(0,80,191,0.1) 50%, transparent 70%)',
               filter: 'blur(100px)',
               animation: 'blob-move-1 20s ease-in-out infinite',
             }}
@@ -536,7 +536,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             className="absolute w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none"
             style={{
               top: '40%', right: '10%',
-              background: 'radial-gradient(circle, rgba(58,74,138,0.35) 0%, rgba(58,74,138,0.08) 50%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(30,111,217,0.35) 0%, rgba(30,111,217,0.08) 50%, transparent 70%)',
               filter: 'blur(120px)',
               animation: 'blob-move-2 25s ease-in-out infinite',
             }}
@@ -555,7 +555,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse at 30% 20%, rgba(41,52,99,0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(58,74,138,0.06) 0%, transparent 50%)',
+              background: 'radial-gradient(ellipse at 30% 20%, rgba(0,80,191,0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(30,111,217,0.06) 0%, transparent 50%)',
             }}
           />
 
@@ -584,8 +584,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-full"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(41,52,99,0.08), rgba(58,74,138,0.05))',
-                  border: '1px solid rgba(41,52,99,0.2)',
+                  background: 'linear-gradient(135deg, rgba(0,80,191,0.08), rgba(30,111,217,0.05))',
+                  border: '1px solid rgba(0,80,191,0.2)',
                 }}
               >
                 <Sparkles size={14} className="text-primary" />
@@ -599,7 +599,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <span
                 className="block mt-3 whitespace-nowrap"
                 style={{
-                  background: 'linear-gradient(135deg, #293463 0%, #3A4A8A 50%, #3A4A8A 100%)',
+                  background: 'linear-gradient(135deg, #0050BF 0%, #1E6FD9 50%, #1E6FD9 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -623,8 +623,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="lp-stagger-4 flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
                 onClick={onGetStarted}
-                className="group px-10 py-4 rounded-full font-black text-lg uppercase tracking-wider flex items-center gap-3 text-white hover:shadow-[0_15px_50px_rgba(41,52,99,0.5)] transition-all duration-500 active:scale-95"
-                style={{ background: 'linear-gradient(135deg, #293463, #3A4A8A)', boxShadow: '0 8px 20px rgba(41,52,99,0.25), 0 4px 12px rgba(41,52,99,0.2)' }}
+                className="group px-10 py-4 rounded-full font-black text-lg uppercase tracking-wider flex items-center gap-3 text-white hover:shadow-[0_15px_50px_rgba(0,80,191,0.5)] transition-all duration-500 active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #0050BF, #1E6FD9)', boxShadow: '0 8px 20px rgba(0,80,191,0.25), 0 4px 12px rgba(0,80,191,0.2)' }}
               >
                 {t('landing.hero.ctaStart')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -641,10 +641,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             {/* Floating tech pills */}
             <div className="lp-stagger-5 flex items-center justify-center gap-4 flex-wrap pt-4">
               {[
-                { name: t('landing.hero.pill1'), color: '#293463' },
-                { name: t('landing.hero.pill2'), color: '#3A4A8A' },
-                { name: t('landing.hero.pill3'), color: '#3A4A8A' },
-                { name: t('landing.hero.pill4'), color: '#F9CB5D' },
+                { name: t('landing.hero.pill1'), color: '#0050BF' },
+                { name: t('landing.hero.pill2'), color: '#1E6FD9' },
+                { name: t('landing.hero.pill3'), color: '#1E6FD9' },
+                { name: t('landing.hero.pill4'), color: '#0050BF' },
               ].map((tech) => (
                 <span
                   key={tech.name}
@@ -673,13 +673,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         {/* ============================================================ */}
         {/*  USE CASE TEMPLATES SECTION                                     */}
         {/* ============================================================ */}
-        <section id="lp-use-cases" className="relative py-28 px-6" ref={useCasesRef} style={{ background: 'linear-gradient(180deg, #F7F4F1 0%, #F4F4F5 100%)' }}>
+        <section id="lp-use-cases" className="relative py-28 px-6" ref={useCasesRef} style={{ background: 'linear-gradient(180deg, #F5F7FA 0%, #F4F4F5 100%)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14 space-y-4">
               <div className="lp-scroll-reveal">
                 <span className="text-xs font-bold text-zinc-400 uppercase tracking-[0.3em]">{t('landing.useCases.sectionTag')}</span>
               </div>
-              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900">
                 {t('landing.useCases.title')}{' '}
                 <span className="text-primary">{t('landing.useCases.titleHighlight')}</span>
               </h2>
@@ -702,7 +702,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center mb-6 shadow-lg shadow-black/30`}>
                       <Icon size={22} className="text-white" />
                     </div>
-                    <h3 className="text-xl font-extrabold tracking-tight mb-3 text-zinc-900">
+                    <h3 className="text-xl font-black tracking-tight mb-3 text-zinc-900">
                       {t(item.titleKey)}
                     </h3>
                     <p className="text-sm text-zinc-500 leading-relaxed mb-5 min-h-[72px]">
@@ -725,11 +725,11 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
         {/* ============================================================ */}
         {/*  WORKFLOW SECTION                                              */}
         {/* ============================================================ */}
-        <section id="lp-workflow" className="relative py-32 px-6" ref={workflowRef} style={{ background: 'linear-gradient(180deg, #F7F4F1 0%, #F4F4F5 50%, #F7F4F1 100%)' }}>
+        <section id="lp-workflow" className="relative py-32 px-6" ref={workflowRef} style={{ background: 'linear-gradient(180deg, #F5F7FA 0%, #F4F4F5 50%, #F5F7FA 100%)' }}>
           {/* Section background accent */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(41,52,99,0.25) 50%, transparent 100%)' }}
+            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,80,191,0.25) 50%, transparent 100%)' }}
           />
 
           <div className="max-w-7xl mx-auto">
@@ -738,7 +738,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div className="lp-scroll-reveal">
                 <span className="text-xs font-bold text-primary uppercase tracking-[0.3em]">{t('landing.workflow.sectionTag')}</span>
               </div>
-              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900">
                 {t('landing.workflow.title')}{' '}
                 <span className="text-primary">{t('landing.workflow.titleHighlight')}</span>
               </h2>
@@ -755,7 +755,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 <div
                   className="w-full h-full lp-line-connector"
                   style={{
-                    background: 'linear-gradient(90deg, #293463, #3A4A8A, #3A4A8A, #F9CB5D)',
+                    background: 'linear-gradient(90deg, #0050BF, #1E6FD9, #1E6FD9, #0050BF)',
                     opacity: 0.2,
                   }}
                 />
@@ -794,7 +794,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                           <Icon size={24} style={{ color: step.color }} />
                         </div>
                         <span
-                          className="text-6xl font-extrabold leading-none"
+                          className="text-6xl font-black leading-none"
                           style={{ color: `${step.color}15` }}
                         >
                           {step.number}
@@ -802,7 +802,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-xl font-extrabold tracking-tight text-zinc-900 mb-1">
+                      <h3 className="text-xl font-black tracking-tight text-zinc-900 mb-1">
                         {step.title}
                       </h3>
                       <p className="text-sm font-bold mb-4" style={{ color: step.color }}>
@@ -838,7 +838,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="absolute top-1/2 left-1/2 w-[500px] h-[500px] rounded-full"
               style={{
                 transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(58,74,138,0.06) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(30,111,217,0.06) 0%, transparent 60%)',
                 filter: 'blur(80px)',
               }}
             />
@@ -850,11 +850,11 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div className="lp-scroll-reveal">
                 <span className="text-xs font-bold text-zinc-400 uppercase tracking-[0.3em]">{t('landing.ai.sectionTag')}</span>
               </div>
-              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900">
                 {t('landing.ai.title')}{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(135deg, #3A4A8A, #3A4A8A)',
+                    background: 'linear-gradient(135deg, #1E6FD9, #1E6FD9)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -900,7 +900,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                         <div className="flex-1 min-w-0">
                           {/* Title row */}
                           <div className="flex items-center gap-3 flex-wrap mb-1">
-                            <h3 className="text-lg font-extrabold tracking-tight text-zinc-900">
+                            <h3 className="text-lg font-black tracking-tight text-zinc-900">
                               {cap.title}
                             </h3>
                             <span className="px-3 py-0.5 bg-zinc-100 border border-zinc-100 rounded-full text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
@@ -933,7 +933,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           {/* Top line */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(41,52,99,0.25) 50%, transparent 100%)' }}
+            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,80,191,0.25) 50%, transparent 100%)' }}
           />
 
           {/* Background accent */}
@@ -942,7 +942,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full"
               style={{
                 transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(41,52,99,0.06) 0%, rgba(58,74,138,0.04) 40%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(0,80,191,0.06) 0%, rgba(30,111,217,0.04) 40%, transparent 60%)',
                 filter: 'blur(80px)',
               }}
             />
@@ -954,11 +954,11 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div className="lp-scroll-reveal">
                 <span className="text-xs font-bold text-primary uppercase tracking-[0.3em]">{t('landing.pricing.sectionTag')}</span>
               </div>
-              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900">
                 {t('landing.pricing.title')}{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(135deg, #293463, #3A4A8A)',
+                    background: 'linear-gradient(135deg, #0050BF, #1E6FD9)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -982,8 +982,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   onClick={() => setIsYearly(!isYearly)}
                   className="relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none"
                   style={{
-                    background: isYearly ? '#293463' : 'rgba(0,0,0,0.1)',
-                    border: `1px solid ${isYearly ? 'rgba(41,52,99,0.5)' : 'rgba(0,0,0,0.1)'}`,
+                    background: isYearly ? '#0050BF' : 'rgba(0,0,0,0.1)',
+                    border: `1px solid ${isYearly ? 'rgba(0,80,191,0.5)' : 'rgba(0,0,0,0.1)'}`,
                   }}
                   aria-label="연간 결제 토글"
                 >
@@ -1001,7 +1001,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 {isYearly && (
                   <span
                     className="ml-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white"
-                    style={{ background: 'linear-gradient(135deg, #293463, #3A4A8A)' }}
+                    style={{ background: 'linear-gradient(135deg, #0050BF, #1E6FD9)' }}
                   >
                     {t('landing.pricing.yearlyDiscount')}
                   </span>
@@ -1021,13 +1021,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   {/* Hover glow */}
                   <div
                     className="absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(41,52,99,0.06) 0%, transparent 70%)' }}
+                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(0,80,191,0.06) 0%, transparent 70%)' }}
                   />
 
                   <div className="relative z-10">
                     {/* Plan name */}
                     <p className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] mb-2">{t('landing.pricing.freePlan')}</p>
-                    <h3 className="text-3xl font-extrabold tracking-tight text-zinc-900 mb-1">
+                    <h3 className="text-3xl font-black tracking-tight text-zinc-900 mb-1">
                       {t('landing.pricing.freePrice')}
                     </h3>
                     <p className="text-xs text-zinc-400 mb-6">{t('landing.pricing.freeLabel')}</p>
@@ -1073,14 +1073,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   {/* Hover glow */}
                   <div
                     className="absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(58,74,138,0.06) 0%, transparent 70%)' }}
+                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(30,111,217,0.06) 0%, transparent 70%)' }}
                   />
 
                   <div className="relative z-10">
                     {/* Plan name */}
-                    <p className="text-xs font-bold text-[#B7791F] uppercase tracking-[0.2em] mb-2">{t('landing.pricing.starterPlan')}</p>
+                    <p className="text-xs font-bold text-[#0050BF] uppercase tracking-[0.2em] mb-2">{t('landing.pricing.starterPlan')}</p>
                     <div className="flex items-baseline gap-2 mb-1">
-                      <h3 className="text-3xl font-extrabold tracking-tight text-zinc-900">
+                      <h3 className="text-3xl font-black tracking-tight text-zinc-900">
                         {isYearly ? t('landing.pricing.starterPriceYearly') : t('landing.pricing.starterPrice')}
                       </h3>
                       <span className="text-sm text-zinc-400 font-bold">{t('common.perMonth')}</span>
@@ -1088,7 +1088,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     {isYearly ? (
                       <p className="text-xs text-zinc-400 mb-6">
                         <span className="line-through text-zinc-300">{t('landing.pricing.starterPrice')}</span>
-                        <span className="ml-2 text-[#B7791F] font-bold">{t('landing.pricing.yearlyBilling')}</span>
+                        <span className="ml-2 text-[#0050BF] font-bold">{t('landing.pricing.yearlyBilling')}</span>
                       </p>
                     ) : (
                       <p className="text-xs text-zinc-400 mb-6">{t('landing.pricing.monthlyBilling')}</p>
@@ -1096,7 +1096,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
                     {/* Credits */}
                     <div className="flex items-center gap-2 mb-6">
-                      <Zap size={14} className="text-[#B7791F]" />
+                      <Zap size={14} className="text-[#0050BF]" />
                       <span className="text-sm font-bold text-zinc-900">{t('landing.pricing.starterCredits')}</span>
                       <span className="text-[10px] text-zinc-400">{t('common.perMonth')}</span>
                     </div>
@@ -1111,7 +1111,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                         t('landing.pricing.starterFeature5'),
                       ].map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5">
-                          <Check size={14} className="text-[#B7791F] mt-0.5 shrink-0" />
+                          <Check size={14} className="text-[#0050BF] mt-0.5 shrink-0" />
                           <span className="text-sm text-zinc-500 leading-snug">{feature}</span>
                         </li>
                       ))}
@@ -1133,20 +1133,20 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 <div
                   className="relative bg-white border rounded-[2rem] p-8 h-full transition-all duration-500 hover:-translate-y-1 overflow-hidden"
                   style={{
-                    borderColor: 'rgba(41,52,99,0.4)',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 0 40px rgba(41,52,99,0.08), 0 0 80px rgba(41,52,99,0.04)',
+                    borderColor: 'rgba(0,80,191,0.4)',
+                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 0 40px rgba(0,80,191,0.08), 0 0 80px rgba(0,80,191,0.04)',
                   }}
                 >
                   {/* Top gradient accent line */}
                   <div
                     className="absolute top-0 left-0 right-0 h-[2px]"
-                    style={{ background: 'linear-gradient(90deg, #293463, #3A4A8A)' }}
+                    style={{ background: 'linear-gradient(90deg, #0050BF, #1E6FD9)' }}
                   />
 
                   {/* Background glow */}
                   <div
                     className="absolute inset-0 rounded-[2rem] pointer-events-none"
-                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(41,52,99,0.06) 0%, transparent 60%)' }}
+                    style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(0,80,191,0.06) 0%, transparent 60%)' }}
                   />
 
                   <div className="relative z-10">
@@ -1155,14 +1155,14 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       <p className="text-xs font-bold text-primary uppercase tracking-[0.2em]">{t('landing.pricing.proPlan')}</p>
                       <span
                         className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white"
-                        style={{ background: 'linear-gradient(135deg, #293463, #3A4A8A)' }}
+                        style={{ background: 'linear-gradient(135deg, #0050BF, #1E6FD9)' }}
                       >
                         <Crown size={10} />
                         {t('common.popular')}
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2 mb-1">
-                      <h3 className="text-3xl font-extrabold tracking-tight text-zinc-900">
+                      <h3 className="text-3xl font-black tracking-tight text-zinc-900">
                         {isYearly ? t('landing.pricing.proPriceYearly') : t('landing.pricing.proPrice')}
                       </h3>
                       <span className="text-sm text-zinc-400 font-bold">{t('common.perMonth')}</span>
@@ -1203,8 +1203,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     {/* CTA */}
                     <button
                       onClick={() => setShowLoginModal(true)}
-                      className="w-full py-3.5 bg-primary rounded-full font-black text-sm uppercase tracking-wider text-white hover:bg-[#1E2650] hover:shadow-[0_10px_40px_rgba(41,52,99,0.35)] transition-all duration-500 active:scale-[0.98]"
-                      style={{ boxShadow: '0 8px 20px rgba(41,52,99,0.25), 0 3px 10px rgba(41,52,99,0.15)' }}
+                      className="w-full py-3.5 bg-primary rounded-full font-black text-sm uppercase tracking-wider text-white hover:bg-[#003E99] hover:shadow-[0_10px_40px_rgba(0,80,191,0.35)] transition-all duration-500 active:scale-[0.98]"
+                      style={{ boxShadow: '0 8px 20px rgba(0,80,191,0.25), 0 3px 10px rgba(0,80,191,0.15)' }}
                     >
                       {t('landing.pricing.proCta')}
                     </button>
@@ -1222,7 +1222,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 {/* Top gradient accent line */}
                 <div
                   className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-                  style={{ background: 'linear-gradient(90deg, #F9CB5D, #FA3E3D)' }}
+                  style={{ background: 'linear-gradient(90deg, #0050BF, #64748B)' }}
                 />
 
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
@@ -1234,10 +1234,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                         border: '1px solid rgba(245,158,11,0.2)',
                       }}
                     >
-                      <Building2 size={24} style={{ color: '#F9CB5D' }} />
+                      <Building2 size={24} style={{ color: '#0050BF' }} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-extrabold tracking-tight text-zinc-900 mb-1">{t('landing.pricing.enterprise')}</h3>
+                      <h3 className="text-xl font-black tracking-tight text-zinc-900 mb-1">{t('landing.pricing.enterprise')}</h3>
                       <p className="text-sm text-zinc-500">{t('landing.pricing.enterpriseDesc')}</p>
                     </div>
                   </div>
@@ -1250,7 +1250,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       t('landing.pricing.enterpriseFeature4'),
                     ].map((feat) => (
                       <span key={feat} className="flex items-center gap-1.5">
-                        <Check size={12} className="text-[#F9CB5D]" />
+                        <Check size={12} className="text-[#0050BF]" />
                         {feat}
                       </span>
                     ))}
@@ -1293,7 +1293,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       >
                         <CreditIcon size={16} className="text-zinc-400 mb-2" />
                         <p className="text-[10px] sm:text-[11px] text-zinc-400 font-bold mb-1 leading-tight">{item.label}</p>
-                        <p className="text-lg sm:text-xl font-extrabold text-zinc-900">{item.credits}</p>
+                        <p className="text-lg sm:text-xl font-black text-zinc-900">{item.credits}</p>
                         <p className="text-[9px] text-zinc-300 uppercase tracking-widest font-bold">{t('landing.pricing.creditUnit')}</p>
                       </div>
                     );
@@ -1312,7 +1312,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
           {/* Top line */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(58,74,138,0.25) 50%, transparent 100%)' }}
+            style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(30,111,217,0.25) 50%, transparent 100%)' }}
           />
 
           {/* Background accent */}
@@ -1321,7 +1321,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="absolute top-1/2 left-1/2 w-[600px] h-[600px] rounded-full"
               style={{
                 transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(58,74,138,0.05) 0%, rgba(236,72,153,0.03) 40%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(30,111,217,0.05) 0%, rgba(236,72,153,0.03) 40%, transparent 60%)',
                 filter: 'blur(80px)',
               }}
             />
@@ -1333,11 +1333,11 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div className="lp-scroll-reveal">
                 <span className="text-xs font-bold uppercase tracking-[0.3em] text-zinc-400">{t('landing.roadmap.sectionTag')}</span>
               </div>
-              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="lp-scroll-reveal lp-delay-1 text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900">
                 {t('landing.roadmap.title')}{' '}
                 <span
                   style={{
-                    background: 'linear-gradient(135deg, #3A4A8A, #FA3E3D)',
+                    background: 'linear-gradient(135deg, #1E6FD9, #64748B)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -1385,13 +1385,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       {/* Top gradient accent line */}
                       <div
                         className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-50 transition-opacity duration-500"
-                        style={{ background: 'linear-gradient(90deg, #3A4A8A, #FA3E3D)' }}
+                        style={{ background: 'linear-gradient(90deg, #1E6FD9, #64748B)' }}
                       />
 
                       {/* Hover glow */}
                       <div
                         className="absolute inset-0 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(58,74,138,0.06) 0%, transparent 70%)' }}
+                        style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(30,111,217,0.06) 0%, transparent 70%)' }}
                       />
 
                       {/* COMING SOON badge */}
@@ -1399,7 +1399,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                         <span
                           className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white"
                           style={{
-                            background: 'linear-gradient(135deg, #3A4A8A, #FA3E3D)',
+                            background: 'linear-gradient(135deg, #1E6FD9, #64748B)',
                             animation: 'lp-badge-pulse 2.5s ease-in-out infinite',
                           }}
                         >
@@ -1411,15 +1411,15 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                       <div
                         className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300"
                         style={{
-                          background: 'linear-gradient(135deg, rgba(58,74,138,0.15), rgba(236,72,153,0.15))',
-                          border: '1px solid rgba(58,74,138,0.2)',
+                          background: 'linear-gradient(135deg, rgba(30,111,217,0.15), rgba(236,72,153,0.15))',
+                          border: '1px solid rgba(30,111,217,0.2)',
                         }}
                       >
-                        <Icon size={26} style={{ color: '#FA3E3D' }} />
+                        <Icon size={26} style={{ color: '#64748B' }} />
                       </div>
 
                       {/* Title */}
-                      <h3 className="text-xl font-extrabold tracking-tight text-zinc-900 mb-3">
+                      <h3 className="text-xl font-black tracking-tight text-zinc-900 mb-3">
                         {t(item.titleKey)}
                       </h3>
 
@@ -1445,7 +1445,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               className="absolute top-1/2 left-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
               style={{
                 transform: 'translate(-50%, -50%)',
-                background: 'radial-gradient(circle, rgba(41,52,99,0.12) 0%, transparent 60%)',
+                background: 'radial-gradient(circle, rgba(0,80,191,0.12) 0%, transparent 60%)',
                 filter: 'blur(60px)',
                 animation: 'lp-pulse-glow 5s ease-in-out infinite',
               }}
@@ -1453,11 +1453,11 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
             <div className="relative z-10 space-y-10">
               <div className="lp-scroll-reveal space-y-6">
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-zinc-900 leading-[0.95]">
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-zinc-900 leading-[0.95]">
                   {t('landing.cta.title1')}{' '}
                   <span
                     style={{
-                      background: 'linear-gradient(135deg, #293463, #3A4A8A)',
+                      background: 'linear-gradient(135deg, #0050BF, #1E6FD9)',
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
@@ -1476,8 +1476,8 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               <div className="lp-scroll-reveal lp-delay-2 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   onClick={onGetStarted}
-                  className="group px-14 py-5 bg-primary text-white rounded-full font-black text-xl uppercase tracking-wider flex items-center gap-3 hover:bg-[#1E2650] transition-all duration-300 active:scale-95"
-                  style={{ boxShadow: '0 15px 50px rgba(41,52,99,0.3), 0 5px 15px rgba(41,52,99,0.2)' }}
+                  className="group px-14 py-5 bg-primary text-white rounded-full font-black text-xl uppercase tracking-wider flex items-center gap-3 hover:bg-[#003E99] transition-all duration-300 active:scale-95"
+                  style={{ boxShadow: '0 15px 50px rgba(0,80,191,0.3), 0 5px 15px rgba(0,80,191,0.2)' }}
                 >
                   {t('landing.cta.button')}
                   <ArrowRight size={22} className="transition-transform duration-300 group-hover:translate-x-1.5" />
@@ -1531,7 +1531,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
 
             {/* Modal Card */}
             <div className="relative z-10 w-full max-w-md bg-white border border-zinc-200 rounded-[2rem] p-10 shadow-2xl lp-modal-enter"
-                 style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.15), 0 0 60px rgba(41,52,99,0.08)' }}>
+                 style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.15), 0 0 60px rgba(0,80,191,0.08)' }}>
 
               {/* Close button */}
               <button
@@ -1547,10 +1547,10 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   src="/sodami.png"
                   alt="소담이"
                   className="w-28 h-28 rounded-3xl object-cover bg-white mx-auto"
-                  style={{ boxShadow: '0 0 50px rgba(41,52,99,0.2)' }}
+                  style={{ boxShadow: '0 0 50px rgba(0,80,191,0.2)' }}
                 />
-                <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">
-                  SODAM <span style={{ color: '#E0A82E' }}>AI</span> STUDIO
+                <h2 className="text-2xl font-black tracking-tight text-zinc-900">
+                  SODAM <span style={{ color: '#0050BF' }}>AI</span> STUDIO
                 </h2>
                 <div className="space-y-1">
                   <p className="text-zinc-600 text-sm font-medium">
@@ -1563,21 +1563,21 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
               </div>
 
               {/* Credit Offer — 골드(크레딧=보상) */}
-              <p className="text-center text-sm font-black mb-5" style={{ color: '#B7791F' }}>
+              <p className="text-center text-sm font-black mb-5" style={{ color: '#0050BF' }}>
                 {t('landing.login.creditOffer')}
               </p>
 
               {/* 디자인(가계정) 모드 — .env(Supabase) 미설정 시 자동 노출 */}
               {MOCK_MODE && (
                 <div className="space-y-3">
-                  <div className="text-center px-3 py-2 rounded-xl bg-amber-400/10 border border-amber-400/20">
-                    <p className="text-[12px] font-black text-amber-600">디자인(가계정) 모드</p>
+                  <div className="text-center px-3 py-2 rounded-xl bg-[#0050BF]/10 border border-[#8FB5E9]/20">
+                    <p className="text-[12px] font-black text-[#0050BF]">디자인(가계정) 모드</p>
                     <p className="text-[11px] text-zinc-500 mt-0.5">.env 미설정 상태 · 실제 로그인/DB 없이 화면만 확인용</p>
                   </div>
                   <button
                     onClick={() => signInAsMock('master')}
                     className="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-95 flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg,#293463,#3A4A8A)', boxShadow: '0 10px 30px rgba(41,52,99,0.25)' }}
+                    style={{ background: 'linear-gradient(135deg,#0050BF,#1E6FD9)', boxShadow: '0 10px 30px rgba(0,80,191,0.25)' }}
                   >
                     🛡 마스터(오픈놀) 가계정으로 입장
                   </button>
@@ -1612,13 +1612,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                   className="w-full py-3.5 px-4 bg-white border border-zinc-200 rounded-2xl text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-primary transition-colors"
                 />
                 {loginError && (
-                  <p className="text-[12px] font-bold text-red-400 px-1">{loginError}</p>
+                  <p className="text-[12px] font-bold text-zinc-400 px-1">{loginError}</p>
                 )}
                 <button
                   type="submit"
                   disabled={isIdLoginLoading}
                   className="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-95 disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#293463,#3A4A8A)', boxShadow: '0 10px 30px rgba(41,52,99,0.25)' }}
+                  style={{ background: 'linear-gradient(135deg,#0050BF,#1E6FD9)', boxShadow: '0 10px 30px rgba(0,80,191,0.25)' }}
                 >
                   {isIdLoginLoading ? '로그인 중…' : '로그인'}
                 </button>
@@ -1679,7 +1679,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-md" />
             <div className="relative bg-white border border-zinc-200 rounded-3xl w-full max-w-2xl max-h-[80vh] shadow-2xl flex flex-col overflow-hidden">
               <div className="flex items-center justify-between p-6 border-b border-zinc-100 shrink-0">
-                <h3 className="text-lg font-extrabold tracking-tight text-zinc-900">{t('landing.privacy.title')}</h3>
+                <h3 className="text-lg font-black tracking-tight text-zinc-900">{t('landing.privacy.title')}</h3>
                 <button onClick={() => setShowPrivacyModal(false)} className="p-2 hover:bg-zinc-100 rounded-xl transition-all">
                   <X size={18} />
                 </button>
@@ -1760,7 +1760,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-md" />
             <div className="relative bg-white border border-zinc-200 rounded-3xl w-full max-w-2xl max-h-[80vh] shadow-2xl flex flex-col overflow-hidden">
               <div className="flex items-center justify-between p-6 border-b border-zinc-100 shrink-0">
-                <h3 className="text-lg font-extrabold tracking-tight text-zinc-900">{t('landing.terms.title')}</h3>
+                <h3 className="text-lg font-black tracking-tight text-zinc-900">{t('landing.terms.title')}</h3>
                 <button onClick={() => setShowTermsModal(false)} className="p-2 hover:bg-zinc-100 rounded-xl transition-all">
                   <X size={18} />
                 </button>

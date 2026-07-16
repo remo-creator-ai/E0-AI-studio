@@ -392,7 +392,7 @@ export const AssemblyStep: React.FC = () => {
   .meta{color:#888;font-size:11px;margin-top:10px;letter-spacing:0.15em;text-transform:uppercase;font-weight:700}
   .grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
   .card{background:#161616;border:1px solid #2a2a2a;border-radius:18px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s}
-  .card:hover{transform:translateY(-4px);border-color:#0057FF;box-shadow:0 12px 30px rgba(0,87,255,0.18)}
+  .card:hover{transform:translateY(-4px);border-color:#0050BF;box-shadow:0 12px 30px rgba(0,87,255,0.18)}
   .card .thumb{width:100%;aspect-ratio:16/9;background:#000;display:block;object-fit:cover}
   .card .thumb.empty{display:flex;align-items:center;justify-content:center;color:#444;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase}
   .card .info{padding:14px 16px}
@@ -757,13 +757,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
           <FileText size={40} className="text-zinc-400" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('assembly.noProject')}</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900">{t('assembly.noProject')}</h2>
           <p className="text-zinc-500 text-sm">{t('assembly.noProjectDesc')}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => importInputRef.current?.click()}
-            className="px-10 py-4 bg-primary text-white rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:bg-[#1E2650] transition-all"
+            className="px-10 py-4 bg-primary text-white rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(0,80,191,0.25)] hover:bg-[#003E99] transition-all"
           >
             <FileUp size={20} /> <span>{t('assembly.importStoryboard')}</span>
           </button>
@@ -863,7 +863,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               <button onClick={handleExportHtmlZip} disabled={isLoading} className="px-5 py-3 bg-white rounded-2xl flex items-center gap-2 border border-zinc-200 hover:bg-zinc-50 transition-all font-bold text-sm text-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 <FileText size={18} /> <span>{t('assembly.exportHtml')}</span>
               </button>
-              <button onClick={handlePrint} className="px-10 py-3 bg-primary rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(41,52,99,0.25)] hover:bg-[#1E2650] transition-all text-white">
+              <button onClick={handlePrint} className="px-10 py-3 bg-primary rounded-full flex items-center gap-2 font-black shadow-[0_8px_20px_rgba(0,80,191,0.25)] hover:bg-[#003E99] transition-all text-white">
                 <Printer size={18} /> <span>{t('assembly.printPdf')}</span>
               </button>
             </div>
@@ -910,7 +910,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                           <button onClick={() => triggerImageUpload(scene.id)} className="p-1 hover:text-primary"><ImageIcon size={10} /></button>
                           <button onClick={() => moveScene(globalIdx, 'up')} className="p-1 hover:text-white"><ArrowUp size={10} /></button>
                           <button onClick={() => moveScene(globalIdx, 'down')} className="p-1 hover:text-white"><ArrowDown size={10} /></button>
-                          <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-red-500"><Trash2 size={10} /></button>
+                          <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-zinc-500"><Trash2 size={10} /></button>
                         </div>
 
                         {/* Cut number + Image */}
@@ -963,7 +963,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                         <button onClick={() => triggerImageUpload(scene.id)} className="p-1 hover:text-primary"><ImageIcon size={10} /></button>
                         <button onClick={() => moveScene(globalIdx, 'up')} className="p-1 hover:text-white"><ArrowUp size={10} /></button>
                         <button onClick={() => moveScene(globalIdx, 'down')} className="p-1 hover:text-white"><ArrowDown size={10} /></button>
-                        <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-red-500"><Trash2 size={10} /></button>
+                        <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-zinc-500"><Trash2 size={10} /></button>
                       </div>
 
                       <div className="flex justify-between bg-black text-white px-2 py-1 text-[9px] font-black italic">
@@ -1016,7 +1016,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       <div data-tour="assembly-timeline" className="bg-white p-10 rounded-[3rem] border border-zinc-200 space-y-8 print:hidden">
         <div className="flex items-center justify-between">
           <div className="space-y-1 text-left">
-            <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900 flex items-center gap-3">
+            <h3 className="text-2xl font-black tracking-tight text-zinc-900 flex items-center gap-3">
               <LayoutIcon className="text-primary" /> {t('assembly.timelineManager')}
             </h3>
             <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{t('assembly.timelineSubtitle')}</p>
@@ -1026,7 +1026,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
             <button
               onClick={handleRefineFullStory}
               disabled={isLoading}
-              className="px-6 py-3 bg-[#FEF3D6] hover:bg-[#FBEBC4] border border-[#F5E1B0] text-[#B7791F] rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-[#E5EDFA] hover:bg-[#E5EDFA] border border-[#C0D4F0] text-[#0050BF] rounded-2xl flex items-center gap-2 text-xs font-bold uppercase transition-all disabled:opacity-50"
             >
               {isLoading ? (
                 <><RefreshCw size={16} className="animate-spin" /> <span>{t('assembly.refiningFullStory')}</span></>
@@ -1050,7 +1050,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
             <button
               onClick={handleDownloadImages}
               disabled={isLoading}
-              className="px-6 py-3 bg-primary hover:bg-primary/80 border border-primary rounded-2xl flex items-center gap-2 text-xs font-black uppercase transition-all text-white shadow-[0_4px_16px_rgba(41,52,99,0.25)] disabled:opacity-50"
+              className="px-6 py-3 bg-primary hover:bg-primary/80 border border-primary rounded-2xl flex items-center gap-2 text-xs font-black uppercase transition-all text-white shadow-[0_4px_16px_rgba(0,80,191,0.25)] disabled:opacity-50"
             >
               <Archive size={16} />
               <span>{t('assembly.downloadZip')}</span>
@@ -1068,7 +1068,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                   <div className="absolute inset-0 flex items-center justify-center opacity-10"><ImageIcon size={24} /></div>
                 )}
                 {scene.upscale_level && (
-                  <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-[8px] font-black text-emerald-700 z-10">
+                  <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-[#E5EDFA] border border-[#C0D4F0] rounded text-[8px] font-black text-[#003E99] z-10">
                     {scene.upscale_level}
                   </div>
                 )}
@@ -1090,7 +1090,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                   >
                     <Download size={14} />
                   </button>
-                  <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-red-500 text-zinc-500 transition-colors ml-1" title="Delete"><Trash2 size={14} /></button>
+                  <button onClick={() => removeScene(scene.id)} className="p-1 hover:text-zinc-500 text-zinc-500 transition-colors ml-1" title="Delete"><Trash2 size={14} /></button>
                 </div>
               </div>
             </div>
@@ -1110,7 +1110,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Edit3 size={24} /></div>
                 <div>
-                  <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">Precision Visual Editor</h3>
+                  <h3 className="text-2xl font-black tracking-tight text-zinc-900">Precision Visual Editor</h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">CUT #{String(project.scenes.findIndex(s => s.id === editingScene.id) + 1).padStart(2, '0')} • {project.aspect_ratio || '16:9'} Aspect Ratio Refinement</p>
                 </div>
               </div>
@@ -1163,7 +1163,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                         <button
                           type="button"
                           onClick={handleApplyPreview}
-                          className="flex-[2] py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all text-white shadow-[0_0_20px_rgba(41,52,99,0.25)]"
+                          className="flex-[2] py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-black uppercase flex items-center justify-center gap-2 transition-all text-white shadow-[0_0_20px_rgba(0,80,191,0.25)]"
                         >
                           <Check size={16} /> {t('assembly.editor.previewApply')}
                         </button>
@@ -1284,7 +1284,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       <button
                         type="button"
                         onClick={() => setUseExistingAsRef(!useExistingAsRef)}
-                        className={`w-11 h-6 rounded-full transition-all relative flex items-center px-1 shrink-0 ${useExistingAsRef ? 'bg-primary shadow-[0_0_12px_rgba(41,52,99,0.3)]' : 'bg-zinc-300'}`}
+                        className={`w-11 h-6 rounded-full transition-all relative flex items-center px-1 shrink-0 ${useExistingAsRef ? 'bg-primary shadow-[0_0_12px_rgba(0,80,191,0.3)]' : 'bg-zinc-300'}`}
                       >
                         <div className={`w-4 h-4 bg-white rounded-full transition-all ${useExistingAsRef ? 'translate-x-5' : 'translate-x-0'}`} />
                       </button>
@@ -1310,7 +1310,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                           <button
                             type="button"
                             onClick={() => modalRefUploadRef.current?.click()}
-                            className="w-6 h-6 flex items-center justify-center rounded-md border border-primary/50 text-primary hover:bg-primary/20 hover:border-primary transition-all shadow-[0_0_8px_rgba(41,52,99,0.15)]"
+                            className="w-6 h-6 flex items-center justify-center rounded-md border border-primary/50 text-primary hover:bg-primary/20 hover:border-primary transition-all shadow-[0_0_8px_rgba(0,80,191,0.15)]"
                           >
                             <Plus size={12} strokeWidth={3} />
                           </button>
@@ -1342,7 +1342,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       }
                     </button>
 
-                    <button type="submit" className="w-full py-5 bg-primary rounded-full text-sm font-black shadow-[0_8px_20px_rgba(41,52,99,0.25)] flex items-center justify-center gap-3 hover:bg-[#1E2650] transition-all text-white uppercase mt-2">
+                    <button type="submit" className="w-full py-5 bg-primary rounded-full text-sm font-black shadow-[0_8px_20px_rgba(0,80,191,0.25)] flex items-center justify-center gap-3 hover:bg-[#003E99] transition-all text-white uppercase mt-2">
                       <Save size={18} /> {t('assembly.editor.updateStoryboard')}
                     </button>
                   </div>

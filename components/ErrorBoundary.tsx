@@ -31,13 +31,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen bg-[#F7F4F1] text-zinc-900">
+        <div className="flex items-center justify-center min-h-screen bg-[#F5F7FA] text-zinc-900">
           <div className="max-w-md text-center space-y-6 p-8">
-            <div className="w-16 h-16 bg-red-50 border border-red-200 rounded-full flex items-center justify-center mx-auto">
-              <AlertCircle size={32} className="text-red-600" />
+            <div className="w-16 h-16 bg-zinc-100 border border-zinc-200 rounded-full flex items-center justify-center mx-auto">
+              <AlertCircle size={32} className="text-zinc-600" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">
+              <h2 className="text-2xl font-black tracking-tight text-zinc-900">
                 Something went wrong
               </h2>
               <p className="text-sm text-zinc-500">
@@ -46,7 +46,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </div>
             <button
               onClick={this.handleRetry}
-              className="px-8 py-3 bg-primary hover:bg-[#1E2650] rounded-full font-black text-white flex items-center gap-2 mx-auto transition-all active:scale-95"
+              className="px-8 py-3 bg-primary hover:bg-[#003E99] rounded-full font-black text-white flex items-center gap-2 mx-auto transition-all active:scale-95"
             >
               <RefreshCw size={18} />
               Try Again

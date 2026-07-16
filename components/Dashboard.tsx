@@ -32,9 +32,9 @@ const REQUEST_STATUS_LABELS_KR: Record<RequestStatus, string> = {
 };
 
 const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
-  pending: 'bg-[#FEE5E4] text-[#E22E2D] border-[#FBC9C7]',
+  pending: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]',
   in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-  completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  completed: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]',
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200',
 };
 
@@ -232,7 +232,7 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-8">
         <div className="flex items-end justify-between">
           <div data-tour="dashboard-welcome" className="space-y-2">
-            <h2 className="text-4xl font-extrabold tracking-tight text-zinc-900">
+            <h2 className="text-5xl font-black italic uppercase tracking-tighter text-zinc-900">
               {t('dashboard.title')} <span className="text-primary">{t('dashboard.titleHighlight')}</span>
             </h2>
             <p className="text-zinc-500 text-sm">{t('dashboard.subtitle')}</p>
@@ -240,7 +240,7 @@ export const Dashboard: React.FC = () => {
           <button
             data-tour="dashboard-new-project"
             onClick={handleNewProject}
-            className="px-7 py-3 bg-primary text-white rounded-full font-bold flex items-center gap-2 hover:bg-[#1E2650] transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
+            className="px-7 py-3 bg-primary text-white rounded-full font-bold flex items-center gap-2 hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
           >
             <Plus size={20} /> {t('dashboard.newProject')}
           </button>
@@ -256,16 +256,16 @@ export const Dashboard: React.FC = () => {
         {/* Empty State */}
         {!isLoading && projects.length === 0 && (
           <div className="text-center py-20 space-y-6">
-            <div className="w-20 h-20 bg-[#EEF0F6] border border-[#CBD2E4] rounded-full flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 bg-[#EEF3FC] border border-[#C0D4F0] rounded-full flex items-center justify-center mx-auto">
               <Film size={40} className="text-primary" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('dashboard.emptyTitle')}</h3>
+              <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('dashboard.emptyTitle')}</h3>
               <p className="text-zinc-500 text-sm">{t('dashboard.emptySubtitle')}</p>
             </div>
             <button
               onClick={handleNewProject}
-              className="px-9 py-4 bg-primary text-white rounded-full font-bold hover:bg-[#1E2650] transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
+              className="px-9 py-4 bg-primary text-white rounded-full font-bold hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
             >
               <Plus size={20} className="inline mr-2" /> {t('dashboard.createProject')}
             </button>
@@ -293,14 +293,14 @@ export const Dashboard: React.FC = () => {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-lg font-extrabold tracking-tight truncate text-white drop-shadow">{project.title}</h3>
+                    <h3 className="text-lg font-black tracking-tight truncate text-white drop-shadow">{project.title}</h3>
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="p-6 space-y-4">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 bg-[#FEF3D6] border border-[#F5E1B0] rounded-full text-[10px] font-bold text-[#B7791F] uppercase">
+                    <span className="px-3 py-1 bg-[#E5EDFA] border border-[#C0D4F0] rounded-full text-[10px] font-bold text-[#0050BF] uppercase">
                       {project.style}
                     </span>
                     <span className="px-3 py-1 bg-zinc-100 border border-zinc-200 rounded-full text-[10px] font-bold text-zinc-500 uppercase">
@@ -329,7 +329,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#F0B93A] rounded-full transition-all"
+                        className="h-full bg-[#0050BF] rounded-full transition-all"
                         style={{ width: `${project.scenes_count > 0 ? (project.videos_done / project.scenes_count) * 100 : 0}%` }}
                       />
                     </div>
@@ -345,13 +345,13 @@ export const Dashboard: React.FC = () => {
 
                   {/* Creator Badge */}
                   {project.original_creator_id && user && project.original_creator_id !== user.id && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FEF3D6] border border-[#F5E1B0] rounded-xl">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#E5EDFA] border border-[#C0D4F0] rounded-xl">
                       {project.creator_avatar_url ? (
                         <img src={project.creator_avatar_url} alt="" className="w-4 h-4 rounded-full" />
                       ) : (
-                        <User size={12} className="text-[#B7791F]" />
+                        <User size={12} className="text-[#0050BF]" />
                       )}
-                      <span className="text-[10px] font-bold text-[#B7791F]">
+                      <span className="text-[10px] font-bold text-[#0050BF]">
                         {t('dashboard.originalCreator', { name: project.creator_display_name || t('dashboard.unknownCreator') })}
                       </span>
                     </div>
@@ -368,7 +368,7 @@ export const Dashboard: React.FC = () => {
                           e.stopPropagation();
                           handleDeleteProject(project.id);
                         }}
-                        className="p-2 hover:bg-red-50 rounded-xl text-zinc-400 hover:text-red-500 transition-all"
+                        className="p-2 hover:bg-zinc-100 rounded-xl text-zinc-400 hover:text-zinc-500 transition-all"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -397,7 +397,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <ClipboardList size={18} className="text-primary" />
-              <h3 className="text-lg font-extrabold tracking-tight text-zinc-900">
+              <h3 className="text-lg font-black tracking-tight text-zinc-900">
                 {t('dashboard.myRequests')} <span className="text-primary">{t('dashboard.myRequestsHighlight')}</span>
               </h3>
             </div>
@@ -462,7 +462,7 @@ export const Dashboard: React.FC = () => {
             <div className="bg-white border border-zinc-200 rounded-[2rem] w-full max-w-xl shadow-[0_30px_80px_rgba(24,24,27,0.2)] animate-in zoom-in-95 duration-200 overflow-hidden">
               <div className="flex items-center justify-between p-8 border-b border-zinc-100">
                 <div>
-                  <h3 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('dashboard.modal.title')}</h3>
+                  <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('dashboard.modal.title')}</h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{t('dashboard.modal.subtitle')}</p>
                 </div>
                 <button onClick={() => setShowNewProjectModal(false)} className="p-3 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500">
@@ -479,7 +479,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => setSelectedAspectRatio(AspectRatio.LANDSCAPE)}
                       className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedAspectRatio === AspectRatio.LANDSCAPE
-                          ? 'border-primary bg-[#EEF0F6] text-primary'
+                          ? 'border-primary bg-[#EEF3FC] text-primary'
                           : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                       }`}
                     >
@@ -493,7 +493,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => setSelectedAspectRatio(AspectRatio.PORTRAIT)}
                       className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedAspectRatio === AspectRatio.PORTRAIT
-                          ? 'border-primary bg-[#EEF0F6] text-primary'
+                          ? 'border-primary bg-[#EEF3FC] text-primary'
                           : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                       }`}
                     >
@@ -516,7 +516,7 @@ export const Dashboard: React.FC = () => {
                         onClick={() => setSelectedSceneCount(count)}
                         className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${
                           selectedSceneCount === count
-                            ? 'border-primary bg-[#EEF0F6] text-primary'
+                            ? 'border-primary bg-[#EEF3FC] text-primary'
                             : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                         }`}
                       >
@@ -539,7 +539,7 @@ export const Dashboard: React.FC = () => {
                 {/* Start Button */}
                 <button
                   onClick={handleStartProject}
-                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#1E2650] transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)]"
+                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
                 >
                   <Sparkles size={20} /> {t('dashboard.modal.startProject')}
                 </button>

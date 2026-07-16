@@ -1,42 +1,44 @@
 @import "tailwindcss";
 
 /* =====================================================================
-   Sodam AI Studio — Design System v2 (소담이 · 네이비·골드·레드)
-   근거: design/guide/소담이-디자인가이드.html · 소담이 캐릭터 가이드 PDF
+   Sodam AI Studio — Design System v2 (오픈놀 · 블루 단색)
+   근거: contact-logo-01.svg (오픈놀 브랜드 블루 #0050BF) · 레드·골드 미사용
    ===================================================================== */
 :root {
-    /* Brand — 소담이 (네이비 primary · 골드 accent · 레드 point) */
-    --primary: #293463;        /* 네이비 (옷 색) · 브랜드 메인 */
-    --primary-strong: #1E2650; /* hover/press */
-    --primary-ink: #3A4A8A;    /* 네이비-인디고 · 그라디언트 파트너 */
-    --primary-tint: #E7E9F1;   /* 연한 네이비 배경 */
-    --primary-tint-2: #EEF0F6;
-    --accent: #F9CB5D;         /* 골드 (머리장식·단추) */
-    --accent-strong: #F0B93A;
-    --accent-tint: #FEF3D6;
-    --point: #FA3E3D;          /* 레드 (머리기둥·강조) */
-    --point-strong: #E22E2D;
-    --gold: #F9CB5D; --red: #FA3E3D;
-    --cream: #F3DDD1;          /* 크림 서브 서피스 (얼굴 톤) */
+    /* Brand — 오픈놀 블루 (단색) */
+    --primary: #0050BF;        /* 오픈놀 브랜드 블루 · 메인 */
+    --primary-strong: #003E99; /* hover/press */
+    --primary-ink: #1E6FD9;    /* 밝은 블루 · 그라디언트 파트너 */
+    --primary-tint: #E5EDFA;   /* 연한 블루 배경 */
+    --primary-tint-2: #EEF3FC;
+    --accent: #0050BF;         /* 단색 — accent도 블루 */
+    --accent-strong: #003E99;
+    --accent-tint: #E5EDFA;
+    --point: #64748B;          /* 포인트(경고·정지) = 중립 슬레이트 */
+    --point-strong: #475569;
+    --cream: #E5EDFA;          /* 서브 서피스 (블루 틴트) */
 
-    /* Surfaces & text — warm neutral */
-    --bg: #F7F4F1;             /* 웜 오프화이트 배경 */
+    /* Surfaces & text — cool neutral */
+    --bg: #F5F7FA;             /* 웜 오프화이트 배경 */
     --surface: #FFFFFF;        /* 카드/패널 */
-    --border: #E7E1DC;         /* 웜 그레이 테두리 */
-    --border-strong: #D8D0C9;
-    --secondary: #F1EEEB;      /* 보조 배경 */
+    --border: #E3E8EF;         /* 웜 그레이 테두리 */
+    --border-strong: #D3DAE3;
+    --secondary: #F1F3F6;      /* 보조 배경 */
     --text: #262626;          /* 잉크 본문 */
-    --text-2: #5B554F;        /* 보조 */
-    --text-muted: #9B938C;    /* 흐린 */
+    --text-2: #5A6474;        /* 보조 */
+    --text-muted: #94A0AE;    /* 흐린 */
 
     /* Status tints */
-    --ok: #2F9E63; --ok-bg: #E3F4EA;
-    --warn: #B7791F; --warn-bg: #FEF3D6;
-    --info: #293463; --info-bg: #E7E9F1;
-    --danger: #E22E2D; --danger-bg: #FEE5E4;
+    --ok: #0050BF; --ok-bg: #E5EDFA;
+    --warn: #0050BF; --warn-bg: #E5EDFA;
+    --info: #0050BF; --info-bg: #E5EDFA;
+    --danger: #475569; --danger-bg: #F1F5F9;
 }
 
 /* Base Styles */
+/* 전역 스케일 +12.5% — Pretendard가 원본(Inter/시스템 한글)보다 작게 렌더되는 것 보정 */
+html { font-size: 18px; }
+
 body {
     font-family: 'Pretendard', 'Pretendard Variable', 'Noto Sans KR', 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg);
@@ -101,14 +103,14 @@ h1 span, h2 span, h3 span {
     border-radius: 999px; padding: 10px 20px;
     font-weight: 700; font-size: 14px;
     transition: background .15s ease, box-shadow .15s ease;
-    box-shadow: 0 6px 16px rgba(41, 52, 99, .18);
+    box-shadow: 0 6px 16px rgba(0, 80, 191, .18);
 }
 .btn-pill:hover { background: var(--primary-strong); }
 .btn-pill.ghost {
     background: var(--primary-tint); color: var(--primary);
     box-shadow: none;
 }
-.btn-pill.ghost:hover { background: #D8DCEC; }
+.btn-pill.ghost:hover { background: #D6E3F7; }
 /* Chip / badge */
 .sd-chip {
     display: inline-flex; align-items: center; gap: 5px;
@@ -277,7 +279,7 @@ h1 span, h2 span, h3 span {
   border: 1px solid var(--border) !important;
   border-radius: 1.5rem !important;
   color: var(--text) !important;
-  box-shadow: 0 20px 60px rgba(24, 24, 27, 0.18), 0 0 40px rgba(41, 52, 99, 0.10) !important;
+  box-shadow: 0 20px 60px rgba(24, 24, 27, 0.18), 0 0 40px rgba(0, 80, 191, 0.10) !important;
   max-width: 360px !important;
   padding: 0 !important;
 }
@@ -343,7 +345,7 @@ h1 span, h2 span, h3 span {
   font-size: 0.75rem !important;
   padding: 0.625rem 1.25rem !important;
   text-shadow: none !important;
-  box-shadow: 0 8px 20px rgba(41, 52, 99, 0.28) !important;
+  box-shadow: 0 8px 20px rgba(0, 80, 191, 0.28) !important;
   transition: all 0.2s !important;
   border: none !important;
 }

@@ -39,9 +39,9 @@ const API_KEY_FIELDS: ApiKeyField[] = [
 type AdminTab = 'dashboard' | 'accounts' | 'usage' | 'requests' | 'api-keys';
 
 const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }> = {
-  pending: { label: '대기', cls: 'bg-[#FEE5E4] text-[#E22E2D] border-[#FBC9C7]' },
+  pending: { label: '대기', cls: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]' },
   in_progress: { label: '진행', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-  completed: { label: '완료', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  completed: { label: '완료', cls: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]' },
   cancelled: { label: '취소', cls: 'bg-zinc-100 text-zinc-500 border-zinc-200' },
 };
 
@@ -62,7 +62,7 @@ export const AdminPage: React.FC = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Shield className="w-16 h-16 text-red-500 mx-auto" />
+          <Shield className="w-16 h-16 text-zinc-500 mx-auto" />
           <h2 className="text-xl font-bold text-zinc-900">{t('admin.unauthorized')}</h2>
           <p className="text-zinc-500 text-sm">{t('admin.unauthorizedDesc')}</p>
         </div>
@@ -79,24 +79,24 @@ export const AdminPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F7F4F1] text-zinc-900 p-8 overflow-y-auto">
+    <div className="min-h-screen bg-[#F5F7FA] text-zinc-900 p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-[#EEF0F6] border border-[#CBD2E4] rounded-[2rem] p-8">
+        <div className="bg-[#EEF3FC] border border-[#C0D4F0] rounded-[2rem] p-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900">관리자 콘솔</h1>
+              <h1 className="text-2xl font-black tracking-tight text-zinc-900">관리자 콘솔</h1>
               <p className="text-sm text-zinc-500 mt-1">오픈놀 · 발급계정 · 크레딧 · 의뢰 관리</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold">MASTER</span>
+            <span className="px-2 py-1 bg-[#E5EDFA] text-[#003E99] border border-[#C0D4F0] rounded-full font-bold">MASTER</span>
             <span>{user?.email}</span>
             {MOCK_MODE && (
-              <span className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-bold ml-1">디자인(가계정) 모드 · 샘플 데이터</span>
+              <span className="px-2 py-1 bg-[#E5EDFA] text-[#003E99] border border-[#C0D4F0] rounded-full font-bold ml-1">디자인(가계정) 모드 · 샘플 데이터</span>
             )}
           </div>
         </div>
@@ -128,8 +128,8 @@ export const AdminPage: React.FC = () => {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-emerald-200 text-zinc-900 rounded-2xl px-5 py-3 shadow-2xl">
-          <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e]" />
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#C0D4F0] text-zinc-900 rounded-2xl px-5 py-3 shadow-2xl">
+          <span className="w-2 h-2 rounded-full bg-[#0050BF] shadow-[0_0_8px_#0050BF]" />
           <span className="text-sm font-bold">{toast}</span>
         </div>
       )}
@@ -140,7 +140,7 @@ export const AdminPage: React.FC = () => {
 /* ============================= Dashboard Tab ============================= */
 const StatCard: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode; badge?: string }> = ({ label, value, sub, badge }) => (
   <div className="bg-white border border-zinc-100 rounded-2xl p-5">
-    <div className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+    <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
       {label}
       {badge && <span className="px-1.5 py-0.5 bg-primary/20 text-primary rounded-full text-[8px]">{badge}</span>}
     </div>
@@ -167,7 +167,7 @@ const DashboardTab: React.FC = () => {
         <StatCard
           label="발급 계정"
           value={<>{stats.issuedCount}<span className="text-lg text-zinc-400"> / {stats.maxSlots}</span></>}
-          sub={<><b className="text-emerald-600">활성 {stats.activeCount}</b> · <span className="text-[#E22E2D]">정지 {stats.suspendedCount}</span></>}
+          sub={<><b className="text-[#0050BF]">활성 {stats.activeCount}</b> · <span className="text-[#475569]">정지 {stats.suspendedCount}</span></>}
         />
         <StatCard
           label="크레딧 부여 한도"
@@ -178,21 +178,21 @@ const DashboardTab: React.FC = () => {
         <StatCard
           label="누적 의뢰"
           value={stats.requestsTotal}
-          sub={<><span className="text-amber-600">대기 {stats.requestsPending}</span> · <b className="text-emerald-600">완료 {stats.requestsCompleted}</b></>}
+          sub={<><span className="text-[#0050BF]">대기 {stats.requestsPending}</span> · <b className="text-[#0050BF]">완료 {stats.requestsCompleted}</b></>}
         />
       </div>
 
       {/* 한도 배분 현황 */}
       <div className="bg-white border border-zinc-100 rounded-2xl p-5">
         <div className="flex justify-between items-baseline mb-2">
-          <div className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest">한도 배분 현황</div>
+          <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">한도 배분 현황</div>
           <div className="text-xs text-zinc-500">
             배분 <b className="text-zinc-900">{stats.creditAllocated.toLocaleString()}</b> / 한도 <b className="text-zinc-900">{stats.creditQuota.toLocaleString()}</b>
             <span className="text-zinc-400"> ({pct.toFixed(1)}%)</span>
           </div>
         </div>
         <div className="h-2.5 rounded-full bg-zinc-100 overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(41,52,99,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(0,80,191,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
         <p className="text-[11px] text-zinc-400 mt-2">
           <b className="text-primary">부여 누계 방식</b> — 지금까지 부여한 총합이 한도를 초과할 수 없음(계정이 소진해도 회복 없음). 한도 변경은 <b className="text-zinc-600">리모와 협의</b> 후 조정.
@@ -204,10 +204,10 @@ const DashboardTab: React.FC = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
-              <th className="text-left font-extrabold px-4 py-3 border-b border-zinc-100">최근 활동</th>
-              <th className="text-left font-extrabold px-4 py-3 border-b border-zinc-100">계정</th>
-              <th className="text-right font-extrabold px-4 py-3 border-b border-zinc-100">변동</th>
-              <th className="text-right font-extrabold px-4 py-3 border-b border-zinc-100">시각</th>
+              <th className="text-left font-black px-4 py-3 border-b border-zinc-100">최근 활동</th>
+              <th className="text-left font-black px-4 py-3 border-b border-zinc-100">계정</th>
+              <th className="text-right font-black px-4 py-3 border-b border-zinc-100">변동</th>
+              <th className="text-right font-black px-4 py-3 border-b border-zinc-100">시각</th>
             </tr>
           </thead>
           <tbody>
@@ -215,7 +215,7 @@ const DashboardTab: React.FC = () => {
               <tr key={tx.id} className="border-b border-zinc-100 last:border-0">
                 <td className="px-4 py-3 text-zinc-700">{tx.description}</td>
                 <td className="px-4 py-3 font-mono text-zinc-900">{tx.account_login_id}</td>
-                <td className={`px-4 py-3 text-right font-mono font-bold ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                <td className={`px-4 py-3 text-right font-mono font-bold ${tx.amount < 0 ? 'text-zinc-500' : 'text-[#0050BF]'}`}>
                   {tx.amount > 0 ? '+' : ''}{tx.amount}
                 </td>
                 <td className="px-4 py-3 text-right text-zinc-400">{tx.created_at}</td>
@@ -266,13 +266,13 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
     <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">계정 관리</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900">계정 관리</h2>
           <p className="text-sm text-zinc-400 mt-1">발급 {accounts.length} / {MASTER_MAX_SLOTS} · 삭제 없이 정지로 이력 보존</p>
         </div>
         <button
           onClick={() => setCreateOpen(true)}
           disabled={atCap}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-bold text-sm transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-bold text-sm transition-all"
         >
           <Plus className="w-4 h-4" /> 계정 생성
         </button>
@@ -283,12 +283,12 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
           <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">아이디</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">표시명</th>
-                <th className="text-right font-extrabold px-3 py-3 border-b border-zinc-100">크레딧</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">상태</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">최근접속</th>
-                <th className="text-right font-extrabold px-3 py-3 border-b border-zinc-100">관리</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">아이디</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">표시명</th>
+                <th className="text-right font-black px-3 py-3 border-b border-zinc-100">크레딧</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">상태</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">최근접속</th>
+                <th className="text-right font-black px-3 py-3 border-b border-zinc-100">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -296,11 +296,11 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
                 <tr key={a.id} className="border-b border-zinc-100 last:border-0">
                   <td className="px-3 py-3 font-mono text-zinc-900 font-semibold">{a.login_id}</td>
                   <td className="px-3 py-3 text-zinc-700 font-bold">{a.display_name}</td>
-                  <td className={`px-3 py-3 text-right font-mono font-extrabold ${a.balance > 0 ? 'text-zinc-900' : 'text-zinc-400'}`}>{a.balance}</td>
+                  <td className={`px-3 py-3 text-right font-mono font-black ${a.balance > 0 ? 'text-zinc-900' : 'text-zinc-400'}`}>{a.balance}</td>
                   <td className="px-3 py-3">
                     {a.status === 'active'
-                      ? <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">활성</span>
-                      : <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#FEE5E4] text-[#E22E2D] border border-[#FBC9C7]">정지</span>}
+                      ? <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#E5EDFA] text-[#003E99] border border-[#C0D4F0]">활성</span>
+                      : <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]">정지</span>}
                   </td>
                   <td className="px-3 py-3 text-zinc-400">{a.last_active ?? '—'}</td>
                   <td className="px-3 py-3">
@@ -383,9 +383,9 @@ const CreateAccountModal: React.FC<{ onClose: () => void; onCreated: (msg: strin
         <input type="number" value={credits} onChange={(e) => setCredits(Number(e.target.value))} className={inputCls} />
         <p className="text-[11px] text-zinc-400 mt-1.5">기본 60 고정 (기존값 유지)</p>
       </Field>
-      {error && <p className="text-[12px] font-bold text-red-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
+      {error && <p className="text-[12px] font-bold text-zinc-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
+        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 생성
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">취소</button>
@@ -417,7 +417,7 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
   return (
     <ModalShell eyebrow={`Credit · ${account.login_id}`} title="크레딧 관리" desc={account.display_name} onClose={onClose}>
       <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center mb-4">
-        <div className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-widest">현재 잔액</div>
+        <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">현재 잔액</div>
         <div className="text-3xl font-black tracking-tighter text-zinc-900">{account.balance}</div>
       </div>
       <Field label="작업">
@@ -430,9 +430,9 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
       <Field label="사유 (로그 기록)">
         <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="7월 정기 지급" className={inputCls} />
       </Field>
-      {error && <p className="text-[12px] font-bold text-red-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
+      {error && <p className="text-[12px] font-bold text-zinc-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
+        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 적용
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">닫기</button>
@@ -449,18 +449,18 @@ const RevealModal: React.FC<{ login: string; pw: string; onClose: () => void }> 
   };
   return (
     <ModalShell eyebrow={`Reset · ${login}`} title="임시 비밀번호 발급" desc="이 비밀번호는 지금 한 번만 표시됩니다" onClose={onClose}>
-      <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 text-center mb-3">
-        <div className="text-[10px] text-amber-700 font-extrabold uppercase tracking-widest mb-1">임시 비밀번호</div>
+      <div className="bg-[#E5EDFA] border border-[#A9C5EE] rounded-2xl p-4 text-center mb-3">
+        <div className="text-[10px] text-[#003E99] font-black uppercase tracking-widest mb-1">임시 비밀번호</div>
         <div className="font-mono text-2xl font-black tracking-widest text-zinc-900">{pw}</div>
       </div>
       <button onClick={copy} className="w-full py-3 rounded-xl border border-zinc-200 bg-white text-sm font-bold text-zinc-700 hover:bg-zinc-50 flex items-center justify-center gap-2 mb-2">
-        {copied ? <><CheckCircle2 className="w-4 h-4 text-green-400" /> 복사됨</> : <><Copy className="w-4 h-4" /> 복사</>}
+        {copied ? <><CheckCircle2 className="w-4 h-4 text-[#1E6FD9]" /> 복사됨</> : <><Copy className="w-4 h-4" /> 복사</>}
       </button>
       <ol className="text-[11px] text-zinc-500 space-y-1.5 mb-3">
         <li className="flex gap-2"><span className="text-primary font-black">1</span> 이 비밀번호를 복사해 해당 발급계정에 전달하세요.</li>
         <li className="flex gap-2"><span className="text-primary font-black">2</span> 창을 닫으면 다시 볼 수 없습니다 (재발급만 가능).</li>
       </ol>
-      <button onClick={onClose} className="w-full py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] font-black text-sm">확인 (닫기)</button>
+      <button onClick={onClose} className="w-full py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] font-black text-sm">확인 (닫기)</button>
     </ModalShell>
   );
 };
@@ -494,7 +494,7 @@ const UsageTab: React.FC = () => {
     <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">사용 이력</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900">사용 이력</h2>
           <p className="text-sm text-zinc-400 mt-1">계정별 크레딧 소진·지급 로그</p>
         </div>
         <button onClick={exportCsv} className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-sm font-bold text-zinc-700 transition-all">
@@ -521,12 +521,12 @@ const UsageTab: React.FC = () => {
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">일시</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">계정</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">유형</th>
-                <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">내용</th>
-                <th className="text-right font-extrabold px-3 py-3 border-b border-zinc-100">변동</th>
-                <th className="text-right font-extrabold px-3 py-3 border-b border-zinc-100">잔액</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">일시</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">계정</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">유형</th>
+                <th className="text-left font-black px-3 py-3 border-b border-zinc-100">내용</th>
+                <th className="text-right font-black px-3 py-3 border-b border-zinc-100">변동</th>
+                <th className="text-right font-black px-3 py-3 border-b border-zinc-100">잔액</th>
               </tr>
             </thead>
             <tbody>
@@ -538,7 +538,7 @@ const UsageTab: React.FC = () => {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${r.type === 'deduct' ? 'bg-zinc-100 text-zinc-500' : 'bg-primary/20 text-primary'}`}>{r.type}</span>
                   </td>
                   <td className="px-3 py-3 text-zinc-700">{r.description}</td>
-                  <td className={`px-3 py-3 text-right font-mono font-bold ${r.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{r.amount > 0 ? '+' : ''}{r.amount}</td>
+                  <td className={`px-3 py-3 text-right font-mono font-bold ${r.amount < 0 ? 'text-zinc-500' : 'text-[#0050BF]'}`}>{r.amount > 0 ? '+' : ''}{r.amount}</td>
                   <td className="px-3 py-3 text-right font-mono text-zinc-700">{r.balance_after}</td>
                 </tr>
               ))}
@@ -575,7 +575,7 @@ const RequestsTab: React.FC = () => {
   return (
     <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">의뢰 기록</h2>
+        <h2 className="text-2xl font-black tracking-tight text-zinc-900">의뢰 기록</h2>
         <p className="text-sm text-zinc-400 mt-1">수신 주소 고정 · <span className="font-mono text-zinc-500">momo.ai.fren@gmail.com</span></p>
       </div>
 
@@ -588,10 +588,10 @@ const RequestsTab: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
-                  <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">일시</th>
-                  <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">의뢰 계정</th>
-                  <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">목적</th>
-                  <th className="text-left font-extrabold px-3 py-3 border-b border-zinc-100">상태</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">일시</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">의뢰 계정</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">목적</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">상태</th>
                 </tr>
               </thead>
               <tbody>
@@ -630,14 +630,14 @@ const RequestsTab: React.FC = () => {
               </div>
               {selected.attachments.length > 0 && (
                 <>
-                  <div className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-widest mt-4 mb-2">첨부</div>
+                  <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-4 mb-2">첨부</div>
                   {selected.attachments.map((f) => (
                     <div key={f} className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-mono mb-1.5">{f}</div>
                   ))}
                 </>
               )}
               <div className="flex gap-2 mt-4">
-                <button onClick={() => setStatus(selected, 'completed')} className="flex-1 py-2.5 rounded-full bg-primary hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] text-white font-bold text-xs">완료 처리</button>
+                <button onClick={() => setStatus(selected, 'completed')} className="flex-1 py-2.5 rounded-full bg-primary hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-bold text-xs">완료 처리</button>
                 <button onClick={() => setStatus(selected, 'cancelled')} className="px-4 py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-xs">취소</button>
               </div>
             </div>
@@ -675,16 +675,16 @@ const ApiKeysTab: React.FC = () => {
     <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
       <div className="flex items-center gap-3 mb-8">
         <Key className="w-7 h-7 text-primary" />
-        <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('admin.apiKeysTitle')}</h2>
+        <h2 className="text-2xl font-black tracking-tight text-zinc-900">{t('admin.apiKeysTitle')}</h2>
       </div>
       <div className="space-y-6">
         {API_KEY_FIELDS.map((field) => (
           <div key={field.key} className="bg-zinc-50 rounded-xl p-5 border border-zinc-100">
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-semibold text-zinc-700">{field.label}</label>
-              {status[field.key] === 'success' && <span className="flex items-center gap-1 text-xs text-emerald-600 font-bold"><CheckCircle2 className="w-3 h-3" /> {t('common.savedStatus')}</span>}
-              {status[field.key] === 'error' && <span className="flex items-center gap-1 text-xs text-red-500 font-bold"><AlertCircle className="w-3 h-3" /> {t('common.failed')}</span>}
-              {values[field.key] && !status[field.key] && <span className="flex items-center gap-1 text-xs text-emerald-600"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
+              {status[field.key] === 'success' && <span className="flex items-center gap-1 text-xs text-[#0050BF] font-bold"><CheckCircle2 className="w-3 h-3" /> {t('common.savedStatus')}</span>}
+              {status[field.key] === 'error' && <span className="flex items-center gap-1 text-xs text-zinc-500 font-bold"><AlertCircle className="w-3 h-3" /> {t('common.failed')}</span>}
+              {values[field.key] && !status[field.key] && <span className="flex items-center gap-1 text-xs text-[#0050BF]"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -701,7 +701,7 @@ const ApiKeysTab: React.FC = () => {
                 </button>
               </div>
               <button onClick={() => save(field.key)} disabled={saving === field.key || !values[field.key]?.trim()}
-                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
+                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
                 {saving === field.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common.save')}
               </button>
             </div>
@@ -717,7 +717,7 @@ const inputCls = 'w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-3 
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="mb-3.5">
-    <label className="block text-[10px] font-extrabold text-zinc-400 uppercase tracking-widest mb-1.5">{label}</label>
+    <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">{label}</label>
     {children}
   </div>
 );

@@ -169,12 +169,12 @@ export const VisualizingStep: React.FC = () => {
           <FileText size={40} className="text-zinc-400" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900">{t('visualizing.noProject')}</h2>
+          <h2 className="text-2xl font-black tracking-tight text-zinc-900">{t('visualizing.noProject')}</h2>
           <p className="text-zinc-500 text-sm">{t('visualizing.noProjectDesc')}</p>
         </div>
         <button
           onClick={() => importTxtRef.current?.click()}
-          className="px-10 py-4 rounded-full bg-primary text-white flex items-center gap-2 font-black hover:bg-[#1E2650] shadow-[0_8px_20px_rgba(41,52,99,0.25)] transition-all"
+          className="px-10 py-4 rounded-full bg-primary text-white flex items-center gap-2 font-black hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] transition-all"
         >
           <FileUp size={20} /> <span>{t('visualizing.importTxt')}</span>
         </button>
@@ -516,7 +516,7 @@ CRITICAL RULES:
       {/* ── Header: Title + Unit Navigation ── */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900">{t('visualizing.title')} <span className="text-primary">{t('visualizing.titleHighlight')}</span></h1>
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900">{t('visualizing.title')} <span className="text-primary">{t('visualizing.titleHighlight')}</span></h1>
           <p className="text-zinc-500">{t('visualizing.subtitle')}</p>
         </div>
 
@@ -549,18 +549,18 @@ CRITICAL RULES:
       {/* ── Project Info Bar (read-only) ── */}
       <div className="bg-white rounded-2xl border border-zinc-200 px-6 py-4 flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          {isPortrait ? <Smartphone size={16} className="text-[#B7791F]" /> : <Monitor size={16} className="text-[#B7791F]" />}
+          {isPortrait ? <Smartphone size={16} className="text-[#0050BF]" /> : <Monitor size={16} className="text-[#0050BF]" />}
           <span className="font-bold">{project.aspect_ratio || '16:9'}</span>
           <span className="text-zinc-400">{isPortrait ? t('visualizing.portrait') : t('visualizing.landscape')}</span>
         </div>
         <div className="w-px h-5 bg-zinc-200" />
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          <Film size={16} className="text-[#B7791F]" />
+          <Film size={16} className="text-[#0050BF]" />
           <span className="font-bold">{t('common.cuts', { count: project.scene_count || 9 })}</span>
         </div>
         <div className="w-px h-5 bg-zinc-200" />
         <div className="flex items-center gap-2 text-sm text-zinc-600">
-          <Clock size={16} className="text-[#B7791F]" />
+          <Clock size={16} className="text-[#0050BF]" />
           <span className="font-bold">{projectDuration}s</span>
         </div>
       </div>
@@ -616,7 +616,7 @@ CRITICAL RULES:
                   onClick={() => setSelectedModel(model)}
                   className={`flex-1 flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                     isSelected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(41,52,99,0.15)]'
+                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(0,80,191,0.15)]'
                       : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50'
                   }`}
                 >
@@ -673,7 +673,7 @@ CRITICAL RULES:
             <button
               onClick={handleGenerateAndApply}
               disabled={isLoading}
-              className="px-8 py-3.5 bg-primary hover:bg-[#1E2650] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white text-sm transition-all shadow-[0_8px_20px_rgba(41,52,99,0.25)] active:scale-95 group"
+              className="px-8 py-3.5 bg-primary hover:bg-[#003E99] disabled:opacity-50 rounded-full flex items-center justify-center gap-2 font-black text-white text-sm transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)] active:scale-95 group"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -703,7 +703,7 @@ CRITICAL RULES:
                <ImageIcon size={40} className="opacity-30 text-primary" />
             </div>
             <div className="text-center space-y-2">
-              <p className="font-extrabold text-2xl text-zinc-400 tracking-tight">{t('visualizing.emptyMatrix', { unit: currentUnitIdx + 1 })}</p>
+              <p className="font-black text-2xl text-zinc-400 tracking-tight">{t('visualizing.emptyMatrix', { unit: currentUnitIdx + 1 })}</p>
               <p className="text-xs text-zinc-300 font-bold uppercase tracking-widest">{t('visualizing.emptyMatrixDesc')}</p>
             </div>
           </div>
@@ -717,7 +717,7 @@ CRITICAL RULES:
                 <div className="w-24 h-24 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto absolute inset-0"></div>
               </div>
               <div className="space-y-3">
-                <p className="text-3xl font-extrabold tracking-tight text-white animate-pulse">
+                <p className="text-3xl font-black tracking-tight text-white animate-pulse">
                   {generationProgress
                     ? `Batch Rendering [${generationProgress.current}/${generationProgress.total}]`
                     : `Rendering Unit ${currentUnitIdx + 1}...`}
@@ -755,7 +755,7 @@ CRITICAL RULES:
                <ImageIcon size={24} className="text-primary" />
             </div>
             <div className="text-left">
-              <h4 className="font-extrabold text-lg tracking-tight text-zinc-900">{t('visualizing.matrixReady')}</h4>
+              <h4 className="font-black text-lg tracking-tight text-zinc-900">{t('visualizing.matrixReady')}</h4>
               <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">{project.aspect_ratio || '16:9'} &bull; {gridLayout.rows}x{gridLayout.cols} Grid &bull; Unit {currentUnitIdx + 1}</p>
             </div>
           </div>
@@ -781,14 +781,14 @@ CRITICAL RULES:
                   setProject({ ...project, grid_images: newGridImages });
                 }
               }}
-              className="p-4 bg-zinc-50 hover:bg-red-50 border border-zinc-200 hover:border-red-200 rounded-2xl transition-all text-zinc-500 hover:text-red-500"
+              className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 hover:border-zinc-200 rounded-2xl transition-all text-zinc-500 hover:text-zinc-500"
               title="매트릭스 이미지 삭제"
             >
               <Trash2 size={20} />
             </button>
             <button
               onClick={handleApplyToStoryboard}
-              className="px-10 py-4 bg-primary text-white font-black rounded-full flex items-center gap-3 hover:bg-[#1E2650] transition-all active:scale-95 shadow-[0_8px_20px_rgba(41,52,99,0.25)] whitespace-nowrap"
+              className="px-10 py-4 bg-primary text-white font-black rounded-full flex items-center gap-3 hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)] whitespace-nowrap"
             >
               <Scissors size={18} />
               <span>{t('visualizing.applyCuts')}</span>
@@ -802,7 +802,7 @@ CRITICAL RULES:
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md">
           <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-5 max-w-2xl w-full mx-4 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-extrabold tracking-tight text-zinc-900">{t('visualizing.selectStyle')}</h4>
+              <h4 className="text-lg font-black tracking-tight text-zinc-900">{t('visualizing.selectStyle')}</h4>
               <button onClick={() => setIsStylePopupOpen(false)} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"><X size={18} /></button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -829,7 +829,7 @@ CRITICAL RULES:
                     }}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                       isSelected
-                        ? 'border-primary bg-[#EEF0F6] shadow-[0_0_20px_rgba(41,52,99,0.2)]'
+                        ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
                         : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                     }`}
                   >
@@ -855,7 +855,7 @@ CRITICAL RULES:
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md">
           <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-4 max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-extrabold tracking-tight text-zinc-900">{t('visualizing.selectCategory')}</h4>
+              <h4 className="text-sm font-black tracking-tight text-zinc-900">{t('visualizing.selectCategory')}</h4>
               <button onClick={() => setPendingImage(null)} className="p-1 hover:bg-zinc-100 rounded-lg transition-colors"><X size={16} /></button>
             </div>
             <div className="w-20 h-20 rounded-xl overflow-hidden border border-zinc-200 mx-auto">
