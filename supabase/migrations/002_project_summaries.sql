@@ -9,6 +9,11 @@ CREATE INDEX IF NOT EXISTS idx_projects_user_id ON public.projects (user_id);
 CREATE INDEX IF NOT EXISTS idx_projects_user_updated ON public.projects (user_id, updated_at DESC);
 
 -- RPC function: returns lightweight project summaries without scenes/grid_images blobs
+-- 재실행 안전성: 이 함수는 003/006 에서 반환 컬럼 수가 늘어난다. 이미 상위
+-- 버전이 적용된 DB 에 002 를 다시 실행하면 10컬럼으로 되돌리려다
+--   42P13 cannot change return type
+-- 로 실패한다. 선행 DROP 으로 회피 (프레시 DB 에서는 무해).
+DROP FUNCTION IF EXISTS get_project_summaries(UUID);
 CREATE OR REPLACE FUNCTION get_project_summaries(p_user_id UUID)
 RETURNS TABLE (
   id UUID,

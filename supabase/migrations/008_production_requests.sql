@@ -22,11 +22,13 @@ CREATE TABLE IF NOT EXISTS production_requests (
 ALTER TABLE production_requests ENABLE ROW LEVEL SECURITY;
 
 -- Users can insert their own requests
+DROP POLICY IF EXISTS "Users can insert own requests" ON production_requests;
 CREATE POLICY "Users can insert own requests"
   ON production_requests FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can view their own requests
+DROP POLICY IF EXISTS "Users can view own requests" ON production_requests;
 CREATE POLICY "Users can view own requests"
   ON production_requests FOR SELECT
   USING (auth.uid() = user_id);
@@ -40,6 +42,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS production_requests_updated_at ON production_requests;
 CREATE TRIGGER production_requests_updated_at
   BEFORE UPDATE ON production_requests
   FOR EACH ROW EXECUTE FUNCTION update_production_requests_updated_at();

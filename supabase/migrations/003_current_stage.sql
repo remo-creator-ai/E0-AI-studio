@@ -1,5 +1,12 @@
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS current_stage TEXT;
 
+-- 002 는 이 함수를 10컬럼 RETURNS TABLE 로 만들고, 여기서 11컬럼으로 늘린다.
+-- RETURNS TABLE 의 출력 컬럼은 반환 타입의 일부라, DROP 없이 CREATE OR REPLACE 하면
+--   42P13 cannot change return type of existing function
+-- 으로 실패한다. 004/006 은 선행 DROP 이 있는데 003 만 빠져 있었다.
+-- 이 한 줄이 없으면 프레시 DB 에서 마이그레이션 체인이 여기서 멈춘다.
+DROP FUNCTION IF EXISTS get_project_summaries(UUID);
+
 CREATE OR REPLACE FUNCTION get_project_summaries(p_user_id UUID)
 RETURNS TABLE (
   id UUID,

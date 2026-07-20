@@ -7,7 +7,7 @@
 | 항목 | 구현 | 파일 |
 |------|------|------|
 | 로그인 | **Google OAuth 단일** | `store/authStore.ts` (`signInWithOAuth({provider:'google'})`), `components/LandingPage.tsx` (구글 버튼만) |
-| 계정 생성 | 구글 로그인 시 `auth.users` 자동 생성 → 트리거로 `profiles` 자동 삽입 | `supabase/schema.sql` (`handle_new_user` 트리거) |
+| 계정 생성 | 구글 로그인 시 `auth.users` 자동 생성 → 트리거로 `profiles` 자동 삽입 | `supabase/migrations/001_initial_schema.sql` (`handle_new_user` 트리거) |
 | 권한 판별 | **클라이언트 이메일 비교** (`VITE_ADMIN_EMAIL`) | `services/adminConfigService.ts` `isAdmin()` |
 | 역할(role) | **DB에 없음** — `profiles`에 role 컬럼 부재 | — |
 | 크레딧 | 가입 시 20 부여 (014에서 60→20 하향) | `supabase/migrations/005_user_credits.sql` |

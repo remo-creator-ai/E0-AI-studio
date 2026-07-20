@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.user_credits (
 ALTER TABLE public.user_credits ENABLE ROW LEVEL SECURITY;
 
 -- 3. 본인 크레딧만 조회 가능
+DROP POLICY IF EXISTS "Users can read own credits" ON public.user_credits;
 CREATE POLICY "Users can read own credits"
   ON public.user_credits FOR SELECT
   USING (auth.uid() = user_id);

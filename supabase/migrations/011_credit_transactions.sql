@@ -17,13 +17,14 @@ CREATE TABLE IF NOT EXISTS public.credit_transactions (
 -- 2. RLS
 ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own transactions" ON public.credit_transactions;
 CREATE POLICY "Users can read own transactions"
   ON public.credit_transactions FOR SELECT
   USING (auth.uid() = user_id);
 
 -- 3. Index
-CREATE INDEX idx_credit_transactions_user_id ON public.credit_transactions (user_id);
-CREATE INDEX idx_credit_transactions_created_at ON public.credit_transactions (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_id ON public.credit_transactions (user_id);
+CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON public.credit_transactions (created_at DESC);
 
 -- 4. Update deduct_credits to log transaction
 CREATE OR REPLACE FUNCTION public.deduct_credits(p_user_id UUID, p_amount INTEGER, p_description TEXT DEFAULT '')
