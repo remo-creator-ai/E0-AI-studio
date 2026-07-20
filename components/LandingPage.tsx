@@ -332,23 +332,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
-  const { signInWithGoogle, signInWithId, signInAsMock, isAuthLoading } = useAuthStore();
-  const [loginId, setLoginId] = useState('');
-  const [loginPw, setLoginPw] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isIdLoginLoading, setIsIdLoginLoading] = useState(false);
-  const handleIdLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError(null);
-    if (!loginId.trim() || !loginPw) {
-      setLoginError('아이디와 비밀번호를 입력하세요.');
-      return;
-    }
-    setIsIdLoginLoading(true);
-    const { error } = await signInWithId(loginId, loginPw);
-    setIsIdLoginLoading(false);
-    if (error) setLoginError(error);
-  };
+  const { signInWithGoogle, signInAsMock, isAuthLoading } = useAuthStore();
   const { t, i18n } = useTranslation();
   const { setLanguage, defaultLanguage } = useSettingsStore();
 
@@ -1585,53 +1569,13 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                     onClick={() => signInAsMock('user')}
                     className="w-full py-4 rounded-2xl font-black text-base text-zinc-900 bg-zinc-100 border border-zinc-200 hover:bg-zinc-200 transition-all active:scale-95"
                   >
-                    👤 발급계정 가계정으로 입장
+                    👤 일반 사용자 가계정으로 입장
                   </button>
                 </div>
               )}
 
-              {/* 실제 로그인 (Supabase 설정 시 노출) */}
+              {/* 실제 로그인 (Supabase 설정 시 노출) — 구글 로그인/가입 단일 진입점 */}
               {!MOCK_MODE && (
-              <>
-              {/* 발급계정: 아이디 / 비밀번호 로그인 */}
-              <form onSubmit={handleIdLogin} className="space-y-3">
-                <input
-                  type="text"
-                  value={loginId}
-                  onChange={(e) => { setLoginId(e.target.value); setLoginError(null); }}
-                  placeholder="아이디"
-                  autoComplete="username"
-                  className="w-full py-3.5 px-4 bg-white border border-zinc-200 rounded-2xl text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-primary transition-colors"
-                />
-                <input
-                  type="password"
-                  value={loginPw}
-                  onChange={(e) => { setLoginPw(e.target.value); setLoginError(null); }}
-                  placeholder="비밀번호"
-                  autoComplete="current-password"
-                  className="w-full py-3.5 px-4 bg-white border border-zinc-200 rounded-2xl text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-primary transition-colors"
-                />
-                {loginError && (
-                  <p className="text-[12px] font-bold text-zinc-400 px-1">{loginError}</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={isIdLoginLoading}
-                  className="w-full py-4 rounded-2xl font-black text-base text-white transition-all active:scale-95 disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#0050BF,#1E6FD9)', boxShadow: '0 10px 30px rgba(0,80,191,0.25)' }}
-                >
-                  {isIdLoginLoading ? '로그인 중…' : '로그인'}
-                </button>
-              </form>
-
-              {/* 구분선 */}
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-zinc-200" />
-                <span className="text-[11px] text-zinc-400">마스터(오픈놀) 전용</span>
-                <div className="flex-1 h-px bg-zinc-200" />
-              </div>
-
-              {/* Google Login Button (마스터 전용) */}
               <button
                 onClick={signInWithGoogle}
                 disabled={isAuthLoading}
@@ -1646,7 +1590,6 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </svg>
                 {t('landing.login.googleLogin')}
               </button>
-              </>
               )}
 
               {/* Privacy & Terms Consent */}

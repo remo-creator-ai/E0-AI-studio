@@ -46,12 +46,11 @@ export function buildMockUser(role: MockRole): User {
       : 'mock-user-0000-0000-0000-000000000000',
     aud: 'authenticated',
     role: 'authenticated',
-    email: isMaster ? 'master@sodam.local' : 'demo@sodam.local',
+    email: isMaster ? 'master@sodam.local' : 'demo.user@gmail.com',
     app_metadata: { provider: 'mock' },
     user_metadata: {
-      full_name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 발급계정 (가계정)',
-      name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 발급계정 (가계정)',
-      login_id: isMaster ? 'openknowl' : 'demo',
+      full_name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 사용자 (가계정)',
+      name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 사용자 (가계정)',
       role,
     },
     created_at: MOCK_CREATED_AT,
@@ -69,8 +68,8 @@ export function buildMockSession(user: User): Session {
   } as unknown as Session;
 }
 
-/** 가계정 크레딧 (디자인 확인용 표시값) */
+/** 가계정 크레딧 (디자인 확인용 표시값) — 신규 가입 시 20 크레딧 부여 기준 */
 export const MOCK_CREDITS: Record<MockRole, { balance: number; maxCredits: number }> = {
   master: { balance: 48, maxCredits: 60 },
-  user: { balance: 45, maxCredits: 60 },
+  user: { balance: 14, maxCredits: 20 },
 };
