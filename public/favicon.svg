@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="168 168 918 918">
+  <style>
+    .ink { stroke: #111111 }
+    @media (prefers-color-scheme: dark) { .ink { stroke: #FFFFFF } }
+  </style>
+
+  <!-- 프레임 브래킷 -->
+  <g class="ink" fill="none" stroke-width="50">
+    <path d="M359 317H214v622h145" />
+    <path d="M894 317h145v622H894" />
+  </g>
+
+  <!-- 人 -->
+  <g class="ink" fill="none" stroke-width="71">
+    <path d="M458 558 627 410V289" />
+    <path d="M796 558 627 410V289" />
+  </g>
+
+  <!-- 오렌지 사각형 -->
+  <rect x="391" y="672" width="178" height="183" fill="none" stroke="#E44506" stroke-width="50" />
+
+  <!-- 파란 링 -->
+  <circle cx="779.5" cy="763" r="92.5" fill="none" stroke="#0291E4" stroke-width="49" />
+</svg>
