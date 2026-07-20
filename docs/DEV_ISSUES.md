@@ -41,7 +41,12 @@ services/klingService.ts            createJWT(...)   ← 브라우저에서 시�
 
 > DEV-002 를 함께 해결할 수 있는 경로다 (차감을 프록시 안으로).
 
-상세: `docs/SECURITY_OPEN_SIGNUP.md` §1
+**진전 (2026-07-21)** — `admin_config` 테이블이 이제 `017_admin_config.sql` 로 레포에서
+관리된다(이전엔 대시보드 수동 생성이라 RLS 를 코드로 바꿀 수 없었다). 위 3)단계의
+`is_master()` RLS 잠금 SQL 을 새 마이그레이션으로 넣을 수 있는 상태가 됐다. 단
+**여전히 1)2) Edge Function 프록시가 선행돼야** 일반 사용자 AI 기능이 안 죽는다.
+
+상세: `docs/SECURITY_OPEN_SIGNUP.md` §1 · 마이그레이션 절차: `docs/MIGRATIONS.md`
 
 ---
 
