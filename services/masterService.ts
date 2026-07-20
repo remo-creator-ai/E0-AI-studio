@@ -1,8 +1,7 @@
 // =============================================================
 //  마스터 콘솔 서비스 계층
 //  MOCK_MODE  → lib/mockMasterData 의 인메모리 데이터로 동작 (디자인/확인용)
-//  실제 모드  → Supabase 테이블 + master Edge Function 호출
-//               (docs/AUTH_MODEL_TRANSITION.md §5 매핑)
+//  실제 모드  → Supabase 테이블 호출 (구글 셀프가입 사용자 기준)
 //  컴포넌트는 이 파일만 바라보므로 실제 배선은 여기서 국소적으로 교체된다.
 // =============================================================
 
@@ -10,30 +9,23 @@ import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
 import {
   getMockDb,
-  MASTER_MAX_SLOTS,
   MASTER_CREDIT_QUOTA,
-  DEFAULT_INITIAL_CREDITS,
+  SIGNUP_INITIAL_CREDITS,
   type MasterAccount,
   type CreditTxn,
   type MasterRequest,
-  type AccountStatus,
 } from '../lib/mockMasterData';
 
 export {
-  MASTER_MAX_SLOTS,
   MASTER_CREDIT_QUOTA,
-  DEFAULT_INITIAL_CREDITS,
+  SIGNUP_INITIAL_CREDITS,
   type MasterAccount,
   type CreditTxn,
   type MasterRequest,
-  type AccountStatus,
 };
 
 export interface DashboardStats {
-  issuedCount: number;
-  maxSlots: number;
-  activeCount: number;
-  suspendedCount: number;
+  signupCount: number;
   creditQuota: number;
   creditAllocated: number; // 부여 누계
   creditRemaining: number;
@@ -44,36 +36,27 @@ export interface DashboardStats {
 
 export type CreditOp = 'add' | 'deduct' | 'set';
 
-const nowIso = () => new Date().toISOString();
 const shortNow = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
 
-function genTempPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let s = '';
-  for (let i = 0; i < 10; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
-}
-
-// ---------------- 계정 목록 ----------------
+// ---------------- 가입 사용자 목록 (구글 셀프가입) ----------------
 export async function listAccounts(): Promise<MasterAccount[]> {
   if (MOCK_MODE) {
-    return [...getMockDb().accounts].sort((a, b) => a.login_id.localeCompare(b.login_id));
+    return [...getMockDb().accounts].sort((a, b) => a.email.localeCompare(b.email));
   }
-  // 실제: profiles(발급계정) + user_credits 조인
+  // 실제: profiles(role='user', 구글 가입) + user_credits 조인
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, login_id, display_name, status, created_at')
+    .select('id, email, display_name, created_at')
     .eq('role', 'user')
-    .order('login_id');
+    .order('email');
   if (error || !data) return [];
   // TODO: user_credits 잔액/최근접속 조인 (별도 뷰 또는 RPC 권장)
   return data.map((p) => ({
     id: p.id,
-    login_id: p.login_id ?? '',
+    email: p.email ?? '',
     display_name: p.display_name ?? '',
     balance: 0,
-    max_credits: 60,
-    status: (p.status as AccountStatus) ?? 'active',
+    max_credits: SIGNUP_INITIAL_CREDITS,
     last_active: null,
     created_at: p.created_at,
   }));
@@ -83,14 +66,9 @@ export async function listAccounts(): Promise<MasterAccount[]> {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const accounts = await listAccounts();
   const requests = await listRequests();
-  const activeCount = accounts.filter((a) => a.status === 'active').length;
-  const suspendedCount = accounts.filter((a) => a.status === 'suspended').length;
   const allocated = MOCK_MODE ? getMockDb().allocated : 0; // TODO: 실제 부여 누계 집계
   return {
-    issuedCount: accounts.length,
-    maxSlots: MASTER_MAX_SLOTS,
-    activeCount,
-    suspendedCount,
+    signupCount: accounts.length,
     creditQuota: MASTER_CREDIT_QUOTA,
     creditAllocated: allocated,
     creditRemaining: MASTER_CREDIT_QUOTA - allocated,
@@ -98,75 +76,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     requestsPending: requests.filter((r) => r.status === 'pending').length,
     requestsCompleted: requests.filter((r) => r.status === 'completed').length,
   };
-}
-
-// ---------------- 계정 생성 ----------------
-export interface CreateAccountInput {
-  login_id: string;
-  display_name: string;
-  password: string;
-  initial_credits: number;
-}
-
-export async function createAccount(input: CreateAccountInput): Promise<{ ok: boolean; error?: string }> {
-  const loginId = input.login_id.trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(loginId)) {
-    return { ok: false, error: '아이디는 영문 소문자/숫자/._- 조합 3~32자여야 합니다.' };
-  }
-  if (input.password.length < 8) {
-    return { ok: false, error: '비밀번호는 8자 이상이어야 합니다.' };
-  }
-
-  if (MOCK_MODE) {
-    const mdb = getMockDb();
-    if (mdb.accounts.length >= MASTER_MAX_SLOTS) return { ok: false, error: '20개 슬롯이 모두 찼습니다.' };
-    if (mdb.accounts.some((a) => a.login_id === loginId)) return { ok: false, error: '이미 존재하는 아이디입니다.' };
-    mdb.accounts.push({
-      id: `mock-${loginId}`,
-      login_id: loginId,
-      display_name: input.display_name.trim() || loginId,
-      balance: input.initial_credits,
-      max_credits: 60,
-      status: 'active',
-      last_active: null,
-      created_at: nowIso().slice(0, 10),
-    });
-    mdb.allocated += input.initial_credits;
-    return { ok: true };
-  }
-
-  const { data, error } = await supabase.functions.invoke('master-create-account', {
-    body: { login_id: loginId, password: input.password, display_name: input.display_name },
-  });
-  if (error) return { ok: false, error: error.message };
-  if (data?.error) return { ok: false, error: data.error };
-  return { ok: true };
-}
-
-// ---------------- 상태 변경 (정지/활성화) ----------------
-export async function setAccountStatus(id: string, status: AccountStatus): Promise<{ ok: boolean; error?: string }> {
-  if (MOCK_MODE) {
-    const a = getMockDb().accounts.find((x) => x.id === id);
-    if (!a) return { ok: false, error: '계정을 찾을 수 없습니다.' };
-    a.status = status;
-    return { ok: true };
-  }
-  const { error } = await supabase.from('profiles').update({ status }).eq('id', id);
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
-}
-
-// ---------------- 비밀번호 재발급 (임시 비번 1회 반환) ----------------
-export async function resetPassword(id: string): Promise<{ ok: boolean; temp_password?: string; error?: string }> {
-  if (MOCK_MODE) {
-    const a = getMockDb().accounts.find((x) => x.id === id);
-    if (!a) return { ok: false, error: '계정을 찾을 수 없습니다.' };
-    return { ok: true, temp_password: genTempPassword() };
-  }
-  const { data, error } = await supabase.functions.invoke('master-reset-password', { body: { user_id: id } });
-  if (error) return { ok: false, error: error.message };
-  if (data?.error) return { ok: false, error: data.error };
-  return { ok: true, temp_password: data?.temp_password };
 }
 
 // ---------------- 크레딧 조정 ----------------
@@ -198,7 +107,7 @@ export async function adjustCredit(
     if (delta > 0) mdb.allocated += delta; // 부여 누계는 증가만
     mdb.txns.unshift({
       id: `t-${Date.now()}`,
-      account_login_id: a.login_id,
+      account_email: a.email,
       type: 'manual',
       description: reason || (op === 'deduct' ? '마스터 차감' : op === 'set' ? '마스터 잔액 설정' : '마스터 지급'),
       amount: delta,
@@ -215,15 +124,15 @@ export async function adjustCredit(
 
 // ---------------- 사용 이력 ----------------
 export interface TxnFilter {
-  account_login_id?: string; // 'all' or specific
+  account_email?: string; // 'all' or specific
   type?: 'all' | 'deduct' | 'manual';
 }
 
 export async function listTransactions(filter?: TxnFilter): Promise<CreditTxn[]> {
   if (MOCK_MODE) {
     let rows = [...getMockDb().txns];
-    if (filter?.account_login_id && filter.account_login_id !== 'all') {
-      rows = rows.filter((r) => r.account_login_id === filter.account_login_id);
+    if (filter?.account_email && filter.account_email !== 'all') {
+      rows = rows.filter((r) => r.account_email === filter.account_email);
     }
     if (filter?.type && filter.type !== 'all') {
       rows = rows.filter((r) => (filter.type === 'deduct' ? r.type === 'deduct' : r.type !== 'deduct'));
@@ -236,10 +145,10 @@ export async function listTransactions(filter?: TxnFilter): Promise<CreditTxn[]>
     .order('created_at', { ascending: false })
     .limit(200);
   if (error || !data) return [];
-  // TODO: user_id → login_id 매핑(뷰/조인)
+  // TODO: user_id → email 매핑(뷰/조인)
   return data.map((t) => ({
     id: t.id,
-    account_login_id: t.user_id,
+    account_email: t.user_id,
     type: (t.type as CreditTxn['type']) ?? 'deduct',
     description: t.description ?? '',
     amount: t.amount,
@@ -257,7 +166,7 @@ export async function listRequests(): Promise<MasterRequest[]> {
   if (error || !data) return [];
   return (data as Array<Record<string, unknown>>).map((r) => ({
     id: String(r.id),
-    account_login_id: String(r.requester_name ?? ''),
+    account_email: String(r.requester_email ?? ''),
     project_title: String(r.project_title ?? ''),
     purpose: String(r.purpose ?? ''),
     recipient_email: String(r.requester_email ?? 'momo.ai.fren@gmail.com'),
@@ -278,9 +187,9 @@ export async function updateRequestStatus(id: string, status: MasterRequest['sta
 }
 
 export function transactionsToCsv(rows: CreditTxn[]): string {
-  const header = '일시,계정,유형,내용,변동,잔액';
+  const header = '일시,이메일,유형,내용,변동,잔액';
   const lines = rows.map((r) =>
-    [r.created_at, r.account_login_id, r.type, `"${r.description.replace(/"/g, '""')}"`, r.amount, r.balance_after].join(',')
+    [r.created_at, r.account_email, r.type, `"${r.description.replace(/"/g, '""')}"`, r.amount, r.balance_after].join(',')
   );
   return [header, ...lines].join('\n');
 }

@@ -7,35 +7,6 @@ import type { User, Session } from '@supabase/supabase-js';
 
 let authSubscriptionRegistered = false;
 
-// 발급계정 아이디 → 합성 이메일 도메인 (docs/AUTH_MODEL_TRANSITION.md §6 확정)
-export const LOGIN_EMAIL_DOMAIN = 'sodam.local';
-
-/** 발급계정 아이디를 로그인용 합성 이메일로 변환 */
-export function loginIdToEmail(loginId: string): string {
-  return `${loginId.trim().toLowerCase()}@${LOGIN_EMAIL_DOMAIN}`;
-}
-
-/**
- * 구글 셀프가입 차단 (docs/AUTH_MODEL_TRANSITION.md §6.2)
- * 구글 OAuth 는 마스터 전용 — 마스터 이메일이 아닌 구글 로그인은 즉시 로그아웃.
- * 발급계정은 provider='email'(@sodam.local) 이므로 이 가드를 통과한다.
- * @returns 차단(로그아웃)했으면 true
- */
-async function enforceGoogleMasterOnly(user: User | null): Promise<boolean> {
-  if (!user) return false;
-  const provider = user.app_metadata?.provider;
-  if (provider !== 'google') return false;
-
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user.email?.toLowerCase();
-  if (adminEmail && userEmail && userEmail === adminEmail) return false;
-
-  // 허용되지 않은 구글 계정 → 강제 로그아웃
-  console.warn('허용되지 않은 구글 계정 로그인 차단:', userEmail);
-  await supabase.auth.signOut();
-  return true;
-}
-
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -44,7 +15,6 @@ interface AuthState {
   setSession: (session: Session | null) => void;
   setAuthLoading: (loading: boolean) => void;
   signInWithGoogle: () => Promise<void>;
-  signInWithId: (loginId: string, password: string) => Promise<{ error: string | null }>;
   signInAsMock: (role: MockRole) => void;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
@@ -67,17 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  // 발급계정: 아이디 + 비밀번호 로그인
-  signInWithId: async (loginId, password) => {
-    const email = loginIdToEmail(loginId);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      return { error: '아이디 또는 비밀번호가 올바르지 않습니다.' };
-    }
-    return { error: null };
-  },
-
-  // 디자인(가계정) 모드: 가짜 마스터/발급계정으로 즉시 입장
+  // 디자인(가계정) 모드: 가짜 마스터/일반 사용자로 즉시 입장
   signInAsMock: (role) => {
     setMockRole(role);
     const user = buildMockUser(role);
@@ -116,24 +76,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (await enforceGoogleMasterOnly(session?.user ?? null)) {
-        set({ session: null, user: null });
-      } else {
-        set({ session, user: session?.user ?? null });
-        if (session?.user) {
-          await useCreditStore.getState().loadCredits(session.user.id);
-        }
+      set({ session, user: session?.user ?? null });
+      if (session?.user) {
+        await useCreditStore.getState().loadCredits(session.user.id);
       }
 
       if (!authSubscriptionRegistered) {
         authSubscriptionRegistered = true;
         supabase.auth.onAuthStateChange(async (_event, session) => {
-          if (await enforceGoogleMasterOnly(session?.user ?? null)) {
-            set({ session: null, user: null });
-            useCreditStore.getState().reset();
-            clearApiKeyCache();
-            return;
-          }
           set({ session, user: session?.user ?? null });
           if (session?.user) {
             useCreditStore.getState().loadCredits(session.user.id);
