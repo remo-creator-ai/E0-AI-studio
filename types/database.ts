@@ -251,6 +251,15 @@ export interface Database {
           creator_avatar_url: string | null;
         }[];
       };
+      get_public_profile: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          display_name: string | null;
+          avatar_url: string | null;
+        }[];
+      };
       initialize_user_credits: {
         Args: {
           p_user_id: string;

@@ -10,7 +10,7 @@
 | 계정 생성 | 구글 로그인 시 `auth.users` 자동 생성 → 트리거로 `profiles` 자동 삽입 | `supabase/schema.sql` (`handle_new_user` 트리거) |
 | 권한 판별 | **클라이언트 이메일 비교** (`VITE_ADMIN_EMAIL`) | `services/adminConfigService.ts` `isAdmin()` |
 | 역할(role) | **DB에 없음** — `profiles`에 role 컬럼 부재 | — |
-| 크레딧 | 가입 시 60 부여 | `supabase/migrations/005_user_credits.sql` |
+| 크레딧 | 가입 시 20 부여 (014에서 60→20 하향) | `supabase/migrations/005_user_credits.sql` |
 
 ## 2. 목표 상태 (To-Be, 시안 기준)
 
@@ -109,7 +109,7 @@ ALTER TABLE public.profiles
 | Edge Function — 임시비번 재발급(1회 표시) | `supabase/functions/master-reset-password/index.ts` | 작성 완료 (배포 필요) |
 | DB 타입 | `types/database.ts` (profiles + `is_master`) | 완료 |
 | 아이디/비번 로그인 | `store/authStore.ts` (`signInWithId`, `loginIdToEmail`) | 완료 |
-| 구글 셀프가입 차단 | `store/authStore.ts` (`enforceGoogleMasterOnly`) | 완료 |
+| 구글 셀프가입 차단 | ~~`store/authStore.ts` (`enforceGoogleMasterOnly`)~~ | **폐기** — 3d65b7b에서 가드 제거, 셀프가입 개방. `docs/SECURITY_OPEN_SIGNUP.md` 참조 |
 | role 기반 권한 판별 | `services/adminConfigService.ts` (`isMaster()`) | 완료 |
 | 로그인 UI (아이디/비번 폼 + 구글=마스터전용) | `components/LandingPage.tsx` | 완료 |
 

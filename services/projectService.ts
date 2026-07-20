@@ -75,11 +75,11 @@ export async function loadProject(projectId: string): Promise<Project | null> {
   let creatorName: string | null = null;
   let creatorAvatar: string | null = null;
   if (data.original_creator_id) {
+    // profiles 를 직접 읽지 않는다. 016 이후 본인 row 만 조회 가능하므로,
+    // 공개 컬럼(display_name/avatar_url)만 반환하는 RPC 를 쓴다.
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, avatar_url')
-      .eq('id', data.original_creator_id)
-      .single();
+      .rpc('get_public_profile', { p_user_id: data.original_creator_id })
+      .maybeSingle();
     if (profile) {
       creatorName = profile.display_name;
       creatorAvatar = profile.avatar_url;
