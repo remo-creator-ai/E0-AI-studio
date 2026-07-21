@@ -181,6 +181,38 @@ export interface Database {
         };
         Relationships: [];
       };
+      intro_survey_responses: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: 'completed' | 'skipped';
+          survey_version: string;
+          q1_role: string | null;
+          q2_content_type: string | null;
+          q3_industry: string | null;
+          q4_expected_volume: string | null;
+          q5_ai_experience: string | null;
+          q6_referral: string | null;
+          submitted_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status: 'completed' | 'skipped';
+          survey_version?: string;
+          q1_role?: string | null;
+          q2_content_type?: string | null;
+          q3_industry?: string | null;
+          q4_expected_volume?: string | null;
+          q5_ai_experience?: string | null;
+          q6_referral?: string | null;
+          submitted_at?: string;
+        };
+        Update: {
+          status?: 'completed' | 'skipped';
+        };
+        Relationships: [];
+      };
       production_requests: {
         Row: {
           id: string;

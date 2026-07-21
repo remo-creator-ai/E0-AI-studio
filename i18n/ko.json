@@ -332,6 +332,61 @@
       "section5Text": "AI 생성물은 참고용이며, 이를 이용한 결과에 대한 책임은 이용자에게 있습니다. 서비스는 관련 법령이 정한 범위 내에서 책임을 부담합니다."
     }
   },
+  "survey": {
+    "title": "몇 가지만 여쭤볼게요",
+    "subtitle": "더 나은 소담 AI 스튜디오를 만들기 위한 참고용 설문이에요. 원치 않으시면 건너뛰어도 됩니다.",
+    "optional": "선택",
+    "skip": "건너뛰기",
+    "submit": "제출하고 시작하기",
+    "submitting": "처리 중…",
+    "q1_role": {
+      "label": "어떤 신분으로 이용하시나요?",
+      "creator": "크리에이터",
+      "smb": "소상공인",
+      "marketer": "마케팅 담당자",
+      "freelancer": "프리랜서",
+      "other": "기타"
+    },
+    "q2_content_type": {
+      "label": "주로 어떤 콘텐츠를 만드실 예정인가요?",
+      "product_promo": "제품 홍보",
+      "brand_story": "브랜드 스토리",
+      "education": "교육·강의",
+      "sns_shorts": "SNS 릴스·숏폼",
+      "other": "기타"
+    },
+    "q3_industry": {
+      "label": "업종·카테고리를 알려주세요",
+      "food": "요식업",
+      "fashion_beauty": "패션·뷰티",
+      "retail": "리테일",
+      "service": "서비스업",
+      "education": "교육",
+      "it_startup": "IT·스타트업",
+      "other": "기타"
+    },
+    "q4_expected_volume": {
+      "label": "월 예상 제작량은 어느 정도인가요?",
+      "lt_5": "5개 미만",
+      "5_to_20": "5~20개",
+      "20_to_50": "20~50개",
+      "gte_50": "50개 이상"
+    },
+    "q5_ai_experience": {
+      "label": "AI 도구 사용 경험이 있으신가요?",
+      "first": "처음이에요",
+      "few": "몇 번 써봤어요",
+      "frequent": "자주 사용해요"
+    },
+    "q6_referral": {
+      "label": "소담을 어떻게 알게 되셨나요?",
+      "openknowl": "오픈놀 프로그램",
+      "referral": "지인 소개",
+      "search": "검색",
+      "sns": "SNS",
+      "other": "기타"
+    }
+  },
   "dashboard": {
     "title": "My",
     "titleHighlight": "Projects",

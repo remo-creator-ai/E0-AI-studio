@@ -8,6 +8,7 @@ import { ConsentGate } from './components/ConsentGate';
 import { useStore } from './store';
 import { useAuthStore } from './store/authStore';
 import { useConsentStore } from './store/consentStore';
+import { useSurveyStore } from './store/surveyStore';
 import { useAutoSave } from './hooks/useAutoSave';
 import { ProjectStep } from './types';
 
@@ -23,17 +24,23 @@ const App: React.FC = () => {
   const { currentStep, project, updateCurrentStage } = useStore();
   const { user, isAuthLoading, initialize } = useAuthStore();
   const { needsConsent, isLoaded: consentLoaded, loadConsent, reset: resetConsent } = useConsentStore();
+  const { loadSurvey, reset: resetSurvey } = useSurveyStore();
   const { saveStatus, flush } = useAutoSave();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
 
-  // 로그인 사용자의 약관 동의 상태 로드(§9.1). 로그아웃 시 초기화.
+  // 로그인 사용자의 약관 동의(§9.1)·인트로 설문(§9.0) 상태 로드. 로그아웃 시 초기화.
   useEffect(() => {
-    if (user) loadConsent(user.id);
-    else resetConsent();
-  }, [user?.id, loadConsent, resetConsent]);
+    if (user) {
+      loadConsent(user.id);
+      loadSurvey(user.id);
+    } else {
+      resetConsent();
+      resetSurvey();
+    }
+  }, [user?.id, loadConsent, resetConsent, loadSurvey, resetSurvey]);
 
   // Auto-update current_stage when entering a workflow step
   useEffect(() => {

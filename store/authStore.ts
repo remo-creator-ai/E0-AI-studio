@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useCreditStore } from './creditStore';
 import { useSettingsStore } from './settingsStore';
 import { MOCK_CONSENT_KEY } from './consentStore';
+import { MOCK_SURVEY_KEY } from './surveyStore';
 import { clearApiKeyCache } from '../services/geminiService';
 import { MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
 import type { User, Session } from '@supabase/supabase-js';
@@ -47,6 +48,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInAsMock: (role) => {
     setMockRole(role);
     localStorage.removeItem(MOCK_CONSENT_KEY);
+    localStorage.removeItem(MOCK_SURVEY_KEY);
     useSettingsStore.getState().resetOnboarding();
     const user = buildMockUser(role);
     set({ user, session: buildMockSession(user) });

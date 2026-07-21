@@ -332,6 +332,61 @@
       "section5Text": "AI output is for reference only, and you are responsible for outcomes from its use. The service bears liability only within the scope prescribed by applicable law."
     }
   },
+  "survey": {
+    "title": "A few quick questions",
+    "subtitle": "An optional survey to help us improve Sodam AI Studio. Feel free to skip it.",
+    "optional": "Optional",
+    "skip": "Skip",
+    "submit": "Submit and start",
+    "submitting": "Processing…",
+    "q1_role": {
+      "label": "How will you be using Sodam?",
+      "creator": "Creator",
+      "smb": "Small business owner",
+      "marketer": "Marketer",
+      "freelancer": "Freelancer",
+      "other": "Other"
+    },
+    "q2_content_type": {
+      "label": "What kind of content will you mainly make?",
+      "product_promo": "Product promotion",
+      "brand_story": "Brand story",
+      "education": "Education",
+      "sns_shorts": "SNS reels / shorts",
+      "other": "Other"
+    },
+    "q3_industry": {
+      "label": "What's your industry / category?",
+      "food": "Food & beverage",
+      "fashion_beauty": "Fashion & beauty",
+      "retail": "Retail",
+      "service": "Services",
+      "education": "Education",
+      "it_startup": "IT & startup",
+      "other": "Other"
+    },
+    "q4_expected_volume": {
+      "label": "How much do you expect to produce per month?",
+      "lt_5": "Fewer than 5",
+      "5_to_20": "5–20",
+      "20_to_50": "20–50",
+      "gte_50": "50 or more"
+    },
+    "q5_ai_experience": {
+      "label": "Have you used AI tools before?",
+      "first": "First time",
+      "few": "A few times",
+      "frequent": "I use them often"
+    },
+    "q6_referral": {
+      "label": "How did you hear about Sodam?",
+      "openknowl": "OpenKnowl program",
+      "referral": "Word of mouth",
+      "search": "Search",
+      "sns": "Social media",
+      "other": "Other"
+    }
+  },
   "dashboard": {
     "title": "My",
     "titleHighlight": "Projects",

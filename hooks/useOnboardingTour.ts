@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store';
 import { useSettingsStore } from '../store/settingsStore';
+import { useSurveyStore } from '../store/surveyStore';
 import { ProjectStep } from '../types';
 
 export type TourId = 'dashboard' | 'planning' | 'visualizing' | 'assembly';
@@ -51,6 +52,7 @@ export function useOnboardingTour() {
   const { t } = useTranslation();
   const currentStep = useStore((s) => s.currentStep);
   const { onboardingCompleted, markTourCompleted, _replayTourId, _clearReplayRequest } = useSettingsStore();
+  const needsSurvey = useSurveyStore((s) => s.needsSurvey);
   const driverRef = useRef<ReturnType<typeof import('driver.js').driver> | null>(null);
   const [isActive, setIsActive] = useState(false);
   // Prevents cleanup destroy from re-marking tour as completed
@@ -125,6 +127,9 @@ export function useOnboardingTour() {
   // Auto-trigger on step change or onboarding reset
   useEffect(() => {
     if (_replayTourId) return; // Skip when replay is handling it
+    // 인트로 설문(§9.0)이 아직 떠 있으면 투어를 미룬다. 설문 제출/건너뛰기로
+    // needsSurvey 가 false 가 되면 이 effect 가 재실행되어 투어가 시작된다.
+    if (needsSurvey !== false) return;
     const tourId = STEP_TO_TOUR[currentStep];
     if (!tourId) return;
     if (onboardingCompleted[tourId]) return;
@@ -145,7 +150,7 @@ export function useOnboardingTour() {
         driverRef.current = null;
       }
     };
-  }, [currentStep, onboardingCompleted, startTour, _replayTourId]);
+  }, [currentStep, onboardingCompleted, startTour, _replayTourId, needsSurvey]);
 
   // Cleanup on unmount
   useEffect(() => {

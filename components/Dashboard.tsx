@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
+import { useSurveyStore } from '../store/surveyStore';
+import { IntroSurveyModal } from './IntroSurveyModal';
 import { useModal } from './ui/ModalProvider';
 import { MAX_FREE_PROJECTS } from '../store/creditStore';
 import { supabase } from '../lib/supabase';
@@ -66,6 +68,7 @@ interface ProjectSummary {
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const needsSurvey = useSurveyStore((s) => s.needsSurvey);
   const { setProject, setStep } = useStore();
   const { alert, confirm } = useModal();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -230,6 +233,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
+        {needsSurvey && <IntroSurveyModal />}
         <div className="flex items-end justify-between">
           <div data-tour="dashboard-welcome" className="space-y-2">
             <h2 className="text-5xl font-black italic uppercase tracking-tighter text-zinc-900">
