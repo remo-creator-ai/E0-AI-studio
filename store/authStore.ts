@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useCreditStore } from './creditStore';
+import { useSettingsStore } from './settingsStore';
+import { MOCK_CONSENT_KEY } from './consentStore';
 import { clearApiKeyCache } from '../services/geminiService';
 import { MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
 import type { User, Session } from '@supabase/supabase-js';
@@ -37,9 +39,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  // 디자인(가계정) 모드: 가짜 마스터/일반 사용자로 즉시 입장
+  // 디자인(가계정) 모드: 가짜 마스터/일반 사용자로 즉시 입장.
+  // 목 로그인은 항상 새 세션으로 취급한다 — 이전 가계정의 약관 동의·온보딩 상태를
+  // 초기화해, 각 가계정(마스터/일반)이 실제 신규 사용자처럼 동의 게이트와 온보딩 투어를
+  // 독립적으로 보게 한다. (브라우저 localStorage 공유로 계정 간 상태가 섞이던 문제 해결)
+  // 실제 인증(signInWithGoogle)에는 영향이 없다.
   signInAsMock: (role) => {
     setMockRole(role);
+    localStorage.removeItem(MOCK_CONSENT_KEY);
+    useSettingsStore.getState().resetOnboarding();
     const user = buildMockUser(role);
     set({ user, session: buildMockSession(user) });
     useCreditStore.getState().loadCredits(user.id);

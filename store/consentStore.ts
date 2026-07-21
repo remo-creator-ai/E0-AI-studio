@@ -11,7 +11,8 @@ import { useCreditStore } from './creditStore';
 // needsConsent === null  → 아직 로드 전(로딩 스피너 유지).
 
 // 목 모드 동의 저장 키 — 현재 버전 조합이 바뀌면 자동으로 재동의가 필요해진다.
-const MOCK_CONSENT_KEY = 'mock-consent';
+// authStore(목 계정 전환 시 초기화)에서도 참조하므로 export.
+export const MOCK_CONSENT_KEY = 'mock-consent';
 function mockConsentSignature(): string {
   return [...currentConsentKeys()].sort().join('|');
 }
