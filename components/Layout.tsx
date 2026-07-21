@@ -21,6 +21,7 @@ import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { CreditRequestModal } from './CreditRequestModal';
 import { ProjectStep } from '../types';
 
 interface SidebarItemProps {
@@ -50,6 +51,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   const { currentStep, setStep, project } = useStore();
   const { user, signOut, isMaster } = useAuthStore();
   const { balance, maxCredits } = useCreditStore();
+  const [showCreditReq, setShowCreditReq] = useState(false);
   const { requestTourReplay } = useSettingsStore();
 
   const STEP_TO_TOUR: Partial<Record<ProjectStep, string>> = {
@@ -192,6 +194,15 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           <div className="mt-2 h-1.5 bg-[#D6E3F7] rounded-full overflow-hidden">
             <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
           </div>
+          {/* 크레딧 신청 — 마스터는 무제한이라 숨김(MASTER-12) */}
+          {!isMaster && (
+            <button
+              onClick={() => setShowCreditReq(true)}
+              className="mt-2.5 w-full py-2 bg-white/70 hover:bg-white border border-[#C0D4F0] rounded-xl text-[11px] font-bold text-[#0050BF] transition-all active:scale-[0.98]"
+            >
+              {t('creditRequest.button')}
+            </button>
+          )}
         </div>
 
         {/* User Profile */}
@@ -352,6 +363,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           {children}
         </div>
       </main>
+
+      {showCreditReq && <CreditRequestModal onClose={() => setShowCreditReq(false)} />}
     </div>
   );
 };

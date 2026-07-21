@@ -387,6 +387,30 @@
       "other": "기타"
     }
   },
+  "creditRequest": {
+    "button": "크레딧 신청",
+    "title": "크레딧 신청",
+    "subtitle": "크레딧이 부족하신가요? 마스터에게 추가 크레딧을 신청할 수 있어요.",
+    "amountLabel": "요청 수량",
+    "amountPlaceholder": "예: 100",
+    "reasonLabel": "신청 사유",
+    "reasonPlaceholder": "어떤 작업에 크레딧이 필요한지 알려주세요.",
+    "submit": "신청하기",
+    "submitting": "신청 중…",
+    "pendingTitle": "대기 중인 신청",
+    "pendingNote": "마스터의 승인을 기다리고 있어요.",
+    "cancel": "신청 취소",
+    "historyTitle": "신청 이력",
+    "empty": "아직 신청 내역이 없어요.",
+    "granted": "지급 {{amount}}",
+    "close": "닫기",
+    "status": {
+      "pending": "대기 중",
+      "approved": "승인됨",
+      "rejected": "반려됨",
+      "cancelled": "취소됨"
+    }
+  },
   "dashboard": {
     "title": "My",
     "titleHighlight": "Projects",

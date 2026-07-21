@@ -16,6 +16,14 @@ import {
   type DashboardStats,
   type CreditOp,
 } from '../services/masterService';
+import {
+  listAllCreditRequests,
+  approveCreditRequest,
+  rejectCreditRequest,
+  getMasterCreditPool,
+  type CreditRequest,
+  type CreditPool,
+} from '../services/creditRequestService';
 import { MOCK_MODE } from '../lib/mockAuth';
 import {
   Shield, Key, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, Save,
@@ -30,7 +38,7 @@ const API_KEY_FIELDS: ApiKeyField[] = [
   { key: 'kling_access_key_secret', label: 'Kling Access Key Secret', placeholder: 'sk-...' },
 ];
 
-type AdminTab = 'dashboard' | 'accounts' | 'usage' | 'requests' | 'api-keys';
+type AdminTab = 'dashboard' | 'accounts' | 'credit-requests' | 'usage' | 'requests' | 'api-keys';
 
 const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }> = {
   pending: { label: '대기', cls: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]' },
@@ -67,6 +75,7 @@ export const AdminPage: React.FC = () => {
   const TABS: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: '대시보드', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'accounts', label: '계정 관리', icon: <Users className="w-4 h-4" /> },
+    { id: 'credit-requests', label: '크레딧 신청', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'usage', label: '사용 이력', icon: <History className="w-4 h-4" /> },
     { id: 'requests', label: '의뢰 기록', icon: <ClipboardList className="w-4 h-4" /> },
     { id: 'api-keys', label: 'API 키', icon: <Key className="w-4 h-4" /> },
@@ -115,6 +124,7 @@ export const AdminPage: React.FC = () => {
 
         {activeTab === 'dashboard' && <DashboardTab />}
         {activeTab === 'accounts' && <AccountsTab showToast={showToast} />}
+        {activeTab === 'credit-requests' && <CreditRequestsTab showToast={showToast} />}
         {activeTab === 'usage' && <UsageTab />}
         {activeTab === 'requests' && <RequestsTab />}
         {activeTab === 'api-keys' && <ApiKeysTab />}
@@ -217,6 +227,117 @@ const DashboardTab: React.FC = () => {
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+};
+
+/* ============================= Credit Requests Tab ============================= */
+const CR_STATUS: Record<CreditRequest['status'], string> = {
+  pending:   'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]',
+  approved:  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  rejected:  'bg-zinc-100 text-zinc-500 border-zinc-200',
+  cancelled: 'bg-zinc-100 text-zinc-400 border-zinc-200',
+};
+const CR_STATUS_LABEL: Record<CreditRequest['status'], string> = {
+  pending: '대기', approved: '승인', rejected: '반려', cancelled: '취소',
+};
+
+const CreditRequestsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }) => {
+  const [pool, setPool] = useState<CreditPool | null>(null);
+  const [reqs, setReqs] = useState<CreditRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [grant, setGrant] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [p, r] = await Promise.all([getMasterCreditPool(), listAllCreditRequests()]);
+    setPool(p); setReqs(r); setLoading(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const approve = async (req: CreditRequest) => {
+    const amt = Number(grant[req.id] ?? req.amount);
+    if (!amt || amt <= 0) { showToast('지급 수량을 확인하세요.'); return; }
+    setBusyId(req.id);
+    const res = await approveCreditRequest(req, amt, '크레딧 신청 승인');
+    setBusyId(null);
+    if (!res.ok) { showToast(res.error ?? '지급에 실패했습니다.'); return; }
+    showToast(`${amt.toLocaleString()} 크레딧 지급 완료`);
+    await load();
+  };
+  // 반려 사유는 MVP 에서 고정 문구. 사유 입력 UI 는 후속(REQUEST-09).
+  const reject = async (req: CreditRequest) => {
+    setBusyId(req.id);
+    const res = await rejectCreditRequest(req.id, '마스터 반려');
+    setBusyId(null);
+    if (res.ok) { showToast('반려 처리했습니다.'); await load(); }
+    else showToast(res.error ?? '반려에 실패했습니다.');
+  };
+
+  if (loading) return <TabLoader />;
+  const pendingCount = reqs.filter((r) => r.status === 'pending').length;
+
+  return (
+    <div className="space-y-5">
+      {pool && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard label="지급 한도" value={pool.limit.toLocaleString()} />
+          <StatCard label="부여 누계" value={pool.granted.toLocaleString()} />
+          <StatCard label="잔여" value={<span className="text-primary">{pool.remaining.toLocaleString()}</span>} />
+        </div>
+      )}
+
+      <div className="bg-white border border-zinc-100 rounded-2xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
+          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">크레딧 신청 대기함</span>
+          {pendingCount > 0 && (
+            <span className="px-1.5 py-0.5 bg-primary text-white rounded-full text-[9px] font-black">{pendingCount}</span>
+          )}
+        </div>
+        {reqs.length === 0 ? (
+          <p className="text-sm text-zinc-400 text-center py-10">신청 내역이 없습니다.</p>
+        ) : (
+          <div className="divide-y divide-zinc-100">
+            {reqs.map((req) => (
+              <div key={req.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-zinc-900 truncate">{req.user_email || req.user_id}</span>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border ${CR_STATUS[req.status]}`}>
+                      {CR_STATUS_LABEL[req.status]}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{req.reason}</p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    요청 {req.amount.toLocaleString()}
+                    {req.granted_amount != null && <> · 지급 <b className="text-zinc-600">{req.granted_amount.toLocaleString()}</b></>}
+                    {' · '}{req.created_at}
+                  </p>
+                </div>
+                {req.status === 'pending' && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number" min={1}
+                      value={grant[req.id] ?? String(req.amount)}
+                      onChange={(e) => setGrant((g) => ({ ...g, [req.id]: e.target.value }))}
+                      className="w-20 px-2 py-1.5 rounded-lg border border-zinc-200 text-sm text-right focus:border-primary outline-none"
+                    />
+                    <button onClick={() => approve(req)} disabled={busyId === req.id}
+                      className="px-3 py-1.5 bg-primary hover:bg-[#003E99] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                      승인
+                    </button>
+                    <button onClick={() => reject(req)} disabled={busyId === req.id}
+                      className="px-3 py-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                      반려
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

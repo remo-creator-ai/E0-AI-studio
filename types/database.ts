@@ -213,6 +213,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      credit_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          reason: string;
+          attachments: string[];
+          status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount: number | null;
+          reviewer: string | null;
+          reviewer_note: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          reason: string;
+          attachments?: string[];
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount?: number | null;
+          reviewer?: string | null;
+          reviewer_note?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount?: number | null;
+          reviewer?: string | null;
+          reviewer_note?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
       production_requests: {
         Row: {
           id: string;
@@ -367,6 +403,40 @@ export interface Database {
           p_status: string;
         };
         Returns: void;
+      };
+      get_master_credit_pool: {
+        Args: Record<never, never>;
+        Returns: {
+          pool_limit: number;
+          granted: number;
+          remaining: number;
+        }[];
+      };
+      master_grant_credit: {
+        Args: {
+          p_user_id: string;
+          p_amount: number;
+          p_reason?: string;
+          p_request_id?: string | null;
+        };
+        Returns: {
+          ok: boolean;
+          new_balance: number;
+          error: string | null;
+        }[];
+      };
+      cancel_credit_request: {
+        Args: {
+          p_request_id: string;
+        };
+        Returns: boolean;
+      };
+      reject_credit_request: {
+        Args: {
+          p_request_id: string;
+          p_note?: string;
+        };
+        Returns: boolean;
       };
     };
   };

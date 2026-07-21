@@ -387,6 +387,30 @@
       "other": "Other"
     }
   },
+  "creditRequest": {
+    "button": "Request credits",
+    "title": "Request credits",
+    "subtitle": "Running low on credits? You can request more from the master.",
+    "amountLabel": "Amount requested",
+    "amountPlaceholder": "e.g. 100",
+    "reasonLabel": "Reason",
+    "reasonPlaceholder": "Tell us what you need the credits for.",
+    "submit": "Submit request",
+    "submitting": "Submitting…",
+    "pendingTitle": "Pending request",
+    "pendingNote": "Waiting for the master's approval.",
+    "cancel": "Cancel request",
+    "historyTitle": "Request history",
+    "empty": "No requests yet.",
+    "granted": "Granted {{amount}}",
+    "close": "Close",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    }
+  },
   "dashboard": {
     "title": "My",
     "titleHighlight": "Projects",

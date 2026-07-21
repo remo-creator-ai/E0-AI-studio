@@ -41,6 +41,20 @@ export interface MasterRequest {
   created_at: string;
 }
 
+// 인앱 크레딧 신청 (§9.7)
+export interface MockCreditRequest {
+  id: string;
+  user_id: string;
+  user_email: string;
+  amount: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  granted_amount: number | null;
+  reviewer_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
 function acc(
   email: string,
   display_name: string,
@@ -82,6 +96,12 @@ const SEED_REQUESTS: MasterRequest[] = [
   { id: 'r3', account_email: 'hongdae.sodam@gmail.com', project_title: '홍대점 이벤트', purpose: '매장', recipient_email: 'momo.ai.fren@gmail.com', status: 'completed', attachments: ['storyboard.json', 'assets.zip'], created_at: '2026-07-05 09:15' },
 ];
 
+// 대기 중인 크레딧 신청 예시 — 마스터 대기함 확인용
+const SEED_CREDIT_REQUESTS: MockCreditRequest[] = [
+  { id: 'cr1', user_id: 'mock-acc-busan', user_email: 'busan.sodam@gmail.com', amount: 200, reason: '월말 캠페인 영상 제작에 크레딧이 부족합니다.', status: 'pending', granted_amount: null, reviewer_note: null, reviewed_at: null, created_at: '2026-07-09 16:20' },
+  { id: 'cr2', user_id: 'mock-acc-jeju', user_email: 'jeju.sodam@gmail.com', amount: 100, reason: '신메뉴 홍보 숏폼용', status: 'approved', granted_amount: 100, reviewer_note: '승인합니다', reviewed_at: '2026-07-08 10:30', created_at: '2026-07-08 09:00' },
+];
+
 // 부여 누계(평생 총량) — 시안 대시보드의 배분 4,420 기준 초기값
 const SEED_ALLOCATED = 4420;
 
@@ -90,6 +110,7 @@ interface MockDb {
   accounts: MasterAccount[];
   txns: CreditTxn[];
   requests: MasterRequest[];
+  creditRequests: MockCreditRequest[];
   allocated: number; // 부여 누계
 }
 
@@ -105,6 +126,7 @@ export function getMockDb(): MockDb {
       accounts: clone(SEED_ACCOUNTS),
       txns: clone(SEED_TXNS),
       requests: clone(SEED_REQUESTS),
+      creditRequests: clone(SEED_CREDIT_REQUESTS),
       allocated: SEED_ALLOCATED,
     };
   }
