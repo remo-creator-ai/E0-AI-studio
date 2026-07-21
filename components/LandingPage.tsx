@@ -333,7 +333,16 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
   const [activeSection, setActiveSection] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
-  const { signInWithGoogle, signInAsMock, isAuthLoading } = useAuthStore();
+  const { signInWithGoogle, signInAsMock, signInDev, isAuthLoading } = useAuthStore();
+  // 로컬 개발 전용 이메일 로그인 상태 (프로덕션 빌드에서는 UI 자체가 렌더되지 않음)
+  const [devEmail, setDevEmail] = useState('user@dev.local');
+  const [devPassword, setDevPassword] = useState('devpass123');
+  const [devError, setDevError] = useState('');
+  const handleDevLogin = async () => {
+    setDevError('');
+    try { await signInDev(devEmail.trim(), devPassword); }
+    catch (e) { setDevError(e instanceof Error ? e.message : String(e)); }
+  };
   const { t, i18n } = useTranslation();
   const { setLanguage, defaultLanguage } = useSettingsStore();
 
@@ -1591,6 +1600,31 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </svg>
                 {t('landing.login.googleLogin')}
               </button>
+              )}
+
+              {/* 개발 전용 이메일 로그인 — 로컬(vite dev) + 실제 Supabase 모드에서만 노출 */}
+              {!MOCK_MODE && import.meta.env.DEV && (
+                <div className="mt-3 space-y-2 p-3 rounded-2xl border border-amber-200 bg-amber-50/60">
+                  <p className="text-[11px] font-black text-amber-700">DEV · 로컬 Supabase 이메일 로그인</p>
+                  <input
+                    type="email" value={devEmail} onChange={(e) => setDevEmail(e.target.value)}
+                    placeholder="user@dev.local"
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary"
+                  />
+                  <input
+                    type="password" value={devPassword} onChange={(e) => setDevPassword(e.target.value)}
+                    placeholder="비밀번호"
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleDevLogin(); }}
+                    className="w-full px-3 py-2 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={handleDevLogin} disabled={isAuthLoading}
+                    className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-900 text-white rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    로그인 / 가입 (dev)
+                  </button>
+                  {devError && <p className="text-[11px] font-semibold text-red-500">{devError}</p>}
+                </div>
               )}
 
               {/* Privacy & Terms Consent */}

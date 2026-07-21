@@ -23,6 +23,9 @@ interface AuthState {
   setAuthLoading: (loading: boolean) => void;
   signInWithGoogle: () => Promise<void>;
   signInAsMock: (role: MockRole) => void;
+  // 로컬 개발 전용: 이메일/비번 로그인(없으면 가입 후 로그인). LandingPage 에서
+  // import.meta.env.DEV && !MOCK_MODE 일 때만 노출한다. 프로덕션 UI 에는 나타나지 않는다.
+  signInDev: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
 }
@@ -58,6 +61,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     const user = buildMockUser(role);
     set({ user, session: buildMockSession(user), isMaster: role === 'master' });
     useCreditStore.getState().loadCredits(user.id);
+  },
+
+  // 로컬 개발 전용 이메일 로그인 — onAuthStateChange 가 세션·크레딧·마스터를 처리한다.
+  signInDev: async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) throw signUpErr;
+      const { error: retryErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (retryErr) throw retryErr;
+    }
   },
 
   signOut: async () => {
