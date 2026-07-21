@@ -117,9 +117,18 @@ export async function adjustCredit(
     return { ok: true, balance: newBalance };
   }
 
-  // TODO(실제): 부여 누계 검증 + credit_transactions 기록을 원자적으로 처리하는
-  //             admin_adjust_credit RPC 신설 필요 (masters.credit_quota 대비 배분 검증).
-  return { ok: false, error: '실제 크레딧 조정 RPC(admin_adjust_credit)가 아직 구현되지 않았습니다.' };
+  // 실제 모드: 지급(add)만 지원한다. 차감·강제 설정은 PRD 비목표(MASTER-11).
+  if (op !== 'add') {
+    return { ok: false, error: '크레딧 차감·설정은 지원하지 않습니다(지급만 가능).' };
+  }
+  // 024 RPC 재사용: 60,000 pool 검증 + 증액 + manual_grant 기록을 원자적으로 처리.
+  const { data, error } = await supabase.rpc('master_grant_credit', {
+    p_user_id: id, p_amount: amount, p_reason: reason, p_request_id: null,
+  });
+  if (error) return { ok: false, error: error.message };
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.ok) return { ok: false, error: row?.error ?? '지급에 실패했습니다.' };
+  return { ok: true, balance: row.new_balance };
 }
 
 // ---------------- 사용 이력 ----------------

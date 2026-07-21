@@ -249,6 +249,8 @@ const CreditRequestsTab: React.FC<{ showToast: (m: string) => void }> = ({ showT
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [grant, setGrant] = useState<Record<string, string>>({});
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -267,11 +269,11 @@ const CreditRequestsTab: React.FC<{ showToast: (m: string) => void }> = ({ showT
     showToast(`${amt.toLocaleString()} 크레딧 지급 완료`);
     await load();
   };
-  // 반려 사유는 MVP 에서 고정 문구. 사유 입력 UI 는 후속(REQUEST-09).
+  // 반려 사유(REQUEST-09/14 처리 메모). 비워두면 기본 문구로 기록.
   const reject = async (req: CreditRequest) => {
     setBusyId(req.id);
-    const res = await rejectCreditRequest(req.id, '마스터 반려');
-    setBusyId(null);
+    const res = await rejectCreditRequest(req.id, rejectNote.trim() || '마스터 반려');
+    setBusyId(null); setRejectId(null); setRejectNote('');
     if (res.ok) { showToast('반려 처리했습니다.'); await load(); }
     else showToast(res.error ?? '반려에 실패했습니다.');
   };
@@ -317,22 +319,41 @@ const CreditRequestsTab: React.FC<{ showToast: (m: string) => void }> = ({ showT
                   </p>
                 </div>
                 {req.status === 'pending' && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <input
-                      type="number" min={1}
-                      value={grant[req.id] ?? String(req.amount)}
-                      onChange={(e) => setGrant((g) => ({ ...g, [req.id]: e.target.value }))}
-                      className="w-20 px-2 py-1.5 rounded-lg border border-zinc-200 text-sm text-right focus:border-primary outline-none"
-                    />
-                    <button onClick={() => approve(req)} disabled={busyId === req.id}
-                      className="px-3 py-1.5 bg-primary hover:bg-[#003E99] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">
-                      승인
-                    </button>
-                    <button onClick={() => reject(req)} disabled={busyId === req.id}
-                      className="px-3 py-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-lg text-xs font-bold transition-all disabled:opacity-50">
-                      반려
-                    </button>
-                  </div>
+                  rejectId === req.id ? (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <input
+                        autoFocus type="text" value={rejectNote}
+                        onChange={(e) => setRejectNote(e.target.value)}
+                        placeholder="반려 사유"
+                        className="w-40 px-2.5 py-1.5 rounded-lg border border-zinc-200 text-sm focus:border-primary outline-none"
+                      />
+                      <button onClick={() => reject(req)} disabled={busyId === req.id}
+                        className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-900 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                        반려 확정
+                      </button>
+                      <button onClick={() => { setRejectId(null); setRejectNote(''); }}
+                        className="px-3 py-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-500 rounded-lg text-xs font-bold transition-all">
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <input
+                        type="number" min={1}
+                        value={grant[req.id] ?? String(req.amount)}
+                        onChange={(e) => setGrant((g) => ({ ...g, [req.id]: e.target.value }))}
+                        className="w-20 px-2 py-1.5 rounded-lg border border-zinc-200 text-sm text-right focus:border-primary outline-none"
+                      />
+                      <button onClick={() => approve(req)} disabled={busyId === req.id}
+                        className="px-3 py-1.5 bg-primary hover:bg-[#003E99] text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                        승인
+                      </button>
+                      <button onClick={() => { setRejectId(req.id); setRejectNote(''); }} disabled={busyId === req.id}
+                        className="px-3 py-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-lg text-xs font-bold transition-all disabled:opacity-50">
+                        반려
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             ))}
@@ -404,37 +425,31 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
 };
 
 /* ============================= Credit Modal ============================= */
+// 크레딧 지급 전용 모달. PRD MASTER-11: 차감·강제 설정은 제공하지 않는다.
 const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDone: (msg: string) => void }> = ({ account, onClose, onDone }) => {
-  const [op, setOp] = useState<CreditOp>('add');
   const [amount, setAmount] = useState(100);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
+    if (amount <= 0) { setError('지급 수량은 1 이상이어야 합니다.'); return; }
     setError(null); setSaving(true);
-    const res = await adjustCredit(account.id, op, amount, reason);
+    const res = await adjustCredit(account.id, 'add', amount, reason);
     setSaving(false);
-    if (res.ok) onDone(`${account.email} 크레딧 ${op === 'add' ? '충전' : op === 'deduct' ? '차감' : '설정'} 완료`);
+    if (res.ok) onDone(`${account.email} 크레딧 ${amount.toLocaleString()} 지급 완료`);
     else setError(res.error ?? '실패');
   };
 
-  const opBtn = (v: CreditOp, label: string) => (
-    <button onClick={() => setOp(v)} className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${op === v ? 'bg-primary border-primary text-white' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}>{label}</button>
-  );
-
   return (
-    <ModalShell eyebrow={`Credit · ${account.email}`} title="크레딧 관리" desc={account.display_name} onClose={onClose}>
+    <ModalShell eyebrow={`Credit · ${account.email}`} title="크레딧 지급" desc={account.display_name} onClose={onClose}>
       <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center mb-4">
         <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">현재 잔액</div>
         <div className="text-3xl font-black tracking-tighter text-zinc-900">{account.balance}</div>
       </div>
-      <Field label="작업">
-        <div className="flex gap-2">{opBtn('add', '＋ 충전')}{opBtn('deduct', '－ 차감')}{opBtn('set', '＝ 설정')}</div>
-      </Field>
-      <Field label="수량">
-        <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={inputCls} />
-        <p className="text-[11px] text-zinc-400 mt-1.5">충전은 마스터 잔여 부여 한도 이내에서만 가능</p>
+      <Field label="지급 수량">
+        <input type="number" min={1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={inputCls} />
+        <p className="text-[11px] text-zinc-400 mt-1.5">마스터 잔여 부여 한도(60,000 pool) 이내에서만 지급됩니다.</p>
       </Field>
       <Field label="사유 (로그 기록)">
         <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="7월 정기 지급" className={inputCls} />
@@ -442,7 +457,7 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
       {error && <p className="text-[12px] font-bold text-zinc-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
         <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 적용
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 지급
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">닫기</button>
       </div>
