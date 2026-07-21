@@ -72,21 +72,9 @@ export async function getAllAdminConfig(): Promise<Record<string, string>> {
 }
 
 /**
- * Check if admin email matches current user.
- * ⚠️ UI 노출 게이팅 전용 — 실제 권한은 DB RLS/`is_master()` 로 강제됩니다.
- * (docs/AUTH_MODEL_TRANSITION.md §4.4)
- */
-export function isAdmin(userEmail: string | undefined): boolean {
-  // 디자인(가계정) 모드: 가짜 마스터면 콘솔 노출
-  if (MOCK_MODE) return getMockRole() === 'master';
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-  if (!adminEmail || !userEmail) return false;
-  return userEmail.toLowerCase() === adminEmail.toLowerCase();
-}
-
-/**
  * 현재 로그인 사용자가 마스터(role='master')인지 DB 에서 확인.
  * 권한 판별의 신뢰 소스. `is_master()` SECURITY DEFINER RPC 사용.
+ * (구 isAdmin() 의 VITE_ADMIN_EMAIL 문자열 비교 방식은 DEV-004 로 폐기됨)
  */
 export async function isMaster(): Promise<boolean> {
   if (MOCK_MODE) return getMockRole() === 'master';

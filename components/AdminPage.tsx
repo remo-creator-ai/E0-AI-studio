@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
-import { getAllAdminConfig, setAdminConfig, isAdmin, type AdminConfigKey } from '../services/adminConfigService';
+import { getAllAdminConfig, setAdminConfig, type AdminConfigKey } from '../services/adminConfigService';
 import {
   listAccounts,
   getDashboardStats,
@@ -42,8 +42,8 @@ const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }
 /* ============================= Main ============================= */
 export const AdminPage: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
-  const userIsAdmin = isAdmin(user?.email ?? undefined);
+  const user = useAuthStore((s) => s.user);
+  const userIsAdmin = useAuthStore((s) => s.isMaster);
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [toast, setToast] = useState<string | null>(null);
 

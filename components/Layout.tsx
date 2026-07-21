@@ -22,7 +22,6 @@ import { useAuthStore } from '../store/authStore';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ProjectStep } from '../types';
-import { isAdmin } from '../services/adminConfigService';
 
 interface SidebarItemProps {
   icon: React.FC<{ size?: number }>;
@@ -49,7 +48,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) =
 export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' | 'saving' | 'saved' | 'error' | 'forbidden'; flushSave?: () => Promise<void> }> = ({ children, saveStatus, flushSave }) => {
   const { t } = useTranslation();
   const { currentStep, setStep, project } = useStore();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, isMaster } = useAuthStore();
   const { balance, maxCredits } = useCreditStore();
   const { requestTourReplay } = useSettingsStore();
 
@@ -151,7 +150,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             onClick={() => handleNavigate(ProjectStep.SETTINGS)}
           />
 
-          {isAdmin(user?.email ?? undefined) && (
+          {isMaster && (
             <>
               <div className="h-[1px] bg-zinc-200 my-4" />
               <div className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.admin')}</div>

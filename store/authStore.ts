@@ -5,6 +5,7 @@ import { useSettingsStore } from './settingsStore';
 import { MOCK_CONSENT_KEY } from './consentStore';
 import { MOCK_SURVEY_KEY } from './surveyStore';
 import { clearApiKeyCache } from '../services/geminiService';
+import { isMaster as resolveMasterRole } from '../services/adminConfigService';
 import { MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -14,6 +15,9 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   isAuthLoading: boolean;
+  // 마스터 권한(profiles.role='master'). 관리자 콘솔 게이팅의 신뢰 소스.
+  // 실제 모드는 is_master() RPC, 목 모드는 가계정 role 로 판정한다.
+  isMaster: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setAuthLoading: (loading: boolean) => void;
@@ -27,6 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   isAuthLoading: true,
+  isMaster: false,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
   setAuthLoading: (loading) => set({ isAuthLoading: loading }),
@@ -51,7 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem(MOCK_SURVEY_KEY);
     useSettingsStore.getState().resetOnboarding();
     const user = buildMockUser(role);
-    set({ user, session: buildMockSession(user) });
+    set({ user, session: buildMockSession(user), isMaster: role === 'master' });
     useCreditStore.getState().loadCredits(user.id);
   },
 
@@ -60,12 +65,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       setMockRole(null);
       clearApiKeyCache();
       useCreditStore.getState().reset();
-      set({ user: null, session: null });
+      set({ user: null, session: null, isMaster: false });
       return;
     }
     await supabase.auth.signOut();
     clearApiKeyCache();
-    set({ user: null, session: null });
+    set({ user: null, session: null, isMaster: false });
   },
 
   initialize: async () => {
@@ -76,10 +81,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         const role = getMockRole();
         if (role) {
           const user = buildMockUser(role);
-          set({ session: buildMockSession(user), user });
+          set({ session: buildMockSession(user), user, isMaster: role === 'master' });
           await useCreditStore.getState().loadCredits(user.id);
         } else {
-          set({ session: null, user: null });
+          set({ session: null, user: null, isMaster: false });
         }
         return;
       }
@@ -89,6 +94,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ session, user: session?.user ?? null });
       if (session?.user) {
         await useCreditStore.getState().loadCredits(session.user.id);
+        // 마스터 판정을 로딩 완료 전에 확정해 관리자 메뉴 깜빡임을 막는다.
+        set({ isMaster: await resolveMasterRole() });
+      } else {
+        set({ isMaster: false });
       }
 
       if (!authSubscriptionRegistered) {
@@ -97,9 +106,11 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({ session, user: session?.user ?? null });
           if (session?.user) {
             useCreditStore.getState().loadCredits(session.user.id);
+            set({ isMaster: await resolveMasterRole() });
           } else {
             useCreditStore.getState().reset();
             clearApiKeyCache();
+            set({ isMaster: false });
           }
         });
       }

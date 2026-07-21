@@ -9,7 +9,7 @@
 | DEV-001 | `admin_config` API 키가 전 사용자에게 읽기·쓰기 개방 | 🔴 Critical | 미해결 | 2026-07-20 |
 | DEV-002 | 크레딧이 작업 *이후* 차감되고 반환값을 확인하지 않음 | 🟠 High | 미해결 | 2026-07-20 |
 | DEV-003 | 관리자 콘솔이 실제 모드에서 반쪽 동작 | 🟡 Medium | 미해결 | 2026-07-20 |
-| DEV-004 | 역할 체계(`profiles.role` / `is_master()`)가 배선되지 않음 | 🟡 Medium | 미해결 | 2026-07-20 |
+| DEV-004 | 역할 체계(`profiles.role` / `is_master()`)가 배선되지 않음 | 🟡 Medium | ✅ 해결 | 2026-07-20 |
 | DEV-005 | 고아 Edge Function 2개가 배포된 채 남아 있을 수 있음 | 🟡 Medium | 미해결 | 2026-07-20 |
 | DEV-006 | `vercel.json` 의 Kling 프록시가 인증 없이 개방 | 🟡 Medium | 미해결 | 2026-07-20 |
 | DEV-007 | 미사용 컬럼 `login_id` / `status` 잔존 | 🟢 Low | 미해결 | 2026-07-20 |
@@ -107,9 +107,17 @@ export function isAdmin(userEmail) {
 - `VITE_ADMIN_EMAIL` 은 클라이언트 번들에 평문으로 박힘 — 누구나 관리자 이메일을 알 수 있음
 - UI 숨김일 뿐 실질적 보안 경계가 아님
 
-**해결** — `AdminPage` / `Layout` 이 `isAdmin()` 대신 `isMaster()` 를 쓰도록 전환.
-그래야 `profiles.role` 이 실제 권한 근거가 되고 관리자 복수 지정도 가능해진다.
-`015`/`016` 적용 후에는 DB 쪽이 이미 `is_master()` 기준이므로 프론트만 맞추면 된다.
+**해결됨 (2026-07-21)** — `authStore` 에 `isMaster` 상태를 추가하고, 로그인/세션복원
+시점에 판정한다(실제=`is_master()` RPC, 목=가계정 role). `Layout`(관리자 메뉴)과
+`AdminPage`(페이지 가드)가 이 상태를 구독하도록 전환. 죽은 `isAdmin()` 함수와
+`VITE_ADMIN_EMAIL` 문자열 비교 방식은 제거. 이제 `profiles.role` 이 실제 권한
+근거이며 마스터 복수 지정도 가능하다.
+
+검증(Playwright): 마스터 로그인 시 관리자 콘솔 메뉴 노출, 일반 로그인 시 미노출.
+
+> 실서비스 전제: `013_roles.sql` 적용 + 마스터 계정 프로비저닝
+> (`UPDATE profiles SET role='master' WHERE email=…`)이 되어 있어야 `is_master()`
+> 가 true 를 반환한다. 로컬 목 모드는 가계정 role 로 동작.
 
 ---
 
