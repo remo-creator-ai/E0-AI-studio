@@ -13,6 +13,7 @@
 | DEV-005 | 고아 Edge Function 2개가 배포된 채 남아 있을 수 있음 | 🟡 Medium | 미해결 | 2026-07-20 |
 | DEV-006 | `vercel.json` 의 Kling 프록시가 인증 없이 개방 | 🟡 Medium | 미해결 | 2026-07-20 |
 | DEV-007 | 미사용 컬럼 `login_id` / `status` 잔존 | 🟢 Low | 미해결 | 2026-07-20 |
+| DEV-008 | `Dashboard.tsx`가 목 모드에서도 실제 Supabase로 조회 시도 | 🟢 Low | 미해결 | 2026-07-21 |
 
 ---
 
@@ -150,6 +151,17 @@ UI 는 사라졌지만 **이미 배포돼 있다면 여전히 HTTP 로 직접 �
 
 ---
 
+## DEV-008 · Dashboard 목 모드 미분기 🟢
+
+목 모드(`.env` 없음)에서도 `components/Dashboard.tsx` 가 `projectService`(→ placeholder
+Supabase URL)로 프로젝트/제작의뢰를 조회하려다 `ERR_NAME_NOT_RESOLVED` 로 실패한다.
+콘솔에 에러가 찍힐 뿐 앱은 동작하지만, 목 모드 UI 확인 시 노이즈가 된다.
+
+`creditStore`/`authStore` 처럼 `MOCK_MODE` 분기를 넣어 목 데이터를 반환하거나 조회를
+건너뛰면 된다. 약관 게이트 검증 중 발견(2026-07-21).
+
+---
+
 ## 종결된 항목
 
 | ID | 이슈 | 결론 |
@@ -165,6 +177,7 @@ UI 는 사라졌지만 **이미 배포돼 있다면 여전히 HTTP 로 직접 �
 | 신규 가입 크레딧 60 → 20 (기존 60 유지) | `a9d25f1` · `014_signup_credits_20.sql` |
 | 관리자 RPC 에 `is_master()` 검사 추가 | `a7a0d32` · `015_secure_admin_rpc.sql` |
 | `profiles` 전체 조회 정책 제거 + `get_public_profile()` RPC | `a7a0d32` · `016_restrict_profiles_read.sql` |
+| 법적문서(개인정보/약관) 뷰어 공용화 — `components/legal/LegalDocBody.tsx` 로 LandingPage·ConsentGate 공유 | Phase 1 약관 게이트 |
 
 **주의**: 위 마이그레이션은 파일로만 존재한다. 레포에 마이그레이션 러너가 없으므로
 Supabase 대시보드 SQL Editor 에서 수동 실행해야 DB 에 반영된다.

@@ -160,6 +160,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      consent_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          document_type: 'terms' | 'privacy' | 'ai_content';
+          document_version: string;
+          agreed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          document_type: 'terms' | 'privacy' | 'ai_content';
+          document_version: string;
+          agreed_at?: string;
+        };
+        Update: {
+          document_type?: 'terms' | 'privacy' | 'ai_content';
+          document_version?: string;
+        };
+        Relationships: [];
+      };
       production_requests: {
         Row: {
           id: string;

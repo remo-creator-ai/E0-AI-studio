@@ -28,6 +28,7 @@ import { useAuthStore } from '../store/authStore';
 import { MOCK_MODE } from '../lib/mockAuth';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../store/settingsStore';
+import { LegalDocBody } from './legal/LegalDocBody';
 
 interface LandingPageProps {}
 
@@ -1628,57 +1629,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </button>
               </div>
               <div className="p-6 overflow-y-auto custom-scrollbar text-sm text-zinc-600 leading-relaxed space-y-4">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('landing.privacy.lastModified')}</p>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section1Title')}</h4>
-                <p>{t('landing.privacy.section1Intro')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.privacy.section1Item1')}</li>
-                  <li>{t('landing.privacy.section1Item2')}</li>
-                  <li>{t('landing.privacy.section1Item3')}</li>
-                  <li>{t('landing.privacy.section1Item4')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section2Title')}</h4>
-                <p>{t('landing.privacy.section2Intro')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li><strong className="text-zinc-600">{t('landing.privacy.section2Required')}</strong> {t('landing.privacy.section2RequiredItems')}</li>
-                  <li><strong className="text-zinc-600">{t('landing.privacy.section2Auto')}</strong> {t('landing.privacy.section2AutoItems')}</li>
-                  <li><strong className="text-zinc-600">{t('landing.privacy.section2Usage')}</strong> {t('landing.privacy.section2UsageItems')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section3Title')}</h4>
-                <p>{t('landing.privacy.section3Text')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.privacy.section3Item1')}</li>
-                  <li>{t('landing.privacy.section3Item2')}</li>
-                  <li>{t('landing.privacy.section3Item3')}</li>
-                  <li>{t('landing.privacy.section3Item4')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section4Title')}</h4>
-                <p>{t('landing.privacy.section4Text')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.privacy.section4Item1')}</li>
-                  <li>{t('landing.privacy.section4Item2')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section5Title')}</h4>
-                <p>{t('landing.privacy.section5Text')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.privacy.section5Item1')}</li>
-                  <li>{t('landing.privacy.section5Item2')}</li>
-                  <li>{t('landing.privacy.section5Item3')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section6Title')}</h4>
-                <p>{t('landing.privacy.section6Text')}</p>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.privacy.section7Title')}</h4>
-                <p>{t('landing.privacy.section7Text')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.privacy.section7Email')}</li>
-                </ul>
+                <LegalDocBody type="privacy" />
               </div>
               <div className="p-4 border-t border-zinc-100 shrink-0">
                 <button onClick={() => setShowPrivacyModal(false)} className="w-full py-3 bg-zinc-100 hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-bold text-sm transition-all">
@@ -1709,51 +1660,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
                 </button>
               </div>
               <div className="p-6 overflow-y-auto custom-scrollbar text-sm text-zinc-600 leading-relaxed space-y-4">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('landing.terms.lastModified')}</p>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article1Title')}</h4>
-                <p>{t('landing.terms.article1Text')}</p>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article2Title')}</h4>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.terms.article2Item1')}</li>
-                  <li>{t('landing.terms.article2Item2')}</li>
-                  <li>{t('landing.terms.article2Item3')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article3Title')}</h4>
-                <p>{t('landing.terms.article3Text')}</p>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article4Title')}</h4>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.terms.article4Item1')}</li>
-                  <li>{t('landing.terms.article4Item2')}</li>
-                  <li>{t('landing.terms.article4Item3')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article5Title')}</h4>
-                <p>{t('landing.terms.article5Text')}</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.terms.article5Item1')}</li>
-                  <li>{t('landing.terms.article5Item2')}</li>
-                  <li>{t('landing.terms.article5Item3')}</li>
-                  <li>{t('landing.terms.article5Item4')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article6Title')}</h4>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.terms.article6Item1')}</li>
-                  <li>{t('landing.terms.article6Item2')}</li>
-                  <li>{t('landing.terms.article6Item3')}</li>
-                  <li>{t('landing.terms.article6Item4')}</li>
-                </ul>
-
-                <h4 className="text-zinc-900 font-bold text-base mt-4">{t('landing.terms.article7Title')}</h4>
-                <ul className="list-disc list-inside space-y-1 text-zinc-500">
-                  <li>{t('landing.terms.article7Item1')}</li>
-                  <li>{t('landing.terms.article7Item2')}</li>
-                  <li>{t('landing.terms.article7Item3')}</li>
-                </ul>
+                <LegalDocBody type="terms" />
               </div>
               <div className="p-4 border-t border-zinc-100 shrink-0">
                 <button onClick={() => setShowTermsModal(false)} className="w-full py-3 bg-zinc-100 hover:bg-zinc-100 border border-zinc-200 rounded-2xl font-bold text-sm transition-all">

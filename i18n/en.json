@@ -300,6 +300,38 @@
       "freelanceChip3": "Lead Gen"
     }
   },
+  "consent": {
+    "gate": {
+      "title": "Service Agreement",
+      "subtitle": "To start using Sodam AI Studio, please agree to all the required terms below.",
+      "agreeAll": "I agree to all of the terms below",
+      "required": "Required",
+      "view": "View full text",
+      "submit": "Agree and continue",
+      "submitting": "Processing…",
+      "error": "Failed to record your consent. Please try again shortly.",
+      "creditNote": "You'll receive 20 credits when you complete sign-up."
+    },
+    "items": {
+      "terms": "Agree to the Terms of Service",
+      "privacy": "Agree to the collection and use of personal information",
+      "aiContent": "Agree to AI content generation and handling of uploaded materials"
+    },
+    "aiContentDoc": {
+      "title": "AI Content Generation & Uploaded Material Handling",
+      "lastModified": "Last modified: July 2026",
+      "section1Title": "1. Handling of uploaded materials",
+      "section1Text": "Images, text, and other materials you upload are used only as input for AI content generation. Materials are stored only in your own private library and are not shared with other users.",
+      "section2Title": "2. Transfer to external AI models",
+      "section2Text": "Prompts and reference images you provide for generation are transferred to and processed by third-party AI model providers such as Google Gemini and Kling. Each provider's data policy may also apply.",
+      "section3Title": "3. Use of generated results",
+      "section3Text": "You may use AI-generated results for your service purposes. However, you are responsible for verifying the accuracy, legality, and non-infringement of the generated output.",
+      "section4Title": "4. Prohibited use",
+      "section4Text": "Uploading or generating materials that infringe others' portrait, copyright, or trademark rights, or that are illegal, harmful, or damaging to others, is prohibited.",
+      "section5Title": "5. Limitation of liability",
+      "section5Text": "AI output is for reference only, and you are responsible for outcomes from its use. The service bears liability only within the scope prescribed by applicable law."
+    }
+  },
   "dashboard": {
     "title": "My",
     "titleHighlight": "Projects",

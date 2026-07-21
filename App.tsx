@@ -4,8 +4,10 @@ import { Layout } from './components/Layout';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
 import { ModalProvider } from './components/ui/ModalProvider';
+import { ConsentGate } from './components/ConsentGate';
 import { useStore } from './store';
 import { useAuthStore } from './store/authStore';
+import { useConsentStore } from './store/consentStore';
 import { useAutoSave } from './hooks/useAutoSave';
 import { ProjectStep } from './types';
 
@@ -20,11 +22,18 @@ const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour')
 const App: React.FC = () => {
   const { currentStep, project, updateCurrentStage } = useStore();
   const { user, isAuthLoading, initialize } = useAuthStore();
+  const { needsConsent, isLoaded: consentLoaded, loadConsent, reset: resetConsent } = useConsentStore();
   const { saveStatus, flush } = useAutoSave();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // 로그인 사용자의 약관 동의 상태 로드(§9.1). 로그아웃 시 초기화.
+  useEffect(() => {
+    if (user) loadConsent(user.id);
+    else resetConsent();
+  }, [user?.id, loadConsent, resetConsent]);
 
   // Auto-update current_stage when entering a workflow step
   useEffect(() => {
@@ -50,6 +59,20 @@ const App: React.FC = () => {
   // Not authenticated
   if (!user) {
     return <LandingPage />;
+  }
+
+  // Authenticated but consent not yet resolved — keep loading to avoid flashing the app
+  if (!consentLoaded || needsConsent === null) {
+    return (
+      <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Consent required (first login or terms revision) — block the app behind the gate
+  if (needsConsent) {
+    return <ConsentGate />;
   }
 
   // Authenticated — all views inside Layout
