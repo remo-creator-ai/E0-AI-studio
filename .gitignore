@@ -35,6 +35,9 @@ output/
 # Supabase CLI local state
 supabase/.temp/
 
+# Playwright MCP 검증 산출물 (스냅샷·콘솔 로그)
+.playwright-mcp/
+
 # 소담이 대용량 소스 (로컬 보관 · git/배포 제외)
 design/sodami/3d/
 design/sodami/video/

@@ -284,7 +284,7 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-black tracking-tight text-zinc-900">계정 관리</h2>
-          <p className="text-sm text-zinc-400 mt-1">구글 셀프가입 사용자 {accounts.length}명 · 가입 시 자동 20 크레딧 부여</p>
+          <p className="text-sm text-zinc-400 mt-1">구글 셀프가입 사용자 {accounts.length}명 · 가입 시 자동 60 크레딧 부여</p>
         </div>
       </div>
 
