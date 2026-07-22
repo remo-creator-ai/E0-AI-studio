@@ -106,13 +106,18 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   return (
     <div id="app-layout" className="flex h-screen overflow-hidden bg-[#F5F7FA] text-zinc-900">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-[60] w-80 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center gap-3 px-2">
+      {/* overflow-y-auto: 루트가 h-screen overflow-hidden 이라 사이드바가 뷰포트보다
+          길어지면 그냥 잘린다(마스터는 '관리자 콘솔'이 추가돼 특히 쉽게 넘친다).
+          창을 줄이면 크레딧·로그아웃이 사라지고 스크롤도 불가능했다. */}
+      <aside className={`fixed inset-y-0 left-0 z-[60] w-80 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 overflow-y-auto print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center gap-3 px-2 shrink-0">
           <img src="/sodami.png" alt="소담이" className="w-9 h-9 rounded-xl shrink-0 object-cover" />
           <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-primary">AI</span> Studio</h1>
         </div>
 
-        <nav className="flex-1 flex flex-col gap-2">
+        {/* min-h-0 + overflow-y-auto: 화면이 짧으면 메뉴 영역만 안에서 스크롤되고
+            아래 크레딧·로그아웃은 계속 보이게 한다 */}
+        <nav className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2">
           <SidebarItem
             icon={Home}
             label={t('nav.dashboard')}
@@ -203,7 +208,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
         )}
 
         {/* Credit Balance — 골드 (크레딧=가치/보상) */}
-        <div data-tour="sidebar-credits" className="px-4 py-3 bg-[#E5EDFA] border border-[#C0D4F0] rounded-2xl">
+        <div data-tour="sidebar-credits" className="shrink-0 px-4 py-3 bg-[#E5EDFA] border border-[#C0D4F0] rounded-2xl">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-bold text-[#0050BF] uppercase tracking-widest">{t('common.credits')}</span>
             <Coins size={14} className="text-[#0050BF]" />
@@ -226,7 +231,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
         </div>
 
         {/* User Profile */}
-        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-200 group">
+        <div className="shrink-0 p-4 bg-zinc-50 rounded-2xl border border-zinc-200 group">
           <div className="flex items-center gap-3">
             {user?.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full shrink-0" />
