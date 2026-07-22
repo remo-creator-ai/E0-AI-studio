@@ -674,6 +674,44 @@
       "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation. Continue?"
     }
   },
+  "imageStudio": {
+    "title": "Image Studio",
+    "subtitle": "Create a single image from one line of description.",
+    "mode": {
+      "label": "Mode",
+      "text": "From text",
+      "reference": "With reference",
+      "referenceSoon": "Asset library integration is coming soon."
+    },
+    "prompt": {
+      "label": "What to create",
+      "placeholder": "Describe the image you want to create.",
+      "example": "e.g. A Korean team meeting in a sunlit modern office"
+    },
+    "aspect": {
+      "label": "Image shape",
+      "square": "Square",
+      "landscape": "Landscape",
+      "portrait": "Portrait"
+    },
+    "generate": {
+      "button": "Generate image",
+      "generating": "Generating…",
+      "cost": "{{count}} credits"
+    },
+    "empty": "Describe the image on the left and generate it.",
+    "loading": "Creating your image.",
+    "result": {
+      "download": "Download",
+      "regenerate": "Regenerate"
+    },
+    "error": {
+      "noApiKey": "No image generation API key is registered. Please add one in the admin console first.",
+      "blocked": "This request cannot be generated due to content policy. Try rewording your description.",
+      "failed": "Image generation failed. Please try again in a moment.",
+      "notEnoughCredits": "Not enough credits. Need {{cost}} · You have {{balance}}"
+    }
+  },
   "settings": {
     "title": "My Account",
     "currentPlan": "Current Plan:",

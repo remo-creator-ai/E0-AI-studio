@@ -1,0 +1,128 @@
+// =============================================================
+//  단건 이미지 제작 서비스 (PRD §9.4)
+//
+//  ⚠️ 격리 원칙 — services/geminiService.ts 를 import 하지 않는다.
+//  geminiService.generateSingleImage() 은 이름과 달리 영상 스토리보드의
+//  씬 재생성 함수다(components/AssemblyStep.tsx:631 에서 호출). 그쪽을
+//  건드리면 영상 기획 결과물이 바뀌므로, 단건 제작은 자체 경로로 간다.
+//  공유하는 것은 부수효과 없는 유틸(imageUtils)과 API 키 조달뿐이다.
+//
+//  두 경로가 요구사항까지 수렴하면 그때 공용 추출을 검토한다.
+// =============================================================
+
+import { GoogleGenAI } from '@google/genai';
+import { getAdminConfig } from './adminConfigService';
+import { MOCK_MODE } from '../lib/mockAuth';
+
+// ---------- 화면비 ----------
+// 영상 경로의 types.ts AspectRatio(16:9/9:16) 를 건드리지 않기 위한 전용 타입.
+// 단건 제작은 1:1 을 기본값으로 쓰므로 열거값이 다르다.
+export type StudioAspect = '1:1' | '16:9' | '9:16';
+export const STUDIO_ASPECTS: StudioAspect[] = ['1:1', '16:9', '9:16'];
+export const DEFAULT_ASPECT: StudioAspect = '1:1';
+
+// ---------- 미정 항목 ----------
+// TODO(미정): 크레딧 단가 확정 시 이 값만 바꾸면 UI·차감이 함께 따라간다.
+export const IMAGE_STUDIO_CREDIT_COST = 3;
+
+// TODO(미정): 사용할 이미지 모델 확정 필요.
+// 확정 전까지 IMAGE_MODEL_INFO 가 Default 로 표기한 3.1 Flash 를 잠정 사용한다.
+export const IMAGE_STUDIO_MODEL = 'gemini-3.1-flash-image-preview';
+
+export type GenerateFailure =
+  | 'no_api_key'      // admin_config 에 gemini_api_key 미등록
+  | 'blocked'         // 콘텐츠 정책 차단 (기술 오류와 구분, 계획서 §9)
+  | 'error';          // 그 외 기술 오류
+
+export interface GenerateResult {
+  ok: boolean;
+  /** 성공 시 data:image/png;base64,... */
+  imageUrl?: string;
+  failure?: GenerateFailure;
+  message?: string;
+}
+
+/** 키 미등록 상태를 UI 가 미리 알 수 있도록 별도 노출 (생성 버튼 안내용) */
+export async function isImageApiReady(): Promise<boolean> {
+  if (MOCK_MODE) return true;
+  return Boolean(await getAdminConfig('gemini_api_key'));
+}
+
+export interface GenerateInput {
+  prompt: string;
+  aspect: StudioAspect;
+  /** 참고 이미지 (data URL 또는 http URL). 3단계에서 자산 보관함이 채운다. */
+  references?: string[];
+}
+
+export async function generateStudioImage(input: GenerateInput): Promise<GenerateResult> {
+  const prompt = input.prompt.trim();
+  if (!prompt) return { ok: false, failure: 'error', message: 'empty_prompt' };
+
+  if (MOCK_MODE) {
+    // 디자인(가계정) 모드: 실제 호출 없이 흐름만 확인한다.
+    await new Promise((r) => setTimeout(r, 1200));
+    return { ok: true, imageUrl: mockImage(input.aspect) };
+  }
+
+  const apiKey = await getAdminConfig('gemini_api_key');
+  if (!apiKey) return { ok: false, failure: 'no_api_key' };
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const parts: Record<string, unknown>[] = [];
+
+    // 참고 이미지가 있을 때만 스타일 지시를 덧붙인다.
+    if (input.references?.length) {
+      const { normalizeImageInput } = await import('./imageUtils');
+      for (const ref of input.references) {
+        const { mimeType, base64 } = await normalizeImageInput(ref);
+        parts.push({ inlineData: { mimeType, data: base64 } });
+      }
+      parts.push({
+        text:
+          'REFERENCE INSTRUCTION: Use the attached images as visual references for ' +
+          'the subject, style, and details described below.\n\n' +
+          `PROMPT: ${prompt}`,
+      });
+    } else {
+      // 영상 경로와 달리 "Cinematic, professional photography, 4k" 같은
+      // 스타일을 강제하지 않는다. 로고·일러스트·제품컷도 만들 수 있어야 한다.
+      parts.push({ text: prompt });
+    }
+
+    const response = await ai.models.generateContent({
+      model: IMAGE_STUDIO_MODEL,
+      contents: { parts },
+      config: {
+        responseModalities: ['Image'],
+        imageConfig: { aspectRatio: input.aspect },
+      },
+    });
+
+    const candidate = response.candidates?.[0];
+    if (!candidate) return { ok: false, failure: 'error', message: 'no_candidates' };
+    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+      return { ok: false, failure: 'blocked', message: candidate.finishReason };
+    }
+    for (const part of candidate.content?.parts || []) {
+      if (part.inlineData) {
+        return { ok: true, imageUrl: `data:image/png;base64,${part.inlineData.data}` };
+      }
+    }
+    return { ok: false, failure: 'error', message: 'no_image_data' };
+  } catch (e) {
+    return { ok: false, failure: 'error', message: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** 목 모드 placeholder — 선택한 형태의 비율을 그대로 가진 SVG */
+function mockImage(aspect: StudioAspect): string {
+  const [w, h] = aspect === '1:1' ? [800, 800] : aspect === '16:9' ? [1280, 720] : [720, 1280];
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
+    `<rect width="${w}" height="${h}" fill="#E5EDFA"/>` +
+    `<text x="50%" y="50%" text-anchor="middle" font-family="sans-serif" font-size="${Math.round(w / 18)}" fill="#0050BF">` +
+    `${aspect} preview</text></svg>`;
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+}
