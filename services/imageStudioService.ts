@@ -11,8 +11,32 @@
 // =============================================================
 
 import { GoogleGenAI } from '@google/genai';
-import { getAdminConfig } from './adminConfigService';
+import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
+
+// ---------- AI 프록시 ----------
+// 키는 브라우저로 내려오지 않는다. Edge Function(ai-proxy)이 서버 시크릿의
+// 키를 주입해 Google 로 포워드한다. SDK 의 httpOptions.baseUrl 덕분에
+// 프롬프트·모델·응답 파싱 코드는 그대로 둘 수 있다.
+const PROXY_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-proxy`;
+
+async function accessToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+async function proxyClient(): Promise<GoogleGenAI | null> {
+  const token = await accessToken();
+  if (!token) return null;
+  return new GoogleGenAI({
+    // 진짜 키는 서버에만 있다. SDK 가 헤더를 채우도록 자리표시자만 준다.
+    apiKey: 'via-ai-proxy',
+    httpOptions: {
+      baseUrl: PROXY_BASE,
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  });
+}
 
 // ---------- 화면비 ----------
 // 영상 경로의 types.ts AspectRatio(16:9/9:16) 를 건드리지 않기 위한 전용 타입.
@@ -42,10 +66,22 @@ export interface GenerateResult {
   message?: string;
 }
 
-/** 키 미등록 상태를 UI 가 미리 알 수 있도록 별도 노출 (생성 버튼 안내용) */
+/** 키 미등록 상태를 UI 가 미리 알 수 있도록 별도 노출 (생성 버튼 안내용).
+ *  프록시의 /health 는 설정 여부(boolean)만 알려주고 키 값은 돌려주지 않는다. */
 export async function isImageApiReady(): Promise<boolean> {
   if (MOCK_MODE) return true;
-  return Boolean(await getAdminConfig('gemini_api_key'));
+  const token = await accessToken();
+  if (!token) return false;
+  try {
+    const res = await fetch(`${PROXY_BASE}/health`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return false;
+    const body = await res.json();
+    return Boolean(body?.gemini);
+  } catch {
+    return false;
+  }
 }
 
 export interface GenerateInput {
@@ -65,11 +101,10 @@ export async function generateStudioImage(input: GenerateInput): Promise<Generat
     return { ok: true, imageUrl: mockImage(input.aspect) };
   }
 
-  const apiKey = await getAdminConfig('gemini_api_key');
-  if (!apiKey) return { ok: false, failure: 'no_api_key' };
+  const ai = await proxyClient();
+  if (!ai) return { ok: false, failure: 'no_api_key', message: 'no_session' };
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
     const parts: Record<string, unknown>[] = [];
 
     // 참고 이미지가 있을 때만 스타일 지시를 덧붙인다.
@@ -112,7 +147,12 @@ export async function generateStudioImage(input: GenerateInput): Promise<Generat
     }
     return { ok: false, failure: 'error', message: 'no_image_data' };
   } catch (e) {
-    return { ok: false, failure: 'error', message: e instanceof Error ? e.message : String(e) };
+    const msg = e instanceof Error ? e.message : String(e);
+    // 프록시가 키 미설정으로 503 을 돌려준 경우를 구분해 안내를 달리한다.
+    if (msg.includes('GEMINI_API_KEY') || msg.includes('503')) {
+      return { ok: false, failure: 'no_api_key', message: msg };
+    }
+    return { ok: false, failure: 'error', message: msg };
   }
 }
 
