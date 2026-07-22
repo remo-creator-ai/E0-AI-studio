@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 3000"
+    "preview": "vite preview --port 3456"
   },
   "dependencies": {
     "@google/genai": "^1.38.0",

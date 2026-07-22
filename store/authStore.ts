@@ -7,13 +7,17 @@ import type { User, Session } from '@supabase/supabase-js';
 
 let authSubscriptionRegistered = false;
 
+type IntroSurveyStatus = 'unknown' | 'pending' | 'done';
+
 interface AuthState {
   user: User | null;
   session: Session | null;
   isAuthLoading: boolean;
+  introSurveyStatus: IntroSurveyStatus;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setAuthLoading: (loading: boolean) => void;
+  setIntroSurveyStatus: (s: IntroSurveyStatus) => void;
   signInWithGoogle: () => Promise<void>;
   signInAsMock: (role: MockRole) => void;
   signOut: () => Promise<void>;
@@ -24,9 +28,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   isAuthLoading: true,
+  introSurveyStatus: 'unknown',
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
   setAuthLoading: (loading) => set({ isAuthLoading: loading }),
+  setIntroSurveyStatus: (s) => set({ introSurveyStatus: s }),
 
   signInWithGoogle: async () => {
     await supabase.auth.signInWithOAuth({

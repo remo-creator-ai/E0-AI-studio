@@ -23,6 +23,7 @@ import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ProjectStep } from '../types';
 import { isAdmin } from '../services/adminConfigService';
+import { CreditRequestModal } from './CreditRequestModal';
 
 interface SidebarItemProps {
   icon: React.FC<{ size?: number }>;
@@ -63,6 +64,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const [showCreditRequest, setShowCreditRequest] = useState(false);
+  const isMasterUi = isAdmin(user?.email ?? undefined);
 
   const handleNavigate = (step: ProjectStep) => {
     if (flushSave) flushSave();
@@ -193,6 +196,14 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           <div className="mt-2 h-1.5 bg-[#D6E3F7] rounded-full overflow-hidden">
             <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
           </div>
+          {!isMasterUi && (
+            <button
+              onClick={() => setShowCreditRequest(true)}
+              className="mt-2 w-full text-[11px] font-bold text-[#0050BF] hover:text-[#003E99] hover:underline text-left"
+            >
+              + 크레딧 신청
+            </button>
+          )}
         </div>
 
         {/* User Profile */}
@@ -353,6 +364,10 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           {children}
         </div>
       </main>
+
+      {showCreditRequest && user && (
+        <CreditRequestModal userId={user.id} onClose={() => setShowCreditRequest(false)} />
+      )}
     </div>
   );
 };

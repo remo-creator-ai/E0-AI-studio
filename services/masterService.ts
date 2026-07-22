@@ -32,6 +32,25 @@ export interface DashboardStats {
   requestsTotal: number;
   requestsPending: number;
   requestsCompleted: number;
+  // 크레딧 신청 (사용자 인앱 신청, §9.7)
+  creditRequestsPending: number;
+  creditRequestsTotal: number;
+}
+
+export interface CreditRequestRow {
+  id: string;
+  user_id: string;
+  user_email: string;
+  amount: number;
+  reason: string | null;
+  applicant_name: string | null;
+  company_name: string | null;
+  phone: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  granted_amount: number | null;
+  reviewer_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
 }
 
 export type CreditOp = 'add' | 'deduct' | 'set';
@@ -43,22 +62,17 @@ export async function listAccounts(): Promise<MasterAccount[]> {
   if (MOCK_MODE) {
     return [...getMockDb().accounts].sort((a, b) => a.email.localeCompare(b.email));
   }
-  // 실제: profiles(role='user', 구글 가입) + user_credits 조인
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, display_name, created_at')
-    .eq('role', 'user')
-    .order('email');
+  // 실제: profiles + user_credits + manual_grant 누계를 서버측에서 SECURITY DEFINER 로 조인
+  const { data, error } = await supabase.rpc('list_accounts_with_credits');
   if (error || !data) return [];
-  // TODO: user_credits 잔액/최근접속 조인 (별도 뷰 또는 RPC 권장)
-  return data.map((p) => ({
-    id: p.id,
-    email: p.email ?? '',
-    display_name: p.display_name ?? '',
-    balance: 0,
-    max_credits: SIGNUP_INITIAL_CREDITS,
-    last_active: null,
-    created_at: p.created_at,
+  return (data as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r.id),
+    email: String(r.email ?? ''),
+    display_name: String(r.display_name ?? ''),
+    balance: Number(r.balance ?? 0),
+    max_credits: Number(r.max_credits ?? SIGNUP_INITIAL_CREDITS),
+    last_active: (r.last_active as string) ?? null,
+    created_at: String(r.created_at),
   }));
 }
 
@@ -66,7 +80,30 @@ export async function listAccounts(): Promise<MasterAccount[]> {
 export async function getDashboardStats(): Promise<DashboardStats> {
   const accounts = await listAccounts();
   const requests = await listRequests();
-  const allocated = MOCK_MODE ? getMockDb().allocated : 0; // TODO: 실제 부여 누계 집계
+
+  let allocated = 0;
+  if (MOCK_MODE) {
+    allocated = getMockDb().allocated;
+  } else {
+    // 실제: master_quota_remaining() 로부터 역산
+    const { data, error } = await supabase.rpc('master_quota_remaining');
+    if (!error && typeof data === 'number') {
+      allocated = Math.max(MASTER_CREDIT_QUOTA - data, 0);
+    }
+  }
+
+  // 크레딧 신청 카운트
+  let creditRequestsPending = 0;
+  let creditRequestsTotal = 0;
+  if (!MOCK_MODE) {
+    const [pendingRes, totalRes] = await Promise.all([
+      supabase.from('credit_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('credit_requests').select('*', { count: 'exact', head: true }),
+    ]);
+    creditRequestsPending = pendingRes.count ?? 0;
+    creditRequestsTotal = totalRes.count ?? 0;
+  }
+
   return {
     signupCount: accounts.length,
     creditQuota: MASTER_CREDIT_QUOTA,
@@ -75,7 +112,65 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     requestsTotal: requests.length,
     requestsPending: requests.filter((r) => r.status === 'pending').length,
     requestsCompleted: requests.filter((r) => r.status === 'completed').length,
+    creditRequestsPending,
+    creditRequestsTotal,
   };
+}
+
+// ---------------- 크레딧 신청 (마스터 대기함) ----------------
+export async function listCreditRequests(status?: 'pending' | 'all'): Promise<CreditRequestRow[]> {
+  if (MOCK_MODE) return [];
+  let q = supabase
+    .from('credit_requests')
+    .select('id, user_id, amount, reason, applicant_name, company_name, phone, status, granted_amount, reviewer_note, reviewed_at, created_at, profiles!credit_requests_user_id_fkey(email)')
+    .order('created_at', { ascending: false });
+  if (status === 'pending' || status === undefined) {
+    q = q.eq('status', 'pending');
+  }
+  const { data, error } = await q;
+  if (error || !data) return [];
+  return (data as Array<Record<string, unknown>>).map((r) => {
+    const prof = r.profiles as { email?: string } | null;
+    return {
+      id: String(r.id),
+      user_id: String(r.user_id),
+      user_email: String(prof?.email ?? ''),
+      amount: Number(r.amount ?? 0),
+      reason: (r.reason as string) ?? null,
+      applicant_name: (r.applicant_name as string) ?? null,
+      company_name: (r.company_name as string) ?? null,
+      phone: (r.phone as string) ?? null,
+      status: r.status as CreditRequestRow['status'],
+      granted_amount: r.granted_amount == null ? null : Number(r.granted_amount),
+      reviewer_note: (r.reviewer_note as string) ?? null,
+      reviewed_at: (r.reviewed_at as string) ?? null,
+      created_at: String(r.created_at),
+    };
+  });
+}
+
+export async function approveCreditRequest(
+  requestId: string,
+  grantedAmount: number | null,
+  note: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('approve_credit_request', {
+    p_request_id: requestId,
+    p_granted_amount: grantedAmount,
+    p_note: note,
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function rejectCreditRequest(
+  requestId: string,
+  note: string
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.rpc('reject_credit_request', {
+    p_request_id: requestId,
+    p_note: note,
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 // ---------------- 크레딧 조정 ----------------
@@ -117,9 +212,18 @@ export async function adjustCredit(
     return { ok: true, balance: newBalance };
   }
 
-  // TODO(실제): 부여 누계 검증 + credit_transactions 기록을 원자적으로 처리하는
-  //             admin_adjust_credit RPC 신설 필요 (masters.credit_quota 대비 배분 검증).
-  return { ok: false, error: '실제 크레딧 조정 RPC(admin_adjust_credit)가 아직 구현되지 않았습니다.' };
+  // 실제 모드: PRD v1.4 §9.2 MASTER-04 에 따라 지급('add') 만 허용
+  if (op !== 'add') {
+    return { ok: false, error: '지급(add) 만 허용됩니다. 차감·강제 설정은 정책상 제거되었습니다.' };
+  }
+  const { data, error } = await supabase.rpc('admin_grant_credit', {
+    p_target_user_id: id,
+    p_amount: amount,
+    p_note: reason,
+  });
+  if (error) return { ok: false, error: error.message };
+  const row = (data as Array<{ balance: number }> | null)?.[0];
+  return { ok: true, balance: row?.balance };
 }
 
 // ---------------- 사용 이력 ----------------

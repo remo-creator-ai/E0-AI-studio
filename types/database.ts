@@ -221,6 +221,86 @@ export interface Database {
         };
         Relationships: [];
       };
+      credit_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          reason: string | null;
+          applicant_name: string | null;
+          company_name: string | null;
+          phone: string | null;
+          status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount: number | null;
+          reviewer_id: string | null;
+          reviewer_note: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          reason?: string | null;
+          applicant_name?: string | null;
+          company_name?: string | null;
+          phone?: string | null;
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount?: number | null;
+          reviewer_id?: string | null;
+          reviewer_note?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          granted_amount?: number | null;
+          reviewer_id?: string | null;
+          reviewer_note?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      intro_survey_responses: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: 'completed' | 'skipped';
+          survey_version: string;
+          q1_role: string | null;
+          q2_content_type: string | null;
+          q3_industry: string | null;
+          q4_expected_volume: string | null;
+          q5_ai_experience: string | null;
+          q6_referral: string | null;
+          submitted_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status: 'completed' | 'skipped';
+          survey_version?: string;
+          q1_role?: string | null;
+          q2_content_type?: string | null;
+          q3_industry?: string | null;
+          q4_expected_volume?: string | null;
+          q5_ai_experience?: string | null;
+          q6_referral?: string | null;
+          submitted_at?: string;
+        };
+        Update: {
+          id?: string;
+          status?: 'completed' | 'skipped';
+          survey_version?: string;
+          q1_role?: string | null;
+          q2_content_type?: string | null;
+          q3_industry?: string | null;
+          q4_expected_volume?: string | null;
+          q5_ai_experience?: string | null;
+          q6_referral?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -305,6 +385,52 @@ export interface Database {
           p_status: string;
         };
         Returns: void;
+      };
+      admin_grant_credit: {
+        Args: {
+          p_target_user_id: string;
+          p_amount: number;
+          p_note?: string | null;
+        };
+        Returns: { balance: number; remaining_quota: number }[];
+      };
+      list_accounts_with_credits: {
+        Args: Record<never, never>;
+        Returns: {
+          id: string;
+          email: string;
+          display_name: string | null;
+          balance: number;
+          max_credits: number;
+          granted_total: number;
+          last_active: string | null;
+          created_at: string;
+        }[];
+      };
+      master_quota_remaining: {
+        Args: Record<never, never>;
+        Returns: number;
+      };
+      approve_credit_request: {
+        Args: {
+          p_request_id: string;
+          p_granted_amount?: number | null;
+          p_note?: string | null;
+        };
+        Returns: string;
+      };
+      reject_credit_request: {
+        Args: {
+          p_request_id: string;
+          p_note?: string | null;
+        };
+        Returns: string;
+      };
+      cancel_credit_request: {
+        Args: {
+          p_request_id: string;
+        };
+        Returns: string;
       };
     };
   };

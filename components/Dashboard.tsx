@@ -21,6 +21,8 @@ import { useModal } from './ui/ModalProvider';
 import { MAX_FREE_PROJECTS } from '../store/creditStore';
 import { supabase } from '../lib/supabase';
 import { Project, ProjectStep, StoryboardLayout, AdDuration, VisualStyle, AspectRatio, SceneCount, SCENE_DURATION_MAP } from '../types';
+import { IntroSurvey } from './IntroSurvey';
+import { MOCK_MODE } from '../lib/mockAuth';
 
 type RequestStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
@@ -76,13 +78,38 @@ export const Dashboard: React.FC = () => {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio>(AspectRatio.LANDSCAPE);
   const [selectedSceneCount, setSelectedSceneCount] = useState<SceneCount>(SceneCount.CUTS_9);
+  const introSurveyStatus = useAuthStore((s) => s.introSurveyStatus);
+  const setIntroSurveyStatus = useAuthStore((s) => s.setIntroSurveyStatus);
 
   useEffect(() => {
     if (user?.id) {
       loadProjects();
       loadMyRequests();
+      checkIntroSurvey();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // PRD v1.4 §9.0 — 대시보드 최초 진입 시 인트로 설문 1회 노출
+  // 결과는 authStore.introSurveyStatus 로 공유되어 온보딩 투어 지연에도 사용됨.
+  const checkIntroSurvey = async () => {
+    if (!user) return;
+    if (MOCK_MODE) {
+      setIntroSurveyStatus('done');
+      return;
+    }
+    const { data, error } = await supabase
+      .from('intro_survey_responses')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (error) {
+      console.warn('[Dashboard] intro survey check failed', error);
+      setIntroSurveyStatus('done'); // 실패 시 온보딩 투어를 무한 대기시키지 않도록 done 처리
+      return;
+    }
+    setIntroSurveyStatus(data ? 'done' : 'pending');
+  };
 
   const loadProjects = async () => {
     if (!user) return;
@@ -546,6 +573,10 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {introSurveyStatus === 'pending' && user && (
+          <IntroSurvey userId={user.id} onClose={() => setIntroSurveyStatus('done')} />
         )}
     </div>
   );

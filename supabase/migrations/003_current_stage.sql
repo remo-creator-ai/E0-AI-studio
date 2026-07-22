@@ -1,5 +1,8 @@
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS current_stage TEXT;
 
+-- 002 에서 만든 함수와 리턴타입이 달라서 CREATE OR REPLACE 불가 → DROP 후 재생성
+DROP FUNCTION IF EXISTS get_project_summaries(UUID);
+
 CREATE OR REPLACE FUNCTION get_project_summaries(p_user_id UUID)
 RETURNS TABLE (
   id UUID,

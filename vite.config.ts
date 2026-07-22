@@ -6,7 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig(() => {
     return {
       server: {
-        port: 3000,
+        port: 3456,
+        strictPort: true,
         host: '0.0.0.0',
         proxy: {
           '/api/kling': {

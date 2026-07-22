@@ -6,6 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { ModalProvider } from './components/ui/ModalProvider';
 import { useStore } from './store';
 import { useAuthStore } from './store/authStore';
+import { useCreditStore } from './store/creditStore';
 import { useAutoSave } from './hooks/useAutoSave';
 import { ProjectStep } from './types';
 
@@ -20,11 +21,31 @@ const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour')
 const App: React.FC = () => {
   const { currentStep, project, updateCurrentStage } = useStore();
   const { user, isAuthLoading, initialize } = useAuthStore();
+  const loadCredits = useCreditStore((s) => s.loadCredits);
   const { saveStatus, flush } = useAutoSave();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // 마스터 승인·기타 서버 사이드 변경을 반영하기 위한 크레딧 폴링
+  //   - 15초 간격
+  //   - 탭이 background 로 이동하면 일시 중단, 다시 활성화되면 즉시 1회 재조회
+  useEffect(() => {
+    if (!user?.id) return;
+    let intervalId: number | undefined;
+    const start = () => {
+      loadCredits(user.id);
+      intervalId = window.setInterval(() => loadCredits(user.id), 15000);
+    };
+    const stop = () => {
+      if (intervalId != null) { window.clearInterval(intervalId); intervalId = undefined; }
+    };
+    const onVis = () => (document.hidden ? stop() : (stop(), start()));
+    start();
+    document.addEventListener('visibilitychange', onVis);
+    return () => { stop(); document.removeEventListener('visibilitychange', onVis); };
+  }, [user?.id, loadCredits]);
 
   // Auto-update current_stage when entering a workflow step
   useEffect(() => {

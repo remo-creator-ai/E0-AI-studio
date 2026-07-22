@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store';
 import { useSettingsStore } from '../store/settingsStore';
+import { useAuthStore } from '../store/authStore';
 import { ProjectStep } from '../types';
 
 export type TourId = 'dashboard' | 'planning' | 'visualizing' | 'assembly';
@@ -50,6 +51,7 @@ const STEP_TO_TOUR: Partial<Record<ProjectStep, TourId>> = {
 export function useOnboardingTour() {
   const { t } = useTranslation();
   const currentStep = useStore((s) => s.currentStep);
+  const introSurveyStatus = useAuthStore((s) => s.introSurveyStatus);
   const { onboardingCompleted, markTourCompleted, _replayTourId, _clearReplayRequest } = useSettingsStore();
   const driverRef = useRef<ReturnType<typeof import('driver.js').driver> | null>(null);
   const [isActive, setIsActive] = useState(false);
@@ -128,6 +130,8 @@ export function useOnboardingTour() {
     const tourId = STEP_TO_TOUR[currentStep];
     if (!tourId) return;
     if (onboardingCompleted[tourId]) return;
+    // PRD v1.4 §9.0 — 인트로 설문이 아직 미해결(unknown/pending)이면 온보딩 투어를 지연
+    if (tourId === 'dashboard' && introSurveyStatus !== 'done') return;
 
     const timer = setTimeout(() => {
       const firstStep = TOUR_DEFINITIONS[tourId][0];
@@ -145,7 +149,7 @@ export function useOnboardingTour() {
         driverRef.current = null;
       }
     };
-  }, [currentStep, onboardingCompleted, startTour, _replayTourId]);
+  }, [currentStep, onboardingCompleted, startTour, _replayTourId, introSurveyStatus]);
 
   // Cleanup on unmount
   useEffect(() => {
