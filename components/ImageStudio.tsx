@@ -159,17 +159,10 @@ export const ImageStudio: React.FC = () => {
 
         {/* 생성 버튼 — 패널 하단 고정 (계획서 §5.6) */}
         <div className="mt-auto pt-2">
-          {/* styles.css:81 의 .bg-primary 는 레이어 밖 일반 CSS 라 Tailwind 의
-              disabled: 변형을 항상 이긴다. 전역 스타일을 건드리지 않기 위해
-              여기서는 조건부 클래스로 비활성 상태를 표현한다. */}
           <button
             onClick={run}
             disabled={!canGenerate}
-            className={`w-full py-4 rounded-full font-black text-sm transition-all flex items-center justify-center gap-2 ${
-              canGenerate
-                ? 'bg-primary hover:bg-[#003E99] text-white active:scale-[0.98]'
-                : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-            }`}
+            className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed text-white rounded-full font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           >
             {busy ? (
               <>

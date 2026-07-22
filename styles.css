@@ -1,17 +1,35 @@
 @import "tailwindcss";
 
 /* =====================================================================
+   브랜드 색을 Tailwind 테마 토큰으로 등록한다.
+   이렇게 해야 bg-primary / text-primary / border-primary 가 Tailwind 가
+   생성하는 진짜 유틸이 되어 변형(hover:, disabled:, focus:)과
+   투명도 표기(bg-primary/10)가 정상 동작한다.
+
+   이전에는 아래쪽에 손으로 쓴 .bg-primary { } 를 두었는데, 그건 레이어
+   밖 일반 CSS 라 @layer utilities 안에 있는 Tailwind 유틸을 항상 이겼다.
+   그 결과 hover:bg-[#003E99] 와 disabled:bg-zinc-200 이 전혀 먹지 않고,
+   bg-primary/10 같은 투명도 유틸은 아예 생성조차 되지 않았다.
+   ===================================================================== */
+@theme {
+  --color-primary: #0050BF;   /* 오픈놀 브랜드 블루 */
+  --color-secondary: #F1F3F6; /* 보조 배경 */
+  --color-accent: #0050BF;    /* 단색 — accent 도 블루 */
+}
+
+/* =====================================================================
    Sodam AI Studio — Design System v2 (오픈놀 · 블루 단색)
    근거: contact-logo-01.svg (오픈놀 브랜드 블루 #0050BF) · 레드·골드 미사용
    ===================================================================== */
 :root {
     /* Brand — 오픈놀 블루 (단색) */
-    --primary: #0050BF;        /* 오픈놀 브랜드 블루 · 메인 */
+    /* 아래 3개는 상단 @theme 토큰을 참조한다 (색값 이중 관리 방지) */
+    --primary: var(--color-primary);   /* 오픈놀 브랜드 블루 · 메인 */
     --primary-strong: #003E99; /* hover/press */
     --primary-ink: #1E6FD9;    /* 밝은 블루 · 그라디언트 파트너 */
     --primary-tint: #E5EDFA;   /* 연한 블루 배경 */
     --primary-tint-2: #EEF3FC;
-    --accent: #0050BF;         /* 단색 — accent도 블루 */
+    --accent: var(--color-accent);     /* 단색 — accent도 블루 */
     --accent-strong: #003E99;
     --accent-tint: #E5EDFA;
     --point: #64748B;          /* 포인트(경고·정지) = 중립 슬레이트 */
@@ -23,7 +41,7 @@
     --surface: #FFFFFF;        /* 카드/패널 */
     --border: #E3E8EF;         /* 웜 그레이 테두리 */
     --border-strong: #D3DAE3;
-    --secondary: #F1F3F6;      /* 보조 배경 */
+    --secondary: var(--color-secondary); /* 보조 배경 */
     --text: #262626;          /* 잉크 본문 */
     --text-2: #5A6474;        /* 보조 */
     --text-muted: #94A0AE;    /* 흐린 */
@@ -78,11 +96,9 @@ h1 span, h2 span, h3 span {
     75% { transform: translate(40px, -60px) scale(1); }
 }
 
-.bg-primary { background-color: var(--primary); }
-.text-primary { color: var(--primary); }
-.border-primary { border-color: var(--primary); }
-.bg-secondary { background-color: var(--secondary); }
-.border-accent { border-color: var(--accent); }
+/* bg-primary / text-primary / border-primary / bg-secondary / border-accent 는
+   더 이상 여기서 손으로 정의하지 않는다. 파일 상단 @theme 이 Tailwind 유틸로
+   생성하므로, 여기에 다시 쓰면 레이어 밖 CSS 가 되어 변형이 또 죽는다. */
 
 /* ── Sodam design-system helpers (라이트/바이올렛) ── */
 .sd-bg { background-color: var(--bg); }
