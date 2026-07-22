@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://remo-ai-studio.vercel.app/sitemap.xml
+Sitemap: https://sodam-ai-studio.vercel.app/sitemap.xml
