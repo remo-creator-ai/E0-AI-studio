@@ -120,17 +120,17 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             onClick={() => handleNavigate(ProjectStep.DASHBOARD)}
           />
 
-          <div className="mt-6 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">크리에이티브</div>
+          <div className="mt-6 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.creative')}</div>
           <div className="space-y-2">
             <SidebarItem
               icon={ImagePlus}
-              label="이미지 생성"
+              label={t('nav.imageStudio')}
               active={currentStep === ProjectStep.IMAGE_STUDIO}
               onClick={() => handleNavigate(ProjectStep.IMAGE_STUDIO)}
             />
             <SidebarItem
               icon={Package}
-              label="자산 보관함"
+              label={t('nav.assets')}
               active={currentStep === ProjectStep.ASSETS}
               onClick={() => handleNavigate(ProjectStep.ASSETS)}
             />
@@ -288,6 +288,10 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.settingsTitle')}</span>
                     ) : currentStep === ProjectStep.ADMIN ? (
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.adminTitle')}</span>
+                    ) : currentStep === ProjectStep.ASSETS ? (
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.assets')}</span>
+                    ) : currentStep === ProjectStep.IMAGE_STUDIO ? (
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.imageStudio')}</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button

@@ -28,6 +28,9 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "creative": "Creative",
+    "imageStudio": "Image Studio",
+    "assets": "Asset Library",
     "workflow": "Workflow",
     "planning": "1. Planning",
     "visualizing": "2. Visualizing",
@@ -628,6 +631,47 @@
       "invalidKey": "Invalid API key. Please select a different one.",
       "generateError": "An error occurred during video generation.",
       "batchKeyError": "Invalid API key. Batch process aborted."
+    }
+  },
+  "assets": {
+    "title": "Asset Library",
+    "subtitle": "Register characters, products, and logos to use as references in video planning and image generation.",
+    "new": "Add Asset",
+    "search": "Search by name",
+    "sortRecent": "Most recent",
+    "sortName": "By name",
+    "empty": "No assets yet",
+    "emptyHint": "Tap Add Asset to register a character or product image.",
+    "types": {
+      "all": "All",
+      "character": "Character",
+      "product": "Product",
+      "logo": "Logo",
+      "image": "Image"
+    },
+    "create": {
+      "title": "Add Asset",
+      "typeLabel": "Category",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Sodami, Strawberry Latte, Brand Logo",
+      "descLabel": "Description",
+      "descPlaceholder": "Describe the look, colors, and mood. This is passed along to the planning prompt.",
+      "primary": "Primary image",
+      "primaryHint": "Used first in listings and references",
+      "singleHint": "This category takes a single image",
+      "reference": "Reference images",
+      "referenceHint": "up to {{count}}",
+      "needPrimary": "Please add a primary image.",
+      "submit": "Save",
+      "submitting": "Saving…"
+    },
+    "detail": {
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this asset? Its images will be removed as well.",
+      "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation. Continue?"
     }
   },
   "settings": {
