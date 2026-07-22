@@ -69,6 +69,7 @@ export async function listAccounts(): Promise<MasterAccount[]> {
     id: String(r.id),
     email: String(r.email ?? ''),
     display_name: String(r.display_name ?? ''),
+    role: r.role === 'master' ? 'master' : 'user',
     balance: Number(r.balance ?? 0),
     max_credits: Number(r.max_credits ?? SIGNUP_INITIAL_CREDITS),
     last_active: (r.last_active as string) ?? null,

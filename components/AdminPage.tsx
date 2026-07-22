@@ -303,7 +303,16 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
             <tbody>
               {accounts.map((a) => (
                 <tr key={a.id} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-3 py-3 font-mono text-zinc-900 font-semibold">{a.email}</td>
+                  <td className="px-3 py-3 font-mono text-zinc-900 font-semibold">
+                    <span className="inline-flex items-center gap-1.5">
+                      {a.email}
+                      {a.role === 'master' && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-[9px] font-black tracking-wider">
+                          MASTER
+                        </span>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-zinc-700 font-bold">{a.display_name}</td>
                   <td className={`px-3 py-3 text-right font-mono font-black ${a.balance > 0 ? 'text-zinc-900' : 'text-zinc-400'}`}>{a.balance}</td>
                   <td className="px-3 py-3 text-zinc-400">{a.last_active ?? '—'}</td>

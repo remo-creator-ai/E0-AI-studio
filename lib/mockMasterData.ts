@@ -14,6 +14,8 @@ export interface MasterAccount {
   id: string;
   email: string;
   display_name: string;
+  /** 목록에 마스터도 포함되므로 UI 가 구분해 표시한다 (마이그레이션 025) */
+  role: 'user' | 'master';
   balance: number;
   max_credits: number;
   last_active: string | null;
@@ -48,7 +50,7 @@ function acc(
   last_active: string | null,
   created_at: string
 ): MasterAccount {
-  return { id: `mock-${email}`, email, display_name, balance, max_credits: 20, last_active, created_at };
+  return { id: `mock-${email}`, email, display_name, role: 'user', balance, max_credits: 20, last_active, created_at };
 }
 
 // 구글로 가입한 사용자 12명 — 시안 수치와 정합
