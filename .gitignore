@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# 대시보드에서 내려받은 환경변수 원본 (SUPABASE_ACCESS_TOKEN 포함 — 절대 커밋 금지)
+env.download
 
 # OMC state
 .omc/
