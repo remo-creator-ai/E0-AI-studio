@@ -261,6 +261,83 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_assets: {
+        Row: {
+          id: string;
+          owner_id: string;
+          asset_type: 'character' | 'product' | 'logo' | 'image';
+          name: string;
+          description: string;
+          source_type: 'upload' | 'generated';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          asset_type: 'character' | 'product' | 'logo' | 'image';
+          name: string;
+          description?: string;
+          source_type?: 'upload' | 'generated';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          description?: string;
+          asset_type?: 'character' | 'product' | 'logo' | 'image';
+        };
+        Relationships: [];
+      };
+      user_asset_files: {
+        Row: {
+          id: string;
+          asset_id: string;
+          storage_path: string;
+          file_role: 'primary' | 'reference';
+          sort_order: number;
+          mime_type: string | null;
+          file_size: number | null;
+          source_prompt: string | null;
+          source_model: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_id: string;
+          storage_path: string;
+          file_role?: 'primary' | 'reference';
+          sort_order?: number;
+          mime_type?: string | null;
+          file_size?: number | null;
+          source_prompt?: string | null;
+          source_model?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          file_role?: 'primary' | 'reference';
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      project_assets: {
+        Row: {
+          project_id: string;
+          asset_id: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          project_id: string;
+          asset_id: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       intro_survey_responses: {
         Row: {
           id: string;

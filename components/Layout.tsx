@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Coins,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Package,
+  ImagePlus
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
@@ -117,6 +119,23 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             active={currentStep === ProjectStep.DASHBOARD}
             onClick={() => handleNavigate(ProjectStep.DASHBOARD)}
           />
+
+          <div className="mt-6 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">크리에이티브</div>
+          <div className="space-y-2">
+            <SidebarItem
+              icon={ImagePlus}
+              label="이미지 생성"
+              active={currentStep === ProjectStep.IMAGE_STUDIO}
+              onClick={() => handleNavigate(ProjectStep.IMAGE_STUDIO)}
+            />
+            <SidebarItem
+              icon={Package}
+              label="자산 보관함"
+              active={currentStep === ProjectStep.ASSETS}
+              onClick={() => handleNavigate(ProjectStep.ASSETS)}
+            />
+          </div>
+
           <div className="h-[1px] bg-zinc-200 my-4" />
           <div data-tour="sidebar-workflow" className="space-y-2">
           <div className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.workflow')}</div>
@@ -357,6 +376,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
         <div className={`p-4 md:p-8 transition-all duration-300 ${
           currentStep === ProjectStep.ASSEMBLY ? 'w-full max-w-[1600px] mx-auto' :
           currentStep === ProjectStep.DASHBOARD ? 'max-w-7xl mx-auto' :
+          currentStep === ProjectStep.ASSETS ? 'max-w-7xl mx-auto' :
+          currentStep === ProjectStep.IMAGE_STUDIO ? 'max-w-5xl mx-auto' :
           currentStep === ProjectStep.SETTINGS ? 'max-w-4xl mx-auto' :
           currentStep === ProjectStep.ADMIN ? 'max-w-5xl mx-auto' :
           'max-w-6xl mx-auto'
