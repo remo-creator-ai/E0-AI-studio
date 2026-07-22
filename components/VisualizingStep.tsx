@@ -764,7 +764,7 @@ CRITICAL RULES:
               onClick={() => {
                 const link = document.createElement('a');
                 link.href = currentGridImage;
-                link.download = `REMO_Matrix_U${currentUnitIdx+1}.png`;
+                link.download = `SODAM_Matrix_U${currentUnitIdx+1}.png`;
                 link.click();
               }}
               className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-2xl transition-all text-zinc-500 hover:text-zinc-900"

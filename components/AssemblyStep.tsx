@@ -275,7 +275,7 @@ export const AssemblyStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `REMO_${project.title.replace(/\s+/g, '_')}.storyboard`;
+    link.download = `SODAM_${project.title.replace(/\s+/g, '_')}.storyboard`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -290,7 +290,7 @@ export const AssemblyStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `REMO_Scene_${String(idx + 1).padStart(2, '0')}.png`;
+    link.download = `SODAM_Scene_${String(idx + 1).padStart(2, '0')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -324,7 +324,7 @@ export const AssemblyStep: React.FC = () => {
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `REMO_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
+      link.download = `SODAM_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -383,7 +383,7 @@ export const AssemblyStep: React.FC = () => {
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<title>REMO AI Storyboard — ${titleSafe}</title>
+<title>Sodam AI Storyboard — ${titleSafe}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0a0a0a;color:#eee;padding:32px 24px;min-height:100vh}
@@ -416,7 +416,7 @@ export const AssemblyStep: React.FC = () => {
 </head>
 <body>
 <header>
-  <h1>REMO AI STORYBOARD</h1>
+  <h1>SODAM AI STORYBOARD</h1>
   <div class="meta">${titleSafe} · ${sceneData.length} cuts · ${aspect}</div>
 </header>
 <div class="grid" id="grid"></div>
@@ -465,13 +465,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 </html>`;
 
       zip.file('index.html', html);
-      zip.file('README.txt', `REMO AI Storyboard — ${project.title || 'Untitled'}\n\n사용법:\n1. 이 ZIP을 압축 해제합니다.\n2. index.html 파일을 더블클릭하면 브라우저에서 열립니다.\n3. 각 컷을 클릭하면 상세 팝업이 표시됩니다.\n\nHow to use:\n1. Unzip this archive.\n2. Double-click index.html to open in your browser.\n3. Click any cut to see the full details popup.\n`);
+      zip.file('README.txt', `Sodam AI Storyboard — ${project.title || 'Untitled'}\n\n사용법:\n1. 이 ZIP을 압축 해제합니다.\n2. index.html 파일을 더블클릭하면 브라우저에서 열립니다.\n3. 각 컷을 클릭하면 상세 팝업이 표시됩니다.\n\nHow to use:\n1. Unzip this archive.\n2. Double-click index.html to open in your browser.\n3. Click any cut to see the full details popup.\n`);
 
       const content = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `REMO_Storyboard_${(project.title || 'Untitled').replace(/\s+/g, '_')}.zip`;
+      link.download = `SODAM_Storyboard_${(project.title || 'Untitled').replace(/\s+/g, '_')}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1225,7 +1225,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                         const link = document.createElement('a');
                         link.href = editingScene.image_url;
                         const sceneIdx = project.scenes.findIndex(s => s.id === editingScene.id);
-                        link.download = `REMO_Scene_${String(sceneIdx + 1).padStart(2, '0')}.png`;
+                        link.download = `SODAM_Scene_${String(sceneIdx + 1).padStart(2, '0')}.png`;
                         link.click();
                       }}
                       disabled={!editingScene?.image_url}

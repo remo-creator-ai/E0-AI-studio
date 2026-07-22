@@ -5,7 +5,7 @@
 //  (새로고침하면 초기값으로 리셋 — 디자인 확인 용도)
 // =============================================================
 
-export const MASTER_CREDIT_QUOTA = 60000; // REMO가 설정하는 부여 한도(누계)
+export const MASTER_CREDIT_QUOTA = 60000; // 운영사가 설정하는 부여 한도(누계)
 export const SIGNUP_INITIAL_CREDITS = 20; // 구글 가입 시 자동 부여 크레딧
 
 export type TxnType = 'deduct' | 'manual' | 'refund';

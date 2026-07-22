@@ -89,7 +89,7 @@ serve(async (req) => {
         from: 'Sodam AI Studio <noreply@resend.dev>',
         to: [TO_EMAIL],
         reply_to: requester_email,
-        subject: `[REMO] 영상 제작 의뢰 - ${project_title} (${requester_name})`,
+        subject: `[소담] 영상 제작 의뢰 - ${project_title} (${requester_name})`,
         html: htmlBody,
       }),
     })

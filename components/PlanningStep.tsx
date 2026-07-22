@@ -248,7 +248,7 @@ export const PlanningStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `REMO_Storyboard_${project.title.replace(/\s+/g, '_')}.txt`;
+    link.download = `SODAM_Storyboard_${project.title.replace(/\s+/g, '_')}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -382,7 +382,7 @@ export const PlanningStep: React.FC = () => {
             <div className="p-4 bg-[#EEF3FC] border border-[#C0D4F0] rounded-2xl flex gap-3 text-xs leading-relaxed">
               <AlertCircle className="text-primary shrink-0" size={16} />
               <p className="text-zinc-600">
-                <span className="text-primary font-bold">REMO Tip:</span> {t('planning.tip')}
+                <span className="text-primary font-bold">Sodam Tip:</span> {t('planning.tip')}
               </p>
             </div>
           </div>

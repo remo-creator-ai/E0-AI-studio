@@ -210,7 +210,7 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
         />
         <StatCard
           label="크레딧 부여 한도"
-          badge="REMO 설정"
+          badge="운영사 설정"
           value={stats.creditQuota.toLocaleString()}
           sub={<>배분 <b className="text-zinc-900">{stats.creditAllocated.toLocaleString()}</b> · 잔여 <span className="text-primary">{stats.creditRemaining.toLocaleString()}</span></>}
         />
