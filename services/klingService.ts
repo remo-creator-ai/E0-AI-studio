@@ -3,48 +3,25 @@
  * API Docs: https://docs.qingque.cn/d/home/eZQB2yS9R7fKMFGdcXjlU_d1p
  */
 
-import { getAdminConfig } from './adminConfigService';
 import { normalizeImageInput } from './imageUtils';
+import { accessToken, PROXY_BASE } from '../lib/aiProxy';
 
-const KLING_API_BASE = '/api/kling';
+// ai-proxy Edge Function 경유. 키와 JWT 서명은 서버에만 있다.
+//
+// 이전에는 브라우저가 admin_config 에서 accessKeySecret 을 읽어 직접 HS256 JWT 를
+// 서명했다. 그래서 (1) secret 이 브라우저에 노출되고, (2) 호출 경로가 '/api/kling'
+// 이라 vite dev 프록시에 의존해 프로덕션 빌드에서는 아예 동작하지 않았다.
+// 프록시로 옮기면서 둘 다 해결된다.
+const KLING_API_BASE = `${PROXY_BASE}/kling`;
 
-function base64url(str: string): string {
-  return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-async function createJWT(accessKeyId: string, accessKeySecret: string): Promise<string> {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const now = Math.floor(Date.now() / 1000);
-  const payload = { iss: accessKeyId, exp: now + 1800, nbf: now - 5 };
-
-  const headerB64 = base64url(JSON.stringify(header));
-  const payloadB64 = base64url(JSON.stringify(payload));
-  const data = `${headerB64}.${payloadB64}`;
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(accessKeySecret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
-  const signatureB64 = base64url(String.fromCharCode(...new Uint8Array(signature)));
-
-  return `${data}.${signatureB64}`;
-}
-
-async function getKlingKeys(): Promise<{ accessKeyId: string; accessKeySecret: string }> {
-  const accessKeyId = await getAdminConfig('kling_access_key_id');
-  const accessKeySecret = await getAdminConfig('kling_access_key_secret');
-  if (!accessKeyId || !accessKeySecret) {
-    throw new Error(
-      'Kling API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
-    );
-  }
-  return { accessKeyId, accessKeySecret };
+/** 프록시 호출용 헤더 — Supabase 세션 토큰. Kling 인증은 서버가 붙인다. */
+async function proxyHeaders(json = false): Promise<Record<string, string>> {
+  const token = await accessToken();
+  if (!token) throw new Error('로그인이 필요합니다. 다시 로그인한 뒤 시도해 주세요.');
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 interface KlingTaskResponse {
@@ -71,9 +48,6 @@ export async function generateKlingVideo(
   aspectRatio?: string,
   signal?: AbortSignal
 ): Promise<string | null> {
-  const { accessKeyId, accessKeySecret } = await getKlingKeys();
-  const token = await createJWT(accessKeyId, accessKeySecret);
-
   const body: Record<string, unknown> = {
     model_name: 'kling-v1',
     prompt: prompt,
@@ -95,10 +69,7 @@ export async function generateKlingVideo(
   // Submit task
   const submitRes = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: await proxyHeaders(true),
     body: JSON.stringify(body),
   });
 
@@ -128,11 +99,9 @@ export async function generateKlingVideo(
     await new Promise(resolve => setTimeout(resolve, 5000));
     attempts++;
 
-    const refreshedToken = await createJWT(accessKeyId, accessKeySecret);
+    // Kling JWT 는 서버가 매 요청마다 새로 서명하므로 클라이언트는 갱신할 게 없다.
     const pollRes = await fetch(queryEndpoint, {
-      headers: {
-        'Authorization': `Bearer ${refreshedToken}`,
-      },
+      headers: await proxyHeaders(),
     });
 
     if (!pollRes.ok) continue;

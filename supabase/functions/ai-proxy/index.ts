@@ -26,6 +26,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const GEMINI_HOST = 'https://generativelanguage.googleapis.com'
+const KLING_HOST = 'https://api.klingai.com'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,14 +44,55 @@ const corsHeaders = {
  * Function Secret 은 DB 가 비었을 때의 폴백.
  */
 async function geminiKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
+  return config(admin, 'gemini_api_key', 'GEMINI_API_KEY')
+}
+
+async function klingKeys(
+  admin: ReturnType<typeof createClient>,
+): Promise<{ id: string; secret: string } | null> {
+  const id = await config(admin, 'kling_access_key_id', 'KLING_ACCESS_KEY_ID')
+  const secret = await config(admin, 'kling_access_key_secret', 'KLING_ACCESS_KEY_SECRET')
+  return id && secret ? { id, secret } : null
+}
+
+/** admin_config(DB) → Function Secret 순으로 설정값을 읽는다. */
+async function config(
+  admin: ReturnType<typeof createClient>,
+  dbKey: string,
+  secretName: string,
+): Promise<string | null> {
   const { data } = await admin
     .from('admin_config')
     .select('value')
-    .eq('key', 'gemini_api_key')
+    .eq('key', dbKey)
     .maybeSingle()
   const fromDb = (data?.value as string | undefined)?.trim()
   if (fromDb) return fromDb
-  return Deno.env.get('GEMINI_API_KEY') ?? null
+  return Deno.env.get(secretName) ?? null
+}
+
+/**
+ * Kling 은 accessKeySecret 으로 HS256 JWT 를 서명해 인증한다.
+ * 예전에는 이 서명을 브라우저에서 했다(= secret 이 브라우저에 있어야 함).
+ * 서명을 여기로 옮겨서 secret 이 서버 밖으로 나가지 않게 한다.
+ */
+async function klingJwt(accessKeyId: string, accessKeySecret: string): Promise<string> {
+  const b64url = (s: string) => btoa(s).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  const now = Math.floor(Date.now() / 1000)
+  const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = b64url(JSON.stringify({ iss: accessKeyId, exp: now + 1800, nbf: now - 5 }))
+  const data = `${header}.${payload}`
+
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(accessKeySecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data))
+  return `${data}.${b64url(String.fromCharCode(...new Uint8Array(sig)))}`
 }
 
 function json(body: unknown, status = 200) {
@@ -98,7 +140,7 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       gemini: Boolean(await geminiKey(admin)),
-      kling: Boolean(Deno.env.get('KLING_ACCESS_KEY_ID') && Deno.env.get('KLING_ACCESS_KEY_SECRET')),
+      kling: Boolean(await klingKeys(admin)),
     })
   }
 
@@ -130,9 +172,31 @@ Deno.serve(async (req) => {
     return new Response(upstream.body, { status: upstream.status, headers: respHeaders })
   }
 
-  // ---------- 4. Kling (후속 단계) ----------
+  // ---------- 4. Kling 포워드 ----------
+  // /ai-proxy/kling/v1/videos/... → https://api.klingai.com/v1/videos/...
+  // 예전에는 브라우저가 secret 으로 직접 JWT 를 서명했다. 이제 여기서 서명한다.
+  // (덤: 기존 '/api/kling' 은 vite dev 전용 프록시라 프로덕션 빌드에서는 아예
+  //  동작하지 않았다. 이 경로로 옮기면 배포 환경에서도 동작한다.)
   if (rest.startsWith('/kling')) {
-    return json({ error: 'Kling 프록시는 아직 준비 중입니다.' }, 501)
+    const keys = await klingKeys(admin)
+    if (!keys) return json({ error: 'Kling API 키가 설정되지 않았습니다.' }, 503)
+
+    const target = `${KLING_HOST}${rest.slice('/kling'.length)}${url.search}`
+    const jwt = await klingJwt(keys.id, keys.secret)
+
+    const upstream = await fetch(target, {
+      method: req.method,
+      headers: {
+        'Content-Type': req.headers.get('Content-Type') ?? 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.text(),
+    })
+
+    const respHeaders = new Headers(corsHeaders)
+    const ct = upstream.headers.get('Content-Type')
+    if (ct) respHeaders.set('Content-Type', ct)
+    return new Response(upstream.body, { status: upstream.status, headers: respHeaders })
   }
 
   return json({ error: `지원하지 않는 경로입니다: ${rest}` }, 404)

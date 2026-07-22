@@ -1,41 +1,13 @@
 import { supabase } from '../lib/supabase';
 import { MOCK_MODE, getMockRole } from '../lib/mockAuth';
 
-// Cache for admin config values (avoids repeated DB queries)
-const configCache: Map<string, { value: string; fetchedAt: number }> = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 export type AdminConfigKey = 'gemini_api_key' | 'kling_access_key_id' | 'kling_access_key_secret';
 
-/**
- * ⚠️ 레거시 — 키 값을 브라우저로 가져온다.
- *
- * Gemini 경로는 ai-proxy Edge Function 으로 옮겨서 더 이상 이 함수를 쓰지 않는다.
- * 남은 사용처는 klingService 뿐이며, admin_config RLS 가 마스터 전용으로 잠긴 뒤
- * 일반 사용자에게는 null 을 돌려준다(= Kling 영상 생성 불가).
- * Kling 도 프록시로 옮기면 이 함수는 삭제할 것.
- */
-export async function getAdminConfig(key: AdminConfigKey): Promise<string | null> {
-  // Check cache first
-  const cached = configCache.get(key);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
-    return cached.value;
-  }
-
-  const { data, error } = await supabase
-    .from('admin_config')
-    .select('value')
-    .eq('key', key)
-    .single();
-
-  if (error || !data) {
-    console.warn(`Admin config '${key}' not found:`, error?.message);
-    return null;
-  }
-
-  configCache.set(key, { value: data.value, fetchedAt: Date.now() });
-  return data.value;
-}
+// 값을 읽어오는 getAdminConfig() 는 제거했다.
+// Gemini·Kling 호출이 모두 ai-proxy Edge Function 을 경유하므로 클라이언트가
+// 키 값을 알 이유가 없다. 다시 만들지 말 것 — 만드는 순간 브라우저에 키가
+// 내려오고, admin_config 의 마스터 전용 RLS(030)를 우회할 명분이 생긴다.
+// 설정 여부만 필요하면 아래 getConfiguredKeys() 를 쓴다.
 
 /**
  * Set an admin config value (only callable by admin)
@@ -50,8 +22,6 @@ export async function setAdminConfig(key: AdminConfigKey, value: string): Promis
     return false;
   }
 
-  // Update cache
-  configCache.set(key, { value, fetchedAt: Date.now() });
   return true;
 }
 
@@ -96,11 +66,4 @@ export async function isMaster(): Promise<boolean> {
     return false;
   }
   return data === true;
-}
-
-/**
- * Clear cache (useful after updates)
- */
-export function clearConfigCache(): void {
-  configCache.clear();
 }
