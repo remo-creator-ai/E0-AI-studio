@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Coins,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Package
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
@@ -143,6 +144,14 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             onClick={() => handleNavigate(ProjectStep.PRODUCTION)}
           />
           </div>
+
+          <div className="mt-8 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.assets')}</div>
+          <SidebarItem
+            icon={Package}
+            label={t('nav.assets')}
+            active={currentStep === ProjectStep.ASSETS}
+            onClick={() => handleNavigate(ProjectStep.ASSETS)}
+          />
 
           <div className="mt-8 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.settings')}</div>
           <SidebarItem

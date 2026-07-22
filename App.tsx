@@ -16,6 +16,7 @@ const PlanningStep = React.lazy(() => import('./components/PlanningStep').then(m
 const VisualizingStep = React.lazy(() => import('./components/VisualizingStep').then(m => ({ default: m.VisualizingStep })));
 const AssemblyStep = React.lazy(() => import('./components/AssemblyStep').then(m => ({ default: m.AssemblyStep })));
 const ProductionStep = React.lazy(() => import('./components/ProductionStep').then(m => ({ default: m.ProductionStep })));
+const AssetLibrary = React.lazy(() => import('./components/AssetLibrary').then(m => ({ default: m.AssetLibrary })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AdminPage = React.lazy(() => import('./components/AdminPage').then(m => ({ default: m.AdminPage })));
 const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
@@ -95,6 +96,8 @@ const App: React.FC = () => {
         return <AssemblyStep />;
       case ProjectStep.PRODUCTION:
         return <ProductionStep />;
+      case ProjectStep.ASSETS:
+        return <AssetLibrary />;
       case ProjectStep.SETTINGS:
         return <SettingsPage />;
       case ProjectStep.ADMIN:

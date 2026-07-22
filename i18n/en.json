@@ -33,6 +33,7 @@
     "visualizing": "2. Visualizing",
     "assembly": "3. Assembly",
     "production": "4. Production",
+    "assets": "Asset Library",
     "settings": "Settings",
     "admin": "Admin",
     "adminSettings": "Admin Settings",
@@ -409,6 +410,51 @@
       "approved": "Approved",
       "rejected": "Rejected",
       "cancelled": "Cancelled"
+    }
+  },
+  "assets": {
+    "title": "Asset Library",
+    "subtitle": "Save characters, products, and logos you use often and reuse them across image and video creation.",
+    "new": "New asset",
+    "search": "Search by name",
+    "empty": "No saved assets yet.",
+    "emptyHint": "Create a new asset to use in your work.",
+    "sortRecent": "Recent",
+    "sortName": "Name",
+    "types": {
+      "all": "All",
+      "character": "Character",
+      "product": "Product",
+      "logo": "Logo",
+      "image": "Image"
+    },
+    "create": {
+      "title": "Create asset",
+      "typeLabel": "Type",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Sodam character",
+      "descLabel": "Description",
+      "descPlaceholder": "Add notes to guide creation.",
+      "primary": "Primary image",
+      "reference": "Reference images",
+      "addImage": "Add image",
+      "primaryHint": "1 primary image",
+      "referenceHint": "Up to {{count}} reference images",
+      "singleHint": "1 original image",
+      "submit": "Save",
+      "submitting": "Saving…",
+      "needPrimary": "Please add a primary image."
+    },
+    "detail": {
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this asset? This can't be undone.",
+      "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation.",
+      "addReference": "Add reference image",
+      "created": "Created",
+      "updated": "Updated"
     }
   },
   "dashboard": {

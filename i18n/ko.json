@@ -33,6 +33,7 @@
     "visualizing": "2. 스토리보드 만들기",
     "assembly": "3. 편집",
     "production": "4. 내보내기",
+    "assets": "자산 보관함",
     "settings": "설정",
     "admin": "관리자",
     "adminSettings": "관리자 콘솔",
@@ -409,6 +410,51 @@
       "approved": "승인됨",
       "rejected": "반려됨",
       "cancelled": "취소됨"
+    }
+  },
+  "assets": {
+    "title": "자산 보관함",
+    "subtitle": "자주 쓰는 캐릭터·제품·로고를 저장해 이미지·영상 제작에 반복 사용하세요.",
+    "new": "새 자산",
+    "search": "이름으로 검색",
+    "empty": "아직 저장한 자산이 없어요.",
+    "emptyHint": "새 자산을 만들어 제작에 활용해 보세요.",
+    "sortRecent": "최신순",
+    "sortName": "이름순",
+    "types": {
+      "all": "전체",
+      "character": "캐릭터",
+      "product": "제품",
+      "logo": "로고",
+      "image": "일반 이미지"
+    },
+    "create": {
+      "title": "새 자산 만들기",
+      "typeLabel": "분류",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 소담이 캐릭터",
+      "descLabel": "설명",
+      "descPlaceholder": "제작에 참고할 설명을 적어주세요.",
+      "primary": "대표 이미지",
+      "reference": "참고 이미지",
+      "addImage": "이미지 추가",
+      "primaryHint": "대표 이미지 1장",
+      "referenceHint": "참고 이미지 최대 {{count}}장",
+      "singleHint": "원본 이미지 1장",
+      "submit": "저장",
+      "submitting": "저장 중…",
+      "needPrimary": "대표 이미지를 추가해 주세요."
+    },
+    "detail": {
+      "edit": "수정",
+      "save": "저장",
+      "cancel": "취소",
+      "delete": "삭제",
+      "deleteConfirm": "이 자산을 삭제할까요? 되돌릴 수 없어요.",
+      "deleteLinked": "이 자산은 {{count}}개 프로젝트에 연결되어 있어요. 삭제하면 이후 레퍼런스 생성에서 제외됩니다.",
+      "addReference": "참고 이미지 추가",
+      "created": "생성",
+      "updated": "수정"
     }
   },
   "dashboard": {
