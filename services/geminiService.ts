@@ -3,30 +3,29 @@ import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_INSTRUCTION, getSystemInstruction } from "../constants";
 import { AdDuration, AspectRatio, SceneCount, CategorizedRefImage, REFERENCE_CATEGORY_INFO } from "../types";
 import { generateKlingVideo } from './klingService';
-import { getAdminConfig } from './adminConfigService';
 import { normalizeImageInput } from './imageUtils';
+import { proxyClient, proxyFetch } from '../lib/aiProxy';
 
-// Cached API key for session
-let cachedApiKey: string | null = null;
-
+/**
+ * 과거 admin_config 에서 읽은 Gemini 키를 세션 캐시하던 흔적.
+ * 이제 키는 브라우저에 오지 않으므로 캐시할 것이 없다.
+ * authStore 가 로그인/로그아웃 시 호출하므로 시그니처만 유지한다.
+ */
 export function clearApiKeyCache() {
-  cachedApiKey = null;
+  /* no-op: 키는 서버(ai-proxy Function Secret)에만 존재한다 */
 }
 
-const getApiKey = async (): Promise<string> => {
-  if (cachedApiKey) return cachedApiKey;
-
-  const key = await getAdminConfig('gemini_api_key');
-  if (!key) {
-    throw new Error(
-      'Gemini API Key가 설정되지 않았습니다. 관리자에게 문의하세요.'
-    );
+/**
+ * 프록시를 경유하는 클라이언트를 만든다.
+ * 프롬프트·모델·응답 파싱은 이 함수 아래로 전혀 바뀌지 않는다 — 전송 경로만 다르다.
+ */
+const getAI = async () => {
+  const ai = await proxyClient();
+  if (!ai) {
+    throw new Error('로그인이 필요합니다. 다시 로그인한 뒤 시도해 주세요.');
   }
-  cachedApiKey = key;
-  return key;
+  return ai;
 };
-
-const getAI = async () => new GoogleGenAI({ apiKey: await getApiKey() });
 
 /**
  * Retries an async operation with exponential backoff on 429 errors.
@@ -390,7 +389,7 @@ export async function generateSceneVideo(prompt: string, startImageBase64?: stri
   }
 
   // VEO 3.1 path
-  const ai = new GoogleGenAI({ apiKey: await getApiKey() });
+  const ai = await getAI();
   const modelName = 'veo-3.1-generate-preview';
 
   interface VideoGenerationParams {
@@ -459,7 +458,8 @@ export async function generateSceneVideo(prompt: string, startImageBase64?: stri
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
     if (!downloadLink) return null;
 
-    const videoResponse = await fetch(`${downloadLink}&key=${await getApiKey()}`);
+    // 키를 URL 에 붙이지 않는다. 프록시가 서버 키로 대신 인증한다.
+    const videoResponse = await proxyFetch(downloadLink);
     const videoBlob = await videoResponse.blob();
     return URL.createObjectURL(videoBlob);
   } catch (error: unknown) {

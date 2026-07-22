@@ -10,33 +10,8 @@
 //  두 경로가 요구사항까지 수렴하면 그때 공용 추출을 검토한다.
 // =============================================================
 
-import { GoogleGenAI } from '@google/genai';
-import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
-
-// ---------- AI 프록시 ----------
-// 키는 브라우저로 내려오지 않는다. Edge Function(ai-proxy)이 서버 시크릿의
-// 키를 주입해 Google 로 포워드한다. SDK 의 httpOptions.baseUrl 덕분에
-// 프롬프트·모델·응답 파싱 코드는 그대로 둘 수 있다.
-const PROXY_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-proxy`;
-
-async function accessToken(): Promise<string | null> {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token ?? null;
-}
-
-async function proxyClient(): Promise<GoogleGenAI | null> {
-  const token = await accessToken();
-  if (!token) return null;
-  return new GoogleGenAI({
-    // 진짜 키는 서버에만 있다. SDK 가 헤더를 채우도록 자리표시자만 준다.
-    apiKey: 'via-ai-proxy',
-    httpOptions: {
-      baseUrl: PROXY_BASE,
-      headers: { Authorization: `Bearer ${token}` },
-    },
-  });
-}
+import { proxyClient, proxyHealth } from '../lib/aiProxy';
 
 // ---------- 화면비 ----------
 // 영상 경로의 types.ts AspectRatio(16:9/9:16) 를 건드리지 않기 위한 전용 타입.
@@ -70,18 +45,8 @@ export interface GenerateResult {
  *  프록시의 /health 는 설정 여부(boolean)만 알려주고 키 값은 돌려주지 않는다. */
 export async function isImageApiReady(): Promise<boolean> {
   if (MOCK_MODE) return true;
-  const token = await accessToken();
-  if (!token) return false;
-  try {
-    const res = await fetch(`${PROXY_BASE}/health`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return false;
-    const body = await res.json();
-    return Boolean(body?.gemini);
-  } catch {
-    return false;
-  }
+  const health = await proxyHealth();
+  return Boolean(health?.gemini);
 }
 
 export interface GenerateInput {

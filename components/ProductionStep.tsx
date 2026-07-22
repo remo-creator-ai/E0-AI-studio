@@ -44,7 +44,7 @@ import { useAuthStore } from '../store/authStore';
 import { useCreditStore, CREDIT_COSTS } from '../store/creditStore';
 import { useModal } from './ui/ModalProvider';
 import { generateSceneVideo } from '../services/geminiService';
-import { getAdminConfig } from '../services/adminConfigService';
+import { proxyHealth } from '../lib/aiProxy';
 import { sceneImageToBlob } from '../services/imageUtils';
 import { Scene, BatchSceneStatus, BatchQueueItem, ProjectStep } from '../types';
 import { supabase } from '../lib/supabase';
@@ -97,9 +97,10 @@ export const ProductionStep: React.FC = () => {
 
   useEffect(() => {
     const checkKey = async () => {
-      // Gemini 키는 admin_config(DB)에 저장됨 — 설정돼 있으면 AI Studio 키 선택기 불필요
-      const configuredKey = await getAdminConfig('gemini_api_key');
-      if (configuredKey && configuredKey !== 'your_gemini_api_key_here') {
+      // Gemini 키는 서버(ai-proxy Function Secret)에만 있다. 설정 여부만 확인하며
+      // 키 값은 브라우저로 내려오지 않는다. 설정돼 있으면 AI Studio 키 선택기 불필요.
+      const health = await proxyHealth();
+      if (health?.gemini) {
         setHasKey(true);
         return;
       }
