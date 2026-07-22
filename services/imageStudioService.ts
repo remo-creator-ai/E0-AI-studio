@@ -20,9 +20,21 @@ export type StudioAspect = '1:1' | '16:9' | '9:16';
 export const STUDIO_ASPECTS: StudioAspect[] = ['1:1', '16:9', '9:16'];
 export const DEFAULT_ASPECT: StudioAspect = '1:1';
 
-// ---------- 미정 항목 ----------
-// TODO(미정): 크레딧 단가 확정 시 이 값만 바꾸면 UI·차감이 함께 따라간다.
-export const IMAGE_STUDIO_CREDIT_COST = 3;
+// ---------- 크레딧 단가 ----------
+// 확정: 단건 1장 = 1크레딧 (2026-07-22).
+//
+// 근거 (docs/IMAGE_MODEL_PRICING.md):
+//   - types.ts 의 IMAGE_MODEL_INFO.creditCost 는 "매트릭스(3x3, 최대 9장)" 단위다
+//     (VisualizingStep.tsx:266). 그 값을 그대로 쓰면 1장에 3크레딧이 되어 영상
+//     경로의 장당 단가(3cr/9장 = 0.33cr)보다 약 9배 비싸진다.
+//   - 문서의 영상 경로 권장안은 Imagen 4 Fast 5cr/매트릭스(장당 0.55cr, 마진 0%,
+//     대량 사용 유도). 단건 1cr 은 그 대비 약 2배의 단품 프리미엄이면서 마진이
+//     양수다(원가 $0.02~0.03 = 약 28~42원, 1cr ≈ 50원 기준).
+//
+// 주의: 현재 사용 모델(Gemini 3.1 Flash Image Preview)의 공식 원가는 아직
+//       미공개라 위 마진은 Imagen 4 Fast / GPT Image 2 원가를 대리 지표로 삼은
+//       추정이다. 문서의 액션 아이템(원가 재확인)이 끝나면 재검토할 것.
+export const IMAGE_STUDIO_CREDIT_COST = 1;
 
 // TODO(미정): 사용할 이미지 모델 확정 필요.
 // 확정 전까지 IMAGE_MODEL_INFO 가 Default 로 표기한 3.1 Flash 를 잠정 사용한다.
