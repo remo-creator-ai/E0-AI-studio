@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
-import { getAllAdminConfig, setAdminConfig, isAdmin, type AdminConfigKey } from '../services/adminConfigService';
+import { getConfiguredKeys, setAdminConfig, isAdmin, type AdminConfigKey } from '../services/adminConfigService';
 import {
   listAccounts,
   getDashboardStats,
@@ -775,12 +775,14 @@ const RequestsTab: React.FC = () => {
 const ApiKeysTab: React.FC = () => {
   const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [configured, setConfigured] = useState<Set<AdminConfigKey>>(new Set());
   const [visibility, setVisibility] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [status, setStatus] = useState<Record<string, 'success' | 'error'>>({});
 
-  useEffect(() => { getAllAdminConfig().then((c) => { setValues(c); setLoading(false); }); }, []);
+  // 값은 가져오지 않는다. 설정 여부만 받아 "설정됨" 표시에 쓴다 (쓰기 전용 화면).
+  useEffect(() => { getConfiguredKeys().then((s) => { setConfigured(s); setLoading(false); }); }, []);
 
   const save = async (key: AdminConfigKey) => {
     const v = values[key];
@@ -788,6 +790,10 @@ const ApiKeysTab: React.FC = () => {
     setSaving(key);
     const ok = await setAdminConfig(key, v.trim());
     setStatus((p) => ({ ...p, [key]: ok ? 'success' : 'error' }));
+    if (ok) {
+      setConfigured((p) => new Set(p).add(key));
+      setValues((p) => ({ ...p, [key]: '' })); // 저장 후 입력창을 비워 화면에 남기지 않는다
+    }
     setSaving(null);
     setTimeout(() => setStatus((p) => { const n = { ...p }; delete n[key]; return n; }), 3000);
   };
@@ -807,7 +813,7 @@ const ApiKeysTab: React.FC = () => {
               <label className="text-sm font-semibold text-zinc-700">{field.label}</label>
               {status[field.key] === 'success' && <span className="flex items-center gap-1 text-xs text-[#0050BF] font-bold"><CheckCircle2 className="w-3 h-3" /> {t('common.savedStatus')}</span>}
               {status[field.key] === 'error' && <span className="flex items-center gap-1 text-xs text-zinc-500 font-bold"><AlertCircle className="w-3 h-3" /> {t('common.failed')}</span>}
-              {values[field.key] && !status[field.key] && <span className="flex items-center gap-1 text-xs text-[#0050BF]"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
+              {configured.has(field.key) && !status[field.key] && <span className="flex items-center gap-1 text-xs text-[#0050BF]"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -815,7 +821,7 @@ const ApiKeysTab: React.FC = () => {
                   type={visibility[field.key] ? 'text' : 'password'}
                   value={values[field.key] || ''}
                   onChange={(e) => setValues((p) => ({ ...p, [field.key]: e.target.value }))}
-                  placeholder={field.placeholder}
+                  placeholder={configured.has(field.key) ? '설정됨 · 새 값을 입력하면 교체됩니다' : field.placeholder}
                   className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-zinc-900 placeholder-zinc-400 font-mono text-sm focus:outline-none focus:border-primary pr-12"
                 />
                 <button onClick={() => setVisibility((p) => ({ ...p, [field.key]: !p[field.key] }))}

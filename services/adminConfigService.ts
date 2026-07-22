@@ -8,7 +8,12 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export type AdminConfigKey = 'gemini_api_key' | 'kling_access_key_id' | 'kling_access_key_secret';
 
 /**
- * Get an admin config value (API key) from Supabase with caching
+ * ⚠️ 레거시 — 키 값을 브라우저로 가져온다.
+ *
+ * Gemini 경로는 ai-proxy Edge Function 으로 옮겨서 더 이상 이 함수를 쓰지 않는다.
+ * 남은 사용처는 klingService 뿐이며, admin_config RLS 가 마스터 전용으로 잠긴 뒤
+ * 일반 사용자에게는 null 을 돌려준다(= Kling 영상 생성 불가).
+ * Kling 도 프록시로 옮기면 이 함수는 삭제할 것.
  */
 export async function getAdminConfig(key: AdminConfigKey): Promise<string | null> {
   // Check cache first
@@ -51,24 +56,19 @@ export async function setAdminConfig(key: AdminConfigKey, value: string): Promis
 }
 
 /**
- * Get all admin config entries (for admin page)
+ * 어떤 키가 설정돼 있는지만 조회한다 (관리자 콘솔용).
+ *
+ * 이전의 getAllAdminConfig() 는 값까지 가져와 입력창에 채웠는데, 그러면 마스터
+ * 브라우저에 실제 API 키가 내려온다. 관리 화면은 "설정됨/미설정"만 알면 되므로
+ * value 컬럼을 아예 요청하지 않는다. 키 교체는 새 값을 덮어쓰는 방식(쓰기 전용).
  */
-export async function getAllAdminConfig(): Promise<Record<string, string>> {
-  const { data, error } = await supabase
-    .from('admin_config')
-    .select('key, value');
-
+export async function getConfiguredKeys(): Promise<Set<AdminConfigKey>> {
+  const { data, error } = await supabase.from('admin_config').select('key');
   if (error || !data) {
-    console.error('Failed to fetch admin config:', error?.message);
-    return {};
+    console.error('Failed to fetch admin config keys:', error?.message);
+    return new Set();
   }
-
-  const result: Record<string, string> = {};
-  for (const row of data) {
-    result[row.key] = row.value;
-    configCache.set(row.key, { value: row.value, fetchedAt: Date.now() });
-  }
-  return result;
+  return new Set(data.map((r) => r.key as AdminConfigKey));
 }
 
 /**

@@ -33,6 +33,26 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
+/**
+ * Gemini 키 조달.
+ *
+ * 우선순위: admin_config(DB) → Function Secret.
+ * DB 를 먼저 보는 이유는 마스터가 관리자 콘솔에서 키를 교체할 수 있게 하기
+ * 위해서다. admin_config 는 RLS 로 마스터 전용이지만, 여기서는 service role 로
+ * 읽으므로 RLS 를 우회한다. 즉 키는 서버 안에서만 오간다.
+ * Function Secret 은 DB 가 비었을 때의 폴백.
+ */
+async function geminiKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
+  const { data } = await admin
+    .from('admin_config')
+    .select('value')
+    .eq('key', 'gemini_api_key')
+    .maybeSingle()
+  const fromDb = (data?.value as string | undefined)?.trim()
+  if (fromDb) return fromDb
+  return Deno.env.get('GEMINI_API_KEY') ?? null
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -77,15 +97,15 @@ Deno.serve(async (req) => {
   if (rest === '/health') {
     return json({
       ok: true,
-      gemini: Boolean(Deno.env.get('GEMINI_API_KEY')),
+      gemini: Boolean(await geminiKey(admin)),
       kling: Boolean(Deno.env.get('KLING_ACCESS_KEY_ID') && Deno.env.get('KLING_ACCESS_KEY_SECRET')),
     })
   }
 
   // ---------- 3. Gemini 포워드 ----------
   if (rest.startsWith('/v1beta') || rest.startsWith('/v1')) {
-    const apiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!apiKey) return json({ error: 'GEMINI_API_KEY 시크릿이 설정되지 않았습니다.' }, 503)
+    const apiKey = await geminiKey(admin)
+    if (!apiKey) return json({ error: 'GEMINI_API_KEY 가 설정되지 않았습니다.' }, 503)
 
     const target = `${GEMINI_HOST}${rest}${url.search}`
 
