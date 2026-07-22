@@ -19,6 +19,11 @@ dist-ssr
 # 대시보드에서 내려받은 환경변수 원본 (SUPABASE_ACCESS_TOKEN 포함 — 절대 커밋 금지)
 env.download
 
+# 루트에 두는 메모/자격증명 텍스트 (API 키 정보 등) — 커밋 금지.
+# 루트 직속 .txt 만 대상이라 public/robots.txt 같은 정상 파일은 그대로 추적된다.
+# 새 메모를 만들어도 자동으로 막히도록 파일명 대신 패턴으로 둔다.
+/*.txt
+
 # OMC state
 .omc/
 .claude/
