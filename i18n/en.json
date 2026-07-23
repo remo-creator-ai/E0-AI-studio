@@ -739,11 +739,16 @@
       "orDivider": "or",
       "fromLibrary": "Pick from asset library",
       "libraryTitle": "Pick reference image from library",
-      "librarySubtitle": "Click to add to references. Up to {{count}}.",
+      "librarySubtitle": "Select cards, then confirm. Up to {{count}}.",
       "libraryEmpty": "You have no assets saved to your library.",
       "libraryLoading": "Loading assets…",
       "libraryFetchFail": "Could not load image.",
-      "libraryClose": "Close"
+      "libraryClose": "Close",
+      "libraryCancel": "Cancel",
+      "librarySelectedCount": "{{count}} selected",
+      "libraryConfirm": "Add {{count}}",
+      "libraryConfirmEmpty": "Add",
+      "libraryAdding": "Adding…"
     },
     "style": {
       "label": "Style",

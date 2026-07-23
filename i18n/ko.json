@@ -739,11 +739,16 @@
       "orDivider": "또는",
       "fromLibrary": "자산 보관함에서 불러오기",
       "libraryTitle": "자산 보관함에서 참고 이미지 선택",
-      "librarySubtitle": "클릭하면 참고 이미지에 추가됩니다. 최대 {{count}}장.",
+      "librarySubtitle": "카드를 클릭해 선택한 뒤 확인을 누르세요. 최대 {{count}}장.",
       "libraryEmpty": "자산 보관함에 등록한 이미지가 없습니다.",
       "libraryLoading": "자산을 불러오는 중…",
       "libraryFetchFail": "이미지를 불러오지 못했습니다.",
-      "libraryClose": "닫기"
+      "libraryClose": "닫기",
+      "libraryCancel": "취소",
+      "librarySelectedCount": "{{count}}장 선택됨",
+      "libraryConfirm": "{{count}}장 추가",
+      "libraryConfirmEmpty": "추가",
+      "libraryAdding": "추가 중…"
     },
     "style": {
       "label": "스타일",
