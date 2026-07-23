@@ -722,8 +722,9 @@ export const ImageStudio: React.FC = () => {
           </>
         )}
 
-        {/* 참고 이미지 — mode === 'image' 일 때만 노출 (계획서 §5.3) */}
-        {mode === 'image' && (
+        {/* 참고 이미지 — 'image' 모드는 필수, 'multishot' 모드는 선택.
+            멀티샷도 참고 이미지가 있으면 각 샷에 함께 첨부되어 앵글별 일관성이 높아진다. */}
+        {(mode === 'image' || mode === 'multishot') && (
           <>
             <label className="text-xs font-bold text-zinc-600">
               {t('imageStudio.reference.label')}
