@@ -36,6 +36,69 @@ export const DEFAULT_ASPECT: StudioAspect = '1:1';
 //       추정이다. 문서의 액션 아이템(원가 재확인)이 끝나면 재검토할 것.
 export const IMAGE_STUDIO_CREDIT_COST = 1;
 
+// ---------- 멀티샷 (Higgsfield 스타일: 6개 프리셋을 병렬 생성) ----------
+// 총액 6cr = 1cr/샷. 단일 이미지 단가와 동일해 부분 실패 시 성공 수만큼 차감하는 규칙이 자연스럽다.
+// 프리셋은 프롬프트 앞에 프리픽스로 합성된다 (STYLE_PROMPT_GUIDES 와 동일 패턴, 스타일 뒤에 놓인다).
+export const IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT = 1;
+export const IMAGE_STUDIO_MULTISHOT_SHOTS = 6;
+
+export interface MultishotShotPreset {
+  id: string;         // 히스토리 style_value 나 로그에 저장할 stable id
+  labelKey: string;   // i18n 경로
+  promptPrefix: string;
+}
+
+export interface MultishotPack {
+  id: 'camera' | 'character' | 'product';
+  labelKey: string;
+  descKey: string;
+  shots: MultishotShotPreset[];  // 정확히 IMAGE_STUDIO_MULTISHOT_SHOTS 개
+}
+
+export const MULTISHOT_PACKS: MultishotPack[] = [
+  {
+    id: 'camera',
+    labelKey: 'imageStudio.multishot.packs.camera',
+    descKey:  'imageStudio.multishot.packs.cameraDesc',
+    shots: [
+      { id: 'wide',      labelKey: 'imageStudio.multishot.shots.wide',      promptPrefix: 'wide angle establishing shot, full scene visible, subject centered' },
+      { id: 'medium',    labelKey: 'imageStudio.multishot.shots.medium',    promptPrefix: 'medium shot, waist up composition, natural framing' },
+      { id: 'closeup',   labelKey: 'imageStudio.multishot.shots.closeup',   promptPrefix: 'close-up shot, tight framing on subject, sharp details visible' },
+      { id: 'ots',       labelKey: 'imageStudio.multishot.shots.ots',       promptPrefix: 'over-the-shoulder view, looking past a foreground subject toward the main scene' },
+      { id: 'lowAngle',  labelKey: 'imageStudio.multishot.shots.lowAngle',  promptPrefix: 'dramatic low angle, hero shot, camera looking up at the subject' },
+      { id: 'birdseye',  labelKey: 'imageStudio.multishot.shots.birdseye',  promptPrefix: "top-down bird's eye view, overhead perspective looking directly down" },
+    ],
+  },
+  {
+    id: 'character',
+    labelKey: 'imageStudio.multishot.packs.character',
+    descKey:  'imageStudio.multishot.packs.characterDesc',
+    shots: [
+      { id: 'front',        labelKey: 'imageStudio.multishot.shots.front',        promptPrefix: 'front view of the character, facing camera directly, neutral pose, full body visible' },
+      { id: 'threeQuarter', labelKey: 'imageStudio.multishot.shots.threeQuarter', promptPrefix: 'three-quarter view of the character, angled 45 degrees from camera, full body visible' },
+      { id: 'side',         labelKey: 'imageStudio.multishot.shots.side',         promptPrefix: 'side profile view of the character, facing exactly 90 degrees from camera, full body visible' },
+      { id: 'back',         labelKey: 'imageStudio.multishot.shots.back',         promptPrefix: 'back view of the character, facing away from camera, full body visible' },
+      { id: 'expression',   labelKey: 'imageStudio.multishot.shots.expression',   promptPrefix: 'close-up portrait of the character showing a natural, expressive facial emotion, shoulders and head visible' },
+      { id: 'actionPose',   labelKey: 'imageStudio.multishot.shots.actionPose',   promptPrefix: 'dynamic action pose of the character in motion, full body visible, sense of movement' },
+    ],
+  },
+  {
+    id: 'product',
+    labelKey: 'imageStudio.multishot.packs.product',
+    descKey:  'imageStudio.multishot.packs.productDesc',
+    shots: [
+      { id: 'hero',        labelKey: 'imageStudio.multishot.shots.hero',        promptPrefix: 'hero product shot, clean seamless background, dramatic studio lighting, product centered' },
+      { id: 'detail',      labelKey: 'imageStudio.multishot.shots.detail',      promptPrefix: 'extreme close-up detail shot of the product, macro focus on texture and material' },
+      { id: 'lifestyle',   labelKey: 'imageStudio.multishot.shots.lifestyle',   promptPrefix: 'lifestyle context shot, product used naturally in a real environment by a person' },
+      { id: 'packaging',   labelKey: 'imageStudio.multishot.shots.packaging',   promptPrefix: 'product with its original packaging visible, retail-ready presentation' },
+      { id: 'group',       labelKey: 'imageStudio.multishot.shots.group',       promptPrefix: 'group shot showing multiple angles or color variants of the product together' },
+      { id: 'inUse',       labelKey: 'imageStudio.multishot.shots.inUse',       promptPrefix: 'in-use scene, hands interacting with the product, natural angle showing functionality' },
+    ],
+  },
+];
+
+export const DEFAULT_MULTISHOT_PACK: MultishotPack['id'] = 'camera';
+
 // TODO(미정): 사용할 이미지 모델 확정 필요.
 // 확정 전까지 IMAGE_MODEL_INFO 가 Default 로 표기한 3.1 Flash 를 잠정 사용한다.
 export const IMAGE_STUDIO_MODEL = 'gemini-3.1-flash-image-preview';

@@ -688,7 +688,46 @@
     "mode": {
       "label": "Mode",
       "text": "From text",
-      "reference": "From reference image"
+      "reference": "From reference image",
+      "multishot": "Multi-shot"
+    },
+    "multishot": {
+      "packLabel": "Multi-shot pack",
+      "packHint": "Runs 6 preset variations of your prompt in parallel.",
+      "packs": {
+        "camera": "Camera angles",
+        "cameraDesc": "Wide · Medium · Close-up · OTS · Low angle · Bird's eye",
+        "character": "Character sheet",
+        "characterDesc": "Front · 3/4 · Side · Back · Expression · Action pose",
+        "product": "Product sheet",
+        "productDesc": "Hero · Detail · Lifestyle · Packaging · Group · In use"
+      },
+      "shots": {
+        "wide": "Wide",
+        "medium": "Medium",
+        "closeup": "Close-up",
+        "ots": "Over-the-shoulder",
+        "lowAngle": "Low angle",
+        "birdseye": "Bird's eye",
+        "front": "Front",
+        "threeQuarter": "3/4 view",
+        "side": "Side",
+        "back": "Back",
+        "expression": "Expression",
+        "actionPose": "Action pose",
+        "hero": "Hero",
+        "detail": "Detail",
+        "lifestyle": "Lifestyle",
+        "packaging": "Packaging",
+        "group": "Group",
+        "inUse": "In use"
+      },
+      "generateButton": "Generate multi-shot",
+      "generating": "Generating… {{done}}/{{total}}",
+      "costHint": "Charged per successful shot · up to {{cost}} credits",
+      "retryShot": "Retry",
+      "shotFailed": "Failed",
+      "shotBusy": "Generating"
     },
     "reference": {
       "label": "Reference images",

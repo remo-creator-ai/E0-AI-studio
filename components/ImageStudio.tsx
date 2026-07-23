@@ -28,7 +28,9 @@ import { STYLE_PROMPT_GUIDES } from '../constants';
 import {
   generateStudioImage, isImageApiReady,
   STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
-  type StudioAspect, type GenerateFailure,
+  MULTISHOT_PACKS, DEFAULT_MULTISHOT_PACK,
+  IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, IMAGE_STUDIO_MULTISHOT_SHOTS,
+  type StudioAspect, type GenerateFailure, type MultishotPack,
 } from '../services/imageStudioService';
 import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
@@ -44,7 +46,21 @@ type SelectedStyle =
   | { kind: 'preset'; value: VisualStyle }
   | { kind: 'custom'; id: string; name: string; icon: string; prompt: string };
 
-type Mode = 'text' | 'image';
+type Mode = 'text' | 'image' | 'multishot';
+
+/** 멀티샷 개별 샷의 상태.
+ *  status: idle(대기) / busy(생성중) / done(성공) / error(실패)
+ *  imageUrl 은 성공 시만, historyId 는 히스토리 적재 성공 시만 존재. */
+export interface MultishotShotState {
+  presetId: string;
+  labelKey: string;
+  promptPrefix: string;
+  status: 'idle' | 'busy' | 'done' | 'error';
+  imageUrl?: string;
+  historyId?: string;
+  saveState: SaveState;
+  errorMessage?: string;
+}
 
 const ASPECT_LABEL: Record<StudioAspect, string> = {
   '1:1': 'square',
@@ -172,7 +188,18 @@ export const ImageStudio: React.FC = () => {
   const [apiReady, setApiReady] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
   // 보관함 저장 다이얼로그 — 사용자가 캐릭터/제품/로고/이미지 중 분류를 고르고 이름을 확인한다.
-  const [saveDraft, setSaveDraft] = useState<{ name: string; type: AssetType } | null>(null);
+  // source 는 어느 결과를 저장할지 스냅샷 (단일 모드는 현재 이미지, 멀티샷은 해당 셀).
+  const [saveDraft, setSaveDraft] = useState<{
+    name: string;
+    type: AssetType;
+    source: { image: string; prompt: string; historyId: string | null };
+    // 멀티샷 셀 저장 시 이 인덱스를 채우면 saved 상태를 해당 셀에도 반영한다.
+    shotIdx?: number;
+  } | null>(null);
+
+  // 멀티샷 상태
+  const [multishotPackId, setMultishotPackId] = useState<MultishotPack['id']>(DEFAULT_MULTISHOT_PACK);
+  const [multishotShots, setMultishotShots] = useState<MultishotShotState[]>([]);
   // 히스토리 상태 — 마운트 시 서버에서 로드, 이후 saveHistory 성공 시 로컬로 prepend.
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -239,7 +266,10 @@ export const ImageStudio: React.FC = () => {
     return () => { cancelled = true; };
   }, [pendingRef, clearPendingRef]);
 
-  const cost = IMAGE_STUDIO_CREDIT_COST;
+  // 단일: 1cr / 멀티샷: 6cr(성공한 샷만 실제 차감되지만 실행 전 잔액은 최대치 기준으로 검사).
+  const cost = mode === 'multishot'
+    ? IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT * IMAGE_STUDIO_MULTISHOT_SHOTS
+    : IMAGE_STUDIO_CREDIT_COST;
   const enoughCredits = hasEnough(cost);
   const needsRef = mode === 'image' && refs.length === 0;
   const canGenerate = prompt.trim().length > 0 && !busy && apiReady && enoughCredits && !needsRef;
@@ -394,45 +424,133 @@ export const ImageStudio: React.FC = () => {
     setBusy(false);
   }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user]);
 
+  // ---------- 멀티샷 ----------
+  const runMultishot = useCallback(async () => {
+    if (!canGenerate) return;
+    setBusy(true);
+    setFailure(null);
+    const snapshot = prompt;
+    const pack = MULTISHOT_PACKS.find((p) => p.id === multishotPackId) ?? MULTISHOT_PACKS[0];
+    // 6개 샷 상태 초기화 → 병렬 실행
+    const initial: MultishotShotState[] = pack.shots.map((sh) => ({
+      presetId: sh.id,
+      labelKey: sh.labelKey,
+      promptPrefix: sh.promptPrefix,
+      status: 'busy',
+      saveState: { kind: 'idle' },
+    }));
+    setMultishotShots(initial);
+    setImagePrompt(snapshot);
+
+    // 병렬 실행. 개별 샷 상태는 setMultishotShots 로 각자 업데이트 → 그리드 UI 가 실시간 반영.
+    // Promise.allSettled 로 전체 완료 시점만 잡아서 busy 해제.
+    await Promise.allSettled(initial.map((_, i) => runOneShotDirect(i, snapshot, pack.shots[i])));
+    setBusy(false);
+  }, [canGenerate, prompt, multishotPackId]);
+
+  // Promise.allSettled 안에서는 최신 multishotShots 를 참조하기 어려워 runOneShot 대신
+  // 각 샷의 preset 을 직접 인자로 받는 헬퍼를 쓴다. runOneShot 은 UI 의 개별 재시도용.
+  const runOneShotDirect = useCallback(async (idx: number, snapshot: string, shotPreset: MultishotPack['shots'][number]) => {
+    const guide = style ? (style.kind === 'preset' ? STYLE_PROMPT_GUIDES[style.value] : style.prompt) : '';
+    const composed = [guide, shotPreset.promptPrefix, snapshot.trim()].filter(Boolean).join('. ');
+    const res = await generateStudioImage({
+      prompt: composed,
+      aspect,
+      references: refs.length > 0 ? refs.map((r) => r.dataUrl) : undefined,
+    });
+    if (res.ok && res.imageUrl) {
+      const imageUrl = res.imageUrl;
+      await deduct(IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, `image_studio:multishot:${aspect}:${shotPreset.id}`);
+      let historyId: string | undefined;
+      if (user) {
+        const hres = await saveHistory({
+          ownerId: user.id,
+          prompt: snapshot,
+          aspect,
+          styleKind: 'preset',
+          styleValue: `multishot:${shotPreset.id}`,
+          model: IMAGE_STUDIO_MODEL,
+          dataUrl: imageUrl,
+        });
+        if (hres.ok && hres.item) {
+          historyId = hres.item.id;
+          setHistory((prev) => [hres.item!, ...prev].slice(0, 200));
+        }
+      }
+      setMultishotShots((prev) => prev.map((s, i) => i === idx
+        ? { ...s, status: 'done', imageUrl, historyId, saveState: { kind: 'idle' } }
+        : s));
+    } else {
+      setMultishotShots((prev) => prev.map((s, i) => i === idx
+        ? { ...s, status: 'error', errorMessage: res.message ?? res.failure ?? 'error' }
+        : s));
+    }
+  }, [style, aspect, refs, deduct, user]);
+
+  const retryOneShot = useCallback(async (idx: number) => {
+    const shot = multishotShots[idx];
+    if (!shot) return;
+    setMultishotShots((prev) => prev.map((s, i) => i === idx ? { ...s, status: 'busy', errorMessage: undefined } : s));
+    await runOneShotDirect(idx, imagePrompt, { id: shot.presetId, labelKey: shot.labelKey, promptPrefix: shot.promptPrefix });
+  }, [multishotShots, imagePrompt, runOneShotDirect]);
+
   // 보관함 저장 버튼: 다이얼로그를 열어 사용자가 분류(캐릭터/제품/로고/이미지)와 이름을 확인하게 한다.
-  // 자동 이름 후보는 프롬프트 첫 줄. 사용자가 그대로 저장하면 기존 흐름과 동일.
-  const openSaveDialog = () => {
-    if (!image || saveState.kind === 'saving' || saveState.kind === 'saved') return;
+  // 자동 이름 후보는 프롬프트 첫 줄. 단일 이미지는 현재 결과를, 멀티샷은 클릭한 셀을 저장한다.
+  const openSaveDialog = (override?: { image: string; prompt: string; historyId: string | null; shotIdx?: number }) => {
     if (!user) { setSaveState({ kind: 'error', message: t('imageStudio.result.saveNoUser') }); return; }
-    setSaveDraft({ name: autoAssetName(imagePrompt), type: 'image' });
+    const src = override ?? (image ? { image, prompt: imagePrompt, historyId: currentHistoryId, shotIdx: undefined } : null);
+    if (!src) return;
+    // 단일 이미지에서 이미 저장 중/완료면 새 다이얼로그를 열지 않는다.
+    if (!override && (saveState.kind === 'saving' || saveState.kind === 'saved')) return;
+    setSaveDraft({
+      name: autoAssetName(src.prompt),
+      type: 'image',
+      source: { image: src.image, prompt: src.prompt, historyId: src.historyId },
+      shotIdx: src.shotIdx,
+    });
   };
 
   const commitSave = useCallback(async () => {
-    if (!saveDraft || !image || !user) return;
+    if (!saveDraft || !user) return;
     const trimmedName = saveDraft.name.trim();
     if (!trimmedName) return;
-    setSaveState({ kind: 'saving' });
+    const src = saveDraft.source;
+    const shotIdx = saveDraft.shotIdx;
+    const setSaveStatus = (v: SaveState) => {
+      if (shotIdx === undefined) {
+        setSaveState(v);
+      } else {
+        setMultishotShots((prev) => prev.map((s, i) => i === shotIdx ? { ...s, saveState: v } : s));
+      }
+    };
+    setSaveStatus({ kind: 'saving' });
     try {
-      const file = await dataUrlToPngFile(image, `${trimmedName.replace(/[\\/:*?"<>|]+/g, '_')}.png`);
+      const file = await dataUrlToPngFile(src.image, `${trimmedName.replace(/[\\/:*?"<>|]+/g, '_')}.png`);
       const res = await createAsset(
         user.id,
         // source_type 은 assetService 가 기본 'upload' 로 넣는데, 스키마상 'generated' 도 허용된다.
         // 지금 API 시그니처가 source_type 을 받지 않으므로 여기서는 upload 로 저장되지만,
         // 후속 단계에서 시그니처 확장 시 'generated' 로 명시할 것.
-        { asset_type: saveDraft.type, name: trimmedName, description: imagePrompt },
+        { asset_type: saveDraft.type, name: trimmedName, description: src.prompt },
         [{ file, role: 'primary' }],
       );
       if (res.ok && res.id) {
         const savedId = res.id;
-        setSaveState({ kind: 'saved', assetId: savedId });
+        setSaveStatus({ kind: 'saved', assetId: savedId });
         setSaveDraft(null);
         // 히스토리 뱃지에 반영 — 실패해도 자산 저장 자체는 이미 성공했으니 UI 상태를 되돌리지 않는다.
-        if (currentHistoryId) {
-          void markHistorySaved(currentHistoryId, savedId);
-          setHistory((prev) => prev.map((h) => h.id === currentHistoryId ? { ...h, saved_asset_id: savedId } : h));
+        if (src.historyId) {
+          const hid = src.historyId;
+          void markHistorySaved(hid, savedId);
+          setHistory((prev) => prev.map((h) => h.id === hid ? { ...h, saved_asset_id: savedId } : h));
         }
       } else {
-        setSaveState({ kind: 'error', message: res.error ?? 'unknown' });
+        setSaveStatus({ kind: 'error', message: res.error ?? 'unknown' });
       }
     } catch (e) {
-      setSaveState({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      setSaveStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, [saveDraft, image, user, imagePrompt, currentHistoryId]);
+  }, [saveDraft, user]);
 
   const download = useCallback(() => {
     if (!image) return;
@@ -540,13 +658,13 @@ export const ImageStudio: React.FC = () => {
           <p className="text-xs text-zinc-500 mt-1">{t('imageStudio.subtitle')}</p>
         </div>
 
-        {/* 생성 방식 */}
+        {/* 생성 방식 — 3세그먼트: 텍스트 / 이미지 / 멀티샷 */}
         <label className="text-xs font-bold text-zinc-600">{t('imageStudio.mode.label')}</label>
         <div className="mt-1.5 mb-5 flex gap-1 p-1 bg-zinc-100 rounded-xl">
           <button
             type="button"
             onClick={() => setMode('text')}
-            className={`flex-1 py-2 rounded-lg text-center text-sm font-bold transition-colors ${
+            className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
               mode === 'text' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
@@ -555,13 +673,54 @@ export const ImageStudio: React.FC = () => {
           <button
             type="button"
             onClick={() => setMode('image')}
-            className={`flex-1 py-2 rounded-lg text-center text-sm font-bold transition-colors ${
+            className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
               mode === 'image' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
             {t('imageStudio.mode.reference')}
           </button>
+          <button
+            type="button"
+            onClick={() => setMode('multishot')}
+            className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
+              mode === 'multishot' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            {t('imageStudio.mode.multishot')}
+          </button>
         </div>
+
+        {/* 멀티샷 팩 선택 — 3종 중 하나 */}
+        {mode === 'multishot' && (
+          <>
+            <label className="text-xs font-bold text-zinc-600">{t('imageStudio.multishot.packLabel')}</label>
+            <div className="mt-1.5 mb-1.5 grid grid-cols-1 gap-1.5">
+              {MULTISHOT_PACKS.map((pk) => {
+                const selected = multishotPackId === pk.id;
+                return (
+                  <button
+                    key={pk.id}
+                    type="button"
+                    onClick={() => setMultishotPackId(pk.id)}
+                    className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
+                      selected
+                        ? 'border-primary bg-[#EEF3FC]'
+                        : 'border-zinc-200 hover:border-primary/40 bg-white'
+                    }`}
+                  >
+                    <div className={`text-sm font-black ${selected ? 'text-primary' : 'text-zinc-800'}`}>
+                      {t(pk.labelKey)}
+                    </div>
+                    <div className="text-[10px] text-zinc-500 mt-0.5">{t(pk.descKey)}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-zinc-400 mb-5 leading-relaxed">
+              {t('imageStudio.multishot.packHint')}
+            </p>
+          </>
+        )}
 
         {/* 참고 이미지 — mode === 'image' 일 때만 노출 (계획서 §5.3) */}
         {mode === 'image' && (
@@ -697,29 +856,110 @@ export const ImageStudio: React.FC = () => {
         <div className="mt-auto pt-2">
           <button
             type="button"
-            onClick={run}
+            onClick={mode === 'multishot' ? runMultishot : run}
             disabled={!canGenerate}
             className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed text-white rounded-full font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           >
             {busy ? (
               <>
                 <RefreshCw size={15} className="animate-spin" />
-                {t('imageStudio.generate.generating')}
+                {mode === 'multishot'
+                  ? t('imageStudio.multishot.generating', {
+                      done: multishotShots.filter((s) => s.status === 'done' || s.status === 'error').length,
+                      total: multishotShots.length,
+                    })
+                  : t('imageStudio.generate.generating')}
               </>
             ) : (
               <>
                 <Sparkles size={15} />
-                {t('imageStudio.generate.button')}
+                {mode === 'multishot' ? t('imageStudio.multishot.generateButton') : t('imageStudio.generate.button')}
                 <span className="opacity-70">· {t('imageStudio.generate.cost', { count: cost })}</span>
               </>
             )}
           </button>
+          {mode === 'multishot' && (
+            <p className="text-[10px] text-zinc-400 mt-2 text-center">
+              {t('imageStudio.multishot.costHint', { cost })}
+            </p>
+          )}
         </div>
       </aside>
 
       {/* ================= 결과 작업영역 ================= */}
       <section className="flex-1 min-h-[70vh] bg-white border border-zinc-200 rounded-3xl flex items-center justify-center p-6">
-        {busy ? (
+        {mode === 'multishot' && multishotShots.length > 0 ? (
+          <div className="w-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {multishotShots.map((shot, idx) => (
+                <div key={shot.presetId} className="flex flex-col">
+                  <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1.5 truncate">
+                    {t(shot.labelKey)}
+                  </div>
+                  <div className="relative bg-zinc-100 rounded-xl overflow-hidden aspect-square flex items-center justify-center">
+                    {shot.status === 'busy' && (
+                      <div className="flex flex-col items-center gap-2 text-zinc-400">
+                        <RefreshCw size={20} className="animate-spin" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">{t('imageStudio.multishot.shotBusy')}</span>
+                      </div>
+                    )}
+                    {shot.status === 'error' && (
+                      <div className="flex flex-col items-center gap-2 p-3 text-center">
+                        <AlertCircle size={18} className="text-red-500" />
+                        <span className="text-[10px] font-bold text-red-600 leading-tight break-words">{t('imageStudio.multishot.shotFailed')}</span>
+                        <button
+                          type="button"
+                          onClick={() => retryOneShot(idx)}
+                          className="flex items-center gap-1 mt-1 px-3 py-1 rounded-full bg-white border border-zinc-200 hover:border-primary/40 text-[10px] font-bold text-zinc-700 transition-colors"
+                        >
+                          <RefreshCw size={10} /> {t('imageStudio.multishot.retryShot')}
+                        </button>
+                      </div>
+                    )}
+                    {shot.status === 'done' && shot.imageUrl && (
+                      <img src={shot.imageUrl} alt={t(shot.labelKey)} className="w-full h-full object-cover" />
+                    )}
+                    {/* hover 액션: 저장 · 다운로드 (done 상태만) */}
+                    {shot.status === 'done' && shot.imageUrl && (
+                      <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-black/60 flex items-center justify-center gap-2">
+                        {shot.saveState.kind === 'saved' ? (
+                          <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
+                            <BookmarkCheck size={12} /> {t('imageStudio.result.saved')}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openSaveDialog({
+                              image: shot.imageUrl!,
+                              prompt: imagePrompt,
+                              historyId: shot.historyId ?? null,
+                              shotIdx: idx,
+                            })}
+                            disabled={shot.saveState.kind === 'saving'}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-primary/60 text-white text-[10px] font-bold"
+                            title={t('imageStudio.result.saveToLibrary')}
+                          >
+                            {shot.saveState.kind === 'saving'
+                              ? <RefreshCw size={12} className="animate-spin" />
+                              : <Bookmark size={12} />}
+                          </button>
+                        )}
+                        <a
+                          href={shot.imageUrl}
+                          download={`SODAM_${shot.presetId}_${aspect.replace(':', 'x')}.png`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-zinc-700 text-[10px] font-bold"
+                          title={t('imageStudio.result.download')}
+                        >
+                          <Download size={12} />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : busy ? (
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
             <p className="text-sm font-bold text-zinc-500">{t('imageStudio.loading')}</p>
@@ -745,7 +985,7 @@ export const ImageStudio: React.FC = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={openSaveDialog}
+                  onClick={() => openSaveDialog()}
                   disabled={saveState.kind === 'saving'}
                   className="flex flex-col items-center gap-0.5 px-5 py-2.5 bg-primary hover:bg-[#003E99] disabled:bg-primary/60 text-white rounded-full font-bold text-sm transition-all active:scale-95"
                 >
