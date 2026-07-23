@@ -442,6 +442,11 @@
       "deleteConfirm": "Are you sure you want to delete the generated matrix images?",
       "maxRefs": "Maximum 5 reference images allowed."
     },
+    "libraryPick": {
+      "button": "Library",
+      "title": "Pick reference image from library",
+      "subtitle": "Category is auto-assigned from the asset type."
+    },
     "refCategories": {
       "character": "Character",
       "product": "Product",

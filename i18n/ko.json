@@ -447,6 +447,11 @@
       "product": "상품",
       "accessory": "악세사리",
       "background": "배경"
+    },
+    "libraryPick": {
+      "button": "보관함",
+      "title": "자산 보관함에서 참고 이미지 선택",
+      "subtitle": "자산 분류에 따라 카테고리가 자동 지정됩니다."
     }
   },
   "assembly": {

@@ -28,9 +28,12 @@ import {
   ShoppingBag,
   Gem,
   Mountain,
-  Trash2
+  Trash2,
+  Package,
 } from 'lucide-react';
 import { useStore } from '../store';
+import { AssetLibraryPicker } from './AssetLibraryPicker';
+import type { Asset, AssetType } from '../services/assetService';
 import { useCreditStore } from '../store/creditStore';
 import { useModal } from './ui/ModalProvider';
 import { generate3x3GridImage } from '../services/geminiService';
@@ -61,6 +64,7 @@ export const VisualizingStep: React.FC = () => {
   const [customStylePrompt, setCustomStylePrompt] = useState('');
   const [refImages, setRefImages] = useState<CategorizedRefImage[]>([]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [isLibraryPickerOpen, setIsLibraryPickerOpen] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<{current: number, total: number} | null>(null);
   const [isPromptAutoSet, setIsPromptAutoSet] = useState(true);
   const [selectedModel, setSelectedModel] = useState<ImageModel>(ImageModel.GEMINI_3_1_FLASH);
@@ -511,6 +515,29 @@ CRITICAL RULES:
     setRefImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 자산 보관함 자산의 asset_type 을 VisualizingStep 의 ReferenceCategory 로 변환한다.
+  // 매핑 근거: 보관함에서 사용자가 이미 이 분류에 맞춰 자산을 정리해 등록했으므로
+  // 로고→악세사리, 일반 이미지→배경으로 두면 대부분의 케이스에서 자연스럽다.
+  // 매핑이 어긋나면 사용자는 자산을 지우고 [+]로 재업로드하거나 아래처럼 카테고리
+  // 팝업을 거치는 흐름으로 조정할 수 있다.
+  const assetTypeToCategory = (t: AssetType): ReferenceCategory => (
+    t === 'character' ? 'character'
+    : t === 'product'   ? 'product'
+    : t === 'logo'      ? 'accessory'
+    :                     'background'
+  );
+
+  const handleLibraryAssetPicked = async (result: { asset: Asset; dataUrl: string }) => {
+    if (refImages.length >= 5) {
+      await alert(t('visualizing.alerts.maxRefs'), { type: 'warning' });
+      return;
+    }
+    setRefImages(prev => [
+      ...prev,
+      { image: result.dataUrl, category: assetTypeToCategory(result.asset.asset_type) },
+    ]);
+  };
+
   return (
     <div className="space-y-6 animate-in slide-in-from-right duration-500 pb-20">
       {/* ── Header: Title + Unit Navigation ── */}
@@ -657,12 +684,23 @@ CRITICAL RULES:
                 </div>
               ))}
               {refImages.length < 5 && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-14 h-14 border-2 border-dashed border-zinc-200 rounded-xl flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/50 transition-all shrink-0"
-                >
-                  <Upload size={16} />
-                </button>
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-14 h-14 border-2 border-dashed border-zinc-200 rounded-xl flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/50 transition-all shrink-0"
+                    title="파일 업로드"
+                  >
+                    <Upload size={16} />
+                  </button>
+                  <button
+                    onClick={() => setIsLibraryPickerOpen(true)}
+                    className="w-14 h-14 border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-primary hover:border-primary/50 transition-all shrink-0"
+                    title={t('visualizing.libraryPick.button')}
+                  >
+                    <Package size={14} />
+                    <span className="text-[8px] font-bold">{t('visualizing.libraryPick.button')}</span>
+                  </button>
+                </>
               )}
               <input type="file" ref={fileInputRef} onChange={onFileChange} className="hidden" accept="image/*" />
             </div>
@@ -849,6 +887,16 @@ CRITICAL RULES:
           </div>
         </div>
       )}
+
+      {/* Asset Library Picker — 자산 클릭 시 asset_type 을 ReferenceCategory 로 자동 매핑 */}
+      <AssetLibraryPicker
+        open={isLibraryPickerOpen}
+        onClose={() => setIsLibraryPickerOpen(false)}
+        onPick={handleLibraryAssetPicked}
+        maxRemaining={5 - refImages.length}
+        title={t('visualizing.libraryPick.title')}
+        subtitle={`${t('visualizing.libraryPick.subtitle')} · ${refImages.length}/5`}
+      />
 
       {/* Category Selection Popup */}
       {pendingImage && (
