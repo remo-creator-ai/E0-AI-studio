@@ -25,11 +25,12 @@ import { ProjectStep, VisualStyle } from '../types';
 import { STYLE_PROMPT_GUIDES } from '../constants';
 import {
   generateStudioImage, isImageApiReady,
-  STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST,
+  STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
   type StudioAspect, type GenerateFailure,
 } from '../services/imageStudioService';
 import { createAsset, listAssets, type Asset } from '../services/assetService';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
+import { saveHistory, markHistorySaved } from '../services/imageHistoryService';
 
 /** 스타일 선택 상태: 프리셋(VisualStyle enum) 또는 사용자 커스텀(id + 즉시 사용할 프롬프트 스냅샷).
  *  커스텀은 스냅샷을 잡아두어 사용자가 설정에서 지운 뒤에도 이 생성 세션 안에서는 계속 유효하다. */
@@ -173,6 +174,8 @@ export const ImageStudio: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   // 저장 시점에 프롬프트가 바뀌어도 흔들리지 않도록, 성공한 생성의 프롬프트를 스냅샷으로 잡는다.
   const [imagePrompt, setImagePrompt] = useState('');
+  // 히스토리에 기록된 현재 이미지의 id — '보관함 저장' 후 saved_asset_id 를 채워줄 근거.
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const [failure, setFailure] = useState<GenerateFailure | null>(null);
   const [apiReady, setApiReady] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
@@ -302,11 +305,28 @@ export const ImageStudio: React.FC = () => {
       // IMAGE-08: 성공한 생성에만 차감한다.
       const styleLabel = style ? (style.kind === 'preset' ? style.value : `custom:${style.id}`) : 'none';
       await deduct(cost, `image_studio:${mode}:${aspect}:${styleLabel}`);
+
+      // 히스토리 적재 — 로그인 사용자에 한해. 실패해도 이미지 결과는 유지한다.
+      setCurrentHistoryId(null);
+      if (user) {
+        const styleKind = style ? style.kind : null;
+        const styleValue = style ? (style.kind === 'preset' ? style.value : style.id) : null;
+        const hres = await saveHistory({
+          ownerId: user.id,
+          prompt: snapshot,
+          aspect,
+          styleKind,
+          styleValue,
+          model: IMAGE_STUDIO_MODEL,
+          dataUrl: res.imageUrl,
+        });
+        if (hres.ok && hres.item) setCurrentHistoryId(hres.item.id);
+      }
     } else {
       setFailure(res.failure ?? 'error');
     }
     setBusy(false);
-  }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt]);
+  }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user]);
 
   const save = useCallback(async () => {
     if (!image || saveState.kind === 'saving' || saveState.kind === 'saved') return;
@@ -324,12 +344,17 @@ export const ImageStudio: React.FC = () => {
         { asset_type: 'image', name, description: imagePrompt },
         [{ file, role: 'primary' }],
       );
-      if (res.ok && res.id) setSaveState({ kind: 'saved', assetId: res.id });
-      else setSaveState({ kind: 'error', message: res.error ?? 'unknown' });
+      if (res.ok && res.id) {
+        setSaveState({ kind: 'saved', assetId: res.id });
+        // 히스토리 뱃지에 반영 — 실패해도 자산 저장 자체는 이미 성공했으니 UI 상태를 되돌리지 않는다.
+        if (currentHistoryId) { void markHistorySaved(currentHistoryId, res.id); }
+      } else {
+        setSaveState({ kind: 'error', message: res.error ?? 'unknown' });
+      }
     } catch (e) {
       setSaveState({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, [image, imagePrompt, user, saveState.kind, t]);
+  }, [image, imagePrompt, user, saveState.kind, currentHistoryId, t]);
 
   const download = useCallback(() => {
     if (!image) return;

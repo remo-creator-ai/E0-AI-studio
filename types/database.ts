@@ -338,6 +338,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      image_generation_history: {
+        Row: {
+          id: string;
+          owner_id: string;
+          prompt: string;
+          aspect: string;
+          style_kind: string | null;
+          style_value: string | null;
+          model: string;
+          storage_path: string;
+          saved_asset_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          prompt: string;
+          aspect: string;
+          style_kind?: string | null;
+          style_value?: string | null;
+          model: string;
+          storage_path: string;
+          saved_asset_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          saved_asset_id?: string | null;
+        };
+        Relationships: [];
+      };
       user_custom_styles: {
         Row: {
           id: string;
