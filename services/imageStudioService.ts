@@ -41,6 +41,8 @@ export const IMAGE_STUDIO_CREDIT_COST = 1;
 // 프리셋은 프롬프트 앞에 프리픽스로 합성된다 (STYLE_PROMPT_GUIDES 와 동일 패턴, 스타일 뒤에 놓인다).
 export const IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT = 1;
 export const IMAGE_STUDIO_MULTISHOT_SHOTS = 6;
+// 1개 시트로 만들기: 6샷을 한 장의 2x3 그리드 이미지로 생성 (API 호출 1번). 개별 6장 대비 저렴.
+export const IMAGE_STUDIO_MULTISHOT_SHEET_COST = 1;
 
 export interface MultishotShotPreset {
   id: string;         // 히스토리 style_value 나 로그에 저장할 stable id

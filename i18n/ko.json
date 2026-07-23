@@ -724,10 +724,18 @@
       },
       "generateButton": "멀티샷 생성",
       "generating": "생성 중… {{done}}/{{total}}",
+      "sheetGenerating": "시트 생성 중…",
       "costHint": "성공한 샷만 차감 · 총 최대 {{cost}}크레딧",
+      "sheetCostHint": "6개 앵글을 한 장 시트로 · {{cost}}크레딧",
       "retryShot": "다시 시도",
       "shotFailed": "생성 실패",
-      "shotBusy": "생성 중"
+      "shotBusy": "생성 중",
+      "outputLabel": "출력 형식",
+      "outputIndividual": "개별 6장",
+      "outputSheet": "1개 시트",
+      "outputIndividualDesc": "각 앵글을 개별 이미지로 · 최대 6크레딧",
+      "outputSheetDesc": "6개 앵글을 한 장 그리드로 · 1크레딧",
+      "needReference": "멀티샷은 참고 이미지가 1장 이상 필요합니다."
     },
     "reference": {
       "label": "참고 이미지",
@@ -786,7 +794,9 @@
       "saved": "저장됨",
       "viewInLibrary": "자산 보기",
       "saveError": "저장 실패: {{message}}",
-      "saveNoUser": "저장하려면 로그인이 필요합니다."
+      "saveNoUser": "저장하려면 로그인이 필요합니다.",
+      "tryMultishot": "멀티샷으로 확장",
+      "tryMultishotHint": "이 이미지로 6개 앵글 만들기"
     },
     "saveDialog": {
       "title": "보관함에 저장",

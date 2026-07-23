@@ -724,10 +724,18 @@
       },
       "generateButton": "Generate multi-shot",
       "generating": "Generating… {{done}}/{{total}}",
+      "sheetGenerating": "Generating sheet…",
       "costHint": "Charged per successful shot · up to {{cost}} credits",
+      "sheetCostHint": "6 angles as one sheet · {{cost}} credit",
       "retryShot": "Retry",
       "shotFailed": "Failed",
-      "shotBusy": "Generating"
+      "shotBusy": "Generating",
+      "outputLabel": "Output",
+      "outputIndividual": "6 separate",
+      "outputSheet": "1 sheet",
+      "outputIndividualDesc": "Each angle as its own image · up to 6 credits",
+      "outputSheetDesc": "6 angles as one grid · 1 credit",
+      "needReference": "Multi-shot requires at least one reference image."
     },
     "reference": {
       "label": "Reference images",
@@ -786,7 +794,9 @@
       "saved": "Saved",
       "viewInLibrary": "View asset",
       "saveError": "Save failed: {{message}}",
-      "saveNoUser": "Please sign in to save."
+      "saveNoUser": "Please sign in to save.",
+      "tryMultishot": "Expand to multi-shot",
+      "tryMultishotHint": "Generate 6 angle variations from this image"
     },
     "saveDialog": {
       "title": "Save to library",

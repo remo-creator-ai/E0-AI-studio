@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ImagePlus, Download, RefreshCw, Sparkles, AlertCircle,
   ChevronRight, X, Upload, Bookmark, BookmarkCheck, Package,
-  Clock, Trash2, History as HistoryIcon, User, ShoppingBag, Type,
+  Clock, Trash2, History as HistoryIcon, User, ShoppingBag, Type, Grid3x3,
 } from 'lucide-react';
 import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
@@ -29,7 +29,7 @@ import {
   generateStudioImage, isImageApiReady,
   STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
   MULTISHOT_PACKS, DEFAULT_MULTISHOT_PACK,
-  IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, IMAGE_STUDIO_MULTISHOT_SHOTS,
+  IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, IMAGE_STUDIO_MULTISHOT_SHOTS, IMAGE_STUDIO_MULTISHOT_SHEET_COST,
   type StudioAspect, type GenerateFailure, type MultishotPack,
 } from '../services/imageStudioService';
 import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
@@ -200,6 +200,8 @@ export const ImageStudio: React.FC = () => {
   // 멀티샷 상태
   const [multishotPackId, setMultishotPackId] = useState<MultishotPack['id']>(DEFAULT_MULTISHOT_PACK);
   const [multishotShots, setMultishotShots] = useState<MultishotShotState[]>([]);
+  // 출력 형식: 개별 6장(false) / 1개 시트(true). 시트는 API 1회 호출, 1cr.
+  const [multishotAsSheet, setMultishotAsSheet] = useState(false);
   // 히스토리 상태 — 마운트 시 서버에서 로드, 이후 saveHistory 성공 시 로컬로 prepend.
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -266,13 +268,17 @@ export const ImageStudio: React.FC = () => {
     return () => { cancelled = true; };
   }, [pendingRef, clearPendingRef]);
 
-  // 단일: 1cr / 멀티샷: 6cr(성공한 샷만 실제 차감되지만 실행 전 잔액은 최대치 기준으로 검사).
+  // 단일: 1cr / 멀티샷 개별: 6cr (성공한 샷만 차감, 잔액 검사는 최대치)
+  // 멀티샷 시트: 1cr (API 1회, 2x3 그리드 한 장)
   const cost = mode === 'multishot'
-    ? IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT * IMAGE_STUDIO_MULTISHOT_SHOTS
+    ? (multishotAsSheet ? IMAGE_STUDIO_MULTISHOT_SHEET_COST : IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT * IMAGE_STUDIO_MULTISHOT_SHOTS)
     : IMAGE_STUDIO_CREDIT_COST;
   const enoughCredits = hasEnough(cost);
-  const needsRef = mode === 'image' && refs.length === 0;
-  const canGenerate = prompt.trim().length > 0 && !busy && apiReady && enoughCredits && !needsRef;
+  // 이미지 모드: 참고 이미지 필수. 멀티샷: 참고 이미지 필수, 프롬프트는 선택.
+  const needsRef = (mode === 'image' || mode === 'multishot') && refs.length === 0;
+  // 텍스트/이미지 모드는 프롬프트 필수. 멀티샷은 프롬프트 선택(참고 이미지가 있으므로).
+  const promptOk = mode === 'multishot' ? true : prompt.trim().length > 0;
+  const canGenerate = promptOk && !busy && apiReady && enoughCredits && !needsRef;
 
   const addRefFiles = useCallback(async (files: File[]) => {
     setRefError(null);
@@ -425,31 +431,8 @@ export const ImageStudio: React.FC = () => {
   }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user]);
 
   // ---------- 멀티샷 ----------
-  const runMultishot = useCallback(async () => {
-    if (!canGenerate) return;
-    setBusy(true);
-    setFailure(null);
-    const snapshot = prompt;
-    const pack = MULTISHOT_PACKS.find((p) => p.id === multishotPackId) ?? MULTISHOT_PACKS[0];
-    // 6개 샷 상태 초기화 → 병렬 실행
-    const initial: MultishotShotState[] = pack.shots.map((sh) => ({
-      presetId: sh.id,
-      labelKey: sh.labelKey,
-      promptPrefix: sh.promptPrefix,
-      status: 'busy',
-      saveState: { kind: 'idle' },
-    }));
-    setMultishotShots(initial);
-    setImagePrompt(snapshot);
-
-    // 병렬 실행. 개별 샷 상태는 setMultishotShots 로 각자 업데이트 → 그리드 UI 가 실시간 반영.
-    // Promise.allSettled 로 전체 완료 시점만 잡아서 busy 해제.
-    await Promise.allSettled(initial.map((_, i) => runOneShotDirect(i, snapshot, pack.shots[i])));
-    setBusy(false);
-  }, [canGenerate, prompt, multishotPackId]);
-
-  // Promise.allSettled 안에서는 최신 multishotShots 를 참조하기 어려워 runOneShot 대신
-  // 각 샷의 preset 을 직접 인자로 받는 헬퍼를 쓴다. runOneShot 은 UI 의 개별 재시도용.
+  // 개별 6장 모드에서 샷 하나만 실행하는 헬퍼. Promise.allSettled 안에서 최신 state 를
+  // 안전하게 참조하기 어려워 preset 을 직접 인자로 받아 클로저를 최소화한다. UI 재시도(retryOneShot)에서도 재사용.
   const runOneShotDirect = useCallback(async (idx: number, snapshot: string, shotPreset: MultishotPack['shots'][number]) => {
     const guide = style ? (style.kind === 'preset' ? STYLE_PROMPT_GUIDES[style.value] : style.prompt) : '';
     const composed = [guide, shotPreset.promptPrefix, snapshot.trim()].filter(Boolean).join('. ');
@@ -486,6 +469,81 @@ export const ImageStudio: React.FC = () => {
         : s));
     }
   }, [style, aspect, refs, deduct, user]);
+
+  const runMultishot = useCallback(async () => {
+    if (!canGenerate) return;
+    setBusy(true);
+    setFailure(null);
+    const snapshot = prompt;
+    const pack = MULTISHOT_PACKS.find((p) => p.id === multishotPackId) ?? MULTISHOT_PACKS[0];
+    setImagePrompt(snapshot);
+
+    // ---- 1개 시트 모드: API 1회로 2x3 그리드 이미지 생성 → 단일 결과 UI 재사용 ----
+    if (multishotAsSheet) {
+      // 기존 개별 결과가 남아 있으면 정리 (모드 전환 흔적 제거)
+      setMultishotShots([]);
+      const guide = style ? (style.kind === 'preset' ? STYLE_PROMPT_GUIDES[style.value] : style.prompt) : '';
+      const panelLines = pack.shots.map((sh, i) => `Panel ${i + 1}: ${sh.promptPrefix}`).join('\n');
+      // 프롬프트가 비어있을 수 있으므로(멀티샷은 텍스트 선택) subject 문구를 안전하게 대체.
+      const subject = snapshot.trim() || 'the subject in the attached reference image';
+      const composedSheet =
+        `Create a 2x3 grid sheet with exactly 6 distinct panels showing the same subject.\n` +
+        `Subject: ${subject}\n` +
+        (guide ? `Style: ${guide}\n` : '') +
+        `\nPanel descriptions:\n${panelLines}\n\n` +
+        `CRITICAL RULES:\n` +
+        `- Exactly 6 panels arranged as 2 rows by 3 columns\n` +
+        `- Each panel is a distinct scene/angle as described\n` +
+        `- Maintain consistent subject appearance and style across all panels\n` +
+        `- Thin white borders between panels\n` +
+        `- Absolutely no text, no captions, no watermarks, no brand marks, no letters`;
+
+      const res = await generateStudioImage({
+        prompt: composedSheet,
+        aspect,
+        references: refs.length > 0 ? refs.map((r) => r.dataUrl) : undefined,
+      });
+
+      if (res.ok && res.imageUrl) {
+        setImage(res.imageUrl);
+        await deduct(IMAGE_STUDIO_MULTISHOT_SHEET_COST, `image_studio:multishot-sheet:${aspect}:${pack.id}`);
+        // 히스토리 적재 — style_value 를 'multishot-sheet:{packId}' 로 남겨 Remix 시 추적 가능.
+        setCurrentHistoryId(null);
+        if (user) {
+          const hres = await saveHistory({
+            ownerId: user.id,
+            prompt: snapshot,
+            aspect,
+            styleKind: 'preset',
+            styleValue: `multishot-sheet:${pack.id}`,
+            model: IMAGE_STUDIO_MODEL,
+            dataUrl: res.imageUrl,
+          });
+          if (hres.ok && hres.item) {
+            setCurrentHistoryId(hres.item.id);
+            setHistory((prev) => [hres.item!, ...prev].slice(0, 200));
+          }
+        }
+      } else {
+        setFailure(res.failure ?? 'error');
+      }
+      setBusy(false);
+      return;
+    }
+
+    // ---- 개별 6장 모드 (기존) ----
+    const initial: MultishotShotState[] = pack.shots.map((sh) => ({
+      presetId: sh.id,
+      labelKey: sh.labelKey,
+      promptPrefix: sh.promptPrefix,
+      status: 'busy',
+      saveState: { kind: 'idle' },
+    }));
+    setMultishotShots(initial);
+    // 병렬 실행. 개별 샷 상태는 setMultishotShots 로 각자 업데이트 → 그리드 UI 가 실시간 반영.
+    await Promise.allSettled(initial.map((_, i) => runOneShotDirect(i, snapshot, pack.shots[i])));
+    setBusy(false);
+  }, [canGenerate, prompt, multishotPackId, multishotAsSheet, style, aspect, refs, deduct, user, runOneShotDirect]);
 
   const retryOneShot = useCallback(async (idx: number) => {
     const shot = multishotShots[idx];
@@ -559,6 +617,16 @@ export const ImageStudio: React.FC = () => {
     link.download = `SODAM_Image_${aspect.replace(':', 'x')}.png`;
     link.click();
   }, [image, aspect]);
+
+  // 현재 결과 이미지를 참고 이미지로 담아 멀티샷 모드로 전환.
+  // 즉시 실행하지 않고 사용자가 팩·출력형식을 확인 후 [멀티샷 생성] 을 눌러 실행하게 한다.
+  const expandToMultishot = useCallback(() => {
+    if (!image) return;
+    setRefs([{ id: `from-gen-${Date.now().toString(36)}`, dataUrl: image }]);
+    setMode('multishot');
+    // 이전 개별 결과 잔재 제거 (모드 전환 시 그리드가 남아있으면 혼란)
+    setMultishotShots([]);
+  }, [image]);
 
   // 오류가 나도 프롬프트/형태/참고 이미지/스타일은 유지한다 (계획서 §9).
   const errorMessage = !apiReady
@@ -716,14 +784,42 @@ export const ImageStudio: React.FC = () => {
                 );
               })}
             </div>
-            <p className="text-[10px] text-zinc-400 mb-5 leading-relaxed">
+            <p className="text-[10px] text-zinc-400 mb-3 leading-relaxed">
               {t('imageStudio.multishot.packHint')}
+            </p>
+
+            {/* 출력 형식: 개별 6장 vs 1개 시트 */}
+            <label className="text-xs font-bold text-zinc-600">{t('imageStudio.multishot.outputLabel')}</label>
+            <div className="mt-1.5 mb-1.5 flex gap-1 p-1 bg-zinc-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setMultishotAsSheet(false)}
+                className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
+                  !multishotAsSheet ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                {t('imageStudio.multishot.outputIndividual')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMultishotAsSheet(true)}
+                className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
+                  multishotAsSheet ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                {t('imageStudio.multishot.outputSheet')}
+              </button>
+            </div>
+            <p className="text-[10px] text-zinc-400 mb-5 leading-relaxed">
+              {multishotAsSheet
+                ? t('imageStudio.multishot.outputSheetDesc')
+                : t('imageStudio.multishot.outputIndividualDesc')}
             </p>
           </>
         )}
 
-        {/* 참고 이미지 — 'image' 모드는 필수, 'multishot' 모드는 선택.
-            멀티샷도 참고 이미지가 있으면 각 샷에 함께 첨부되어 앵글별 일관성이 높아진다. */}
+        {/* 참고 이미지 — 'image' 모드와 'multishot' 모드 모두 필수.
+            멀티샷은 참고 이미지 기반으로 6개 앵글을 생성하므로 참고 이미지가 반드시 필요하다. */}
         {(mode === 'image' || mode === 'multishot') && (
           <>
             <label className="text-xs font-bold text-zinc-600">
@@ -865,10 +961,12 @@ export const ImageStudio: React.FC = () => {
               <>
                 <RefreshCw size={15} className="animate-spin" />
                 {mode === 'multishot'
-                  ? t('imageStudio.multishot.generating', {
-                      done: multishotShots.filter((s) => s.status === 'done' || s.status === 'error').length,
-                      total: multishotShots.length,
-                    })
+                  ? (multishotAsSheet
+                      ? t('imageStudio.multishot.sheetGenerating')
+                      : t('imageStudio.multishot.generating', {
+                          done: multishotShots.filter((s) => s.status === 'done' || s.status === 'error').length,
+                          total: multishotShots.length,
+                        }))
                   : t('imageStudio.generate.generating')}
               </>
             ) : (
@@ -881,7 +979,9 @@ export const ImageStudio: React.FC = () => {
           </button>
           {mode === 'multishot' && (
             <p className="text-[10px] text-zinc-400 mt-2 text-center">
-              {t('imageStudio.multishot.costHint', { cost })}
+              {multishotAsSheet
+                ? t('imageStudio.multishot.sheetCostHint', { cost })
+                : t('imageStudio.multishot.costHint', { cost })}
             </p>
           )}
         </div>
@@ -1019,7 +1119,19 @@ export const ImageStudio: React.FC = () => {
                 <span className="text-[10px] font-normal text-zinc-400">{t('imageStudio.result.downloadHint')}</span>
               </button>
 
-              {/* 3) 다시 생성 — text 버튼 (덜 강조) */}
+              {/* 3) 멀티샷으로 확장 — 현재 이미지를 참고 이미지로 넘겨 멀티샷 모드로 이동 */}
+              <button
+                type="button"
+                onClick={expandToMultishot}
+                className="flex flex-col items-center gap-0.5 px-5 py-2.5 bg-white border border-primary/30 hover:border-primary text-primary rounded-full font-bold text-sm transition-all active:scale-95"
+              >
+                <span className="flex items-center gap-2">
+                  <Grid3x3 size={15} /> {t('imageStudio.result.tryMultishot')}
+                </span>
+                <span className="text-[10px] font-normal text-primary/70">{t('imageStudio.result.tryMultishotHint')}</span>
+              </button>
+
+              {/* 4) 다시 생성 — text 버튼 (덜 강조) */}
               <button
                 type="button"
                 onClick={run}
