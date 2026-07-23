@@ -742,6 +742,22 @@
       "failed": "Image generation failed. Please try again in a moment.",
       "notEnoughCredits": "Not enough credits. Need {{cost}} · You have {{balance}}",
       "needReference": "Please add at least one reference image."
+    },
+    "history": {
+      "title": "History",
+      "counter": "{{count}} items",
+      "retentionNote": "Auto-deleted after 30 days · save to library to keep",
+      "empty": "No generated images yet.",
+      "loading": "Loading history…",
+      "loadError": "Could not load history.",
+      "signInRequired": "Sign in to use history.",
+      "openDrawer": "Open history",
+      "closeDrawer": "Close history",
+      "remix": "Reuse settings (Remix)",
+      "delete": "Remove from history",
+      "deleteConfirm": "Remove this history item? Copies saved to your library are kept.",
+      "savedBadge": "Saved to library",
+      "unsavedBadge": "Not saved"
     }
   },
   "settings": {

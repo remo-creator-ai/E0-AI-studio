@@ -17,7 +17,9 @@ import { useTranslation } from 'react-i18next';
 import {
   ImagePlus, Download, RefreshCw, Sparkles, AlertCircle,
   ChevronRight, X, Upload, Bookmark, BookmarkCheck, Package,
+  Clock, Trash2, History as HistoryIcon,
 } from 'lucide-react';
+import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
 import { useAuthStore } from '../store/authStore';
 import { useStore } from '../store';
@@ -30,7 +32,10 @@ import {
 } from '../services/imageStudioService';
 import { createAsset, listAssets, type Asset } from '../services/assetService';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
-import { saveHistory, markHistorySaved } from '../services/imageHistoryService';
+import {
+  saveHistory, markHistorySaved, listHistory, deleteHistoryItem,
+  type HistoryItem,
+} from '../services/imageHistoryService';
 
 /** 스타일 선택 상태: 프리셋(VisualStyle enum) 또는 사용자 커스텀(id + 즉시 사용할 프롬프트 스냅샷).
  *  커스텀은 스냅샷을 잡아두어 사용자가 설정에서 지운 뒤에도 이 생성 세션 안에서는 계속 유효하다. */
@@ -179,10 +184,38 @@ export const ImageStudio: React.FC = () => {
   const [failure, setFailure] = useState<GenerateFailure | null>(null);
   const [apiReady, setApiReady] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
+  // 히스토리 상태 — 마운트 시 서버에서 로드, 이후 saveHistory 성공 시 로컬로 prepend.
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const { confirm: modalConfirm } = useModal();
 
   useEffect(() => { isImageApiReady().then(setApiReady); }, []);
   // 새 이미지가 뜨면 이전 저장 상태를 초기화한다.
   useEffect(() => { setSaveState({ kind: 'idle' }); }, [image]);
+
+  // 로그인 상태에서 마운트/사용자 변경 시 히스토리를 로드한다.
+  // 커스텀 스타일도 함께 로드해 두면 히스토리 Remix 시 style_kind='custom' 을 즉시 해석할 수 있다.
+  useEffect(() => {
+    if (!user) { setHistory([]); return; }
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    (async () => {
+      try {
+        const [h, cs] = await Promise.all([listHistory(user.id), listCustomStyles(user.id)]);
+        if (cancelled) return;
+        setHistory(h);
+        setCustomStyles(cs);
+      } catch (e) {
+        if (!cancelled) setHistoryError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const cost = IMAGE_STUDIO_CREDIT_COST;
   const enoughCredits = hasEnough(cost);
@@ -238,6 +271,45 @@ export const ImageStudio: React.FC = () => {
       setCustomStylesLoading(false);
     }
   }, [user]);
+
+  // 히스토리 클릭 → 결과 캔버스에 이미지 로드 + 폼 되채움 (Remix 준비 상태).
+  // 실제 다시 생성은 사용자가 '다시 생성' 을 눌러야 크레딧이 차감된다.
+  const pickHistoryItem = useCallback((item: HistoryItem) => {
+    setImage(item.url);
+    setImagePrompt(item.prompt);
+    setPrompt(item.prompt);
+    setAspect(item.aspect as StudioAspect);
+    // 스타일 복원: preset 은 그대로, custom 은 로컬 customStyles 에서 조회. 없으면 스타일 미적용.
+    if (!item.style_kind || !item.style_value) {
+      setStyle(null);
+    } else if (item.style_kind === 'preset') {
+      setStyle({ kind: 'preset', value: item.style_value as VisualStyle });
+    } else {
+      const cs = customStyles?.find((s) => s.id === item.style_value);
+      setStyle(cs
+        ? { kind: 'custom', id: cs.id, name: cs.name, icon: cs.icon_emoji, prompt: cs.prompt_guide }
+        : null);
+    }
+    setCurrentHistoryId(item.id);
+    setSaveState(item.saved_asset_id ? { kind: 'saved', assetId: item.saved_asset_id } : { kind: 'idle' });
+    // 이미지 참고 모드는 참고 이미지가 세션마다 달라져서 자동 복원하지 않는다. 텍스트 모드로 고정.
+    setMode('text');
+    setIsHistoryDrawerOpen(false);
+  }, [customStyles]);
+
+  const removeHistoryItem = useCallback(async (item: HistoryItem) => {
+    const ok = await modalConfirm(t('imageStudio.history.deleteConfirm'), { type: 'warning' });
+    if (!ok) return;
+    const success = await deleteHistoryItem(item.id, item.storage_path);
+    if (!success) return;
+    setHistory((prev) => prev.filter((h) => h.id !== item.id));
+    // 현재 캔버스에 뜬 이미지가 삭제 대상이라면 결과창을 비운다.
+    if (currentHistoryId === item.id) {
+      setImage(null);
+      setCurrentHistoryId(null);
+      setSaveState({ kind: 'idle' });
+    }
+  }, [modalConfirm, t, currentHistoryId]);
 
   const openLibraryPicker = useCallback(async () => {
     setIsLibraryPickOpen(true);
@@ -320,7 +392,11 @@ export const ImageStudio: React.FC = () => {
           model: IMAGE_STUDIO_MODEL,
           dataUrl: res.imageUrl,
         });
-        if (hres.ok && hres.item) setCurrentHistoryId(hres.item.id);
+        if (hres.ok && hres.item) {
+          setCurrentHistoryId(hres.item.id);
+          // 로컬 목록에 prepend 하고, 상한 200 을 넘으면 UI 측도 잘라준다.
+          setHistory((prev) => [hres.item!, ...prev].slice(0, 200));
+        }
       }
     } else {
       setFailure(res.failure ?? 'error');
@@ -345,9 +421,13 @@ export const ImageStudio: React.FC = () => {
         [{ file, role: 'primary' }],
       );
       if (res.ok && res.id) {
-        setSaveState({ kind: 'saved', assetId: res.id });
+        const savedId = res.id;
+        setSaveState({ kind: 'saved', assetId: savedId });
         // 히스토리 뱃지에 반영 — 실패해도 자산 저장 자체는 이미 성공했으니 UI 상태를 되돌리지 않는다.
-        if (currentHistoryId) { void markHistorySaved(currentHistoryId, res.id); }
+        if (currentHistoryId) {
+          void markHistorySaved(currentHistoryId, savedId);
+          setHistory((prev) => prev.map((h) => h.id === currentHistoryId ? { ...h, saved_asset_id: savedId } : h));
+        }
       } else {
         setSaveState({ kind: 'error', message: res.error ?? 'unknown' });
       }
@@ -378,6 +458,80 @@ export const ImageStudio: React.FC = () => {
             : failure
               ? t('imageStudio.error.failed')
               : null;
+
+  // ---- 히스토리 스트립: xl+ 인라인, 그 미만은 서랍(drawer)에 같은 내용을 재사용 ----
+  const historyStripContent = (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <Clock size={14} className="text-primary" />
+          <h3 className="text-sm font-black text-zinc-900">{t('imageStudio.history.title')}</h3>
+        </div>
+        <span className="text-[10px] text-zinc-400 tabular-nums">
+          {t('imageStudio.history.counter', { count: history.length })}
+        </span>
+      </div>
+      <p className="text-[10px] text-zinc-400 leading-relaxed mb-3">
+        {t('imageStudio.history.retentionNote')}
+      </p>
+
+      {!user && (
+        <div className="text-xs text-zinc-500 text-center py-8">{t('imageStudio.history.signInRequired')}</div>
+      )}
+      {user && historyLoading && (
+        <div className="text-xs text-zinc-500 text-center py-8 flex items-center justify-center gap-2">
+          <RefreshCw size={12} className="animate-spin" /> {t('imageStudio.history.loading')}
+        </div>
+      )}
+      {user && historyError && !historyLoading && (
+        <div className="text-xs text-red-600 py-4">{t('imageStudio.history.loadError')}</div>
+      )}
+      {user && !historyLoading && !historyError && history.length === 0 && (
+        <div className="text-xs text-zinc-400 text-center py-8">{t('imageStudio.history.empty')}</div>
+      )}
+
+      {user && history.length > 0 && (
+        <ul className="grid grid-cols-2 gap-2 overflow-y-auto pr-1 -mr-1">
+          {history.map((item) => {
+            const active = currentHistoryId === item.id;
+            const saved = Boolean(item.saved_asset_id);
+            return (
+              <li key={item.id} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => pickHistoryItem(item)}
+                  title={item.prompt}
+                  className={`block w-full aspect-square rounded-xl overflow-hidden border transition-all ${
+                    active ? 'border-primary ring-2 ring-primary/30' : 'border-zinc-200 hover:border-primary/40'
+                  }`}
+                >
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                </button>
+                {/* 우상단 뱃지: 저장 여부 */}
+                <div
+                  className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center shadow ${
+                    saved ? 'bg-emerald-500 text-white' : 'bg-white/90 text-zinc-400 border border-zinc-200'
+                  }`}
+                  title={saved ? t('imageStudio.history.savedBadge') : t('imageStudio.history.unsavedBadge')}
+                >
+                  {saved ? <BookmarkCheck size={11} /> : <Bookmark size={11} />}
+                </div>
+                {/* 좌상단 삭제 (hover) */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeHistoryItem(item); }}
+                  aria-label={t('imageStudio.history.delete')}
+                  className="absolute top-1 left-1 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -651,6 +805,52 @@ export const ImageStudio: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* ================= 히스토리 스트립 (xl+ 인라인) ================= */}
+      <aside
+        aria-label={t('imageStudio.history.title')}
+        className="hidden xl:flex xl:w-[240px] xl:shrink-0 bg-white border border-zinc-200 rounded-3xl p-4 max-h-[80vh]"
+      >
+        {historyStripContent}
+      </aside>
+
+      {/* ================= 히스토리 열기 버튼 (xl 미만) ================= */}
+      <button
+        type="button"
+        onClick={() => setIsHistoryDrawerOpen(true)}
+        aria-label={t('imageStudio.history.openDrawer')}
+        className="xl:hidden fixed right-4 bottom-4 z-40 w-12 h-12 rounded-full bg-primary hover:bg-[#003E99] text-white shadow-lg flex items-center justify-center"
+      >
+        <HistoryIcon size={18} />
+      </button>
+
+      {/* ================= 히스토리 서랍 (xl 미만) ================= */}
+      {isHistoryDrawerOpen && (
+        <div
+          className="xl:hidden fixed inset-0 z-[190] flex justify-end"
+          onClick={() => setIsHistoryDrawerOpen(false)}
+        >
+          <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" />
+          <aside
+            role="dialog"
+            aria-label={t('imageStudio.history.title')}
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white w-full sm:w-[340px] h-full overflow-hidden p-4 shadow-2xl animate-in slide-in-from-right duration-200 flex flex-col"
+          >
+            <button
+              type="button"
+              onClick={() => setIsHistoryDrawerOpen(false)}
+              aria-label={t('imageStudio.history.closeDrawer')}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-zinc-100 z-10"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex-1 min-h-0 mt-6">
+              {historyStripContent}
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* ================= 자산 보관함 참고 이미지 선택 팝업 ================= */}
       {isLibraryPickOpen && (
