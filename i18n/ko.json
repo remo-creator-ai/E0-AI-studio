@@ -701,7 +701,10 @@
     "style": {
       "label": "스타일",
       "none": "선택 없음",
-      "popupTitle": "스타일 선택"
+      "popupTitle": "스타일 선택",
+      "customGroup": "나만의 스타일",
+      "presetGroup": "기본 스타일",
+      "manageInSettings": "설정에서 관리"
     },
     "prompt": {
       "label": "만들고 싶은 이미지",
@@ -768,7 +771,30 @@
     "defaultLayout": "기본 스토리보드 레이아웃",
     "layout2x5": "2x5 Grid",
     "layout2x4": "2x4 Grid",
-    "layout1x4": "1x4 Wide"
+    "layout1x4": "1x4 Wide",
+    "customStyles": {
+      "title": "나만의 스타일",
+      "subtitle": "이미지 생성에 재사용할 프리셋을 최대 {{max}}개까지 등록할 수 있습니다.",
+      "counter": "{{count}}/{{max}}",
+      "empty": "아직 등록한 스타일이 없습니다. 자주 쓰는 톤을 프리셋으로 저장해 보세요.",
+      "add": "스타일 추가",
+      "edit": "수정",
+      "delete": "삭제",
+      "save": "저장",
+      "cancel": "취소",
+      "nameLabel": "이름",
+      "namePlaceholder": "예) 우리 브랜드 톤, 실물 목업",
+      "iconLabel": "아이콘",
+      "iconHint": "이모지 1개",
+      "promptLabel": "프롬프트 가이드 (영어 권장)",
+      "promptPlaceholder": "예) warm golden hour lighting, film grain, muted pastel palette, shot on 35mm",
+      "promptHint": "이미지 생성 시 프롬프트 앞에 프리픽스로 합성됩니다.",
+      "loading": "불러오는 중…",
+      "loadError": "커스텀 스타일을 불러오지 못했습니다.",
+      "atMax": "커스텀 스타일은 최대 {{max}}개까지 등록할 수 있습니다.",
+      "deleteConfirm": "이 스타일을 삭제할까요? 되돌릴 수 없습니다.",
+      "signInRequired": "커스텀 스타일은 로그인 후 사용할 수 있습니다."
+    }
   },
   "admin": {
     "unauthorized": "접근 권한 없음",

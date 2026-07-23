@@ -13,6 +13,7 @@ import {
   Cpu,
   Settings as SettingsIcon,
 } from 'lucide-react';
+import { CustomStylesSection } from './CustomStylesSection';
 
 export const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -245,6 +246,9 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Section: My Custom Styles */}
+        <CustomStylesSection />
 
         {/* Section 2: Language Settings */}
         <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">

@@ -701,7 +701,10 @@
     "style": {
       "label": "Style",
       "none": "None",
-      "popupTitle": "Select style"
+      "popupTitle": "Select style",
+      "customGroup": "My styles",
+      "presetGroup": "Preset styles",
+      "manageInSettings": "Manage in settings"
     },
     "prompt": {
       "label": "What to create",
@@ -768,7 +771,30 @@
     "defaultLayout": "Default Storyboard Layout",
     "layout2x5": "2x5 Grid",
     "layout2x4": "2x4 Grid",
-    "layout1x4": "1x4 Wide"
+    "layout1x4": "1x4 Wide",
+    "customStyles": {
+      "title": "My styles",
+      "subtitle": "Save up to {{max}} presets to reuse in image generation.",
+      "counter": "{{count}}/{{max}}",
+      "empty": "No custom styles yet. Save presets for tones you use often.",
+      "add": "Add style",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Our brand tone, Product mockup",
+      "iconLabel": "Icon",
+      "iconHint": "One emoji",
+      "promptLabel": "Prompt guide (English recommended)",
+      "promptPlaceholder": "e.g. warm golden hour lighting, film grain, muted pastel palette, shot on 35mm",
+      "promptHint": "Prepended to the prompt when generating images.",
+      "loading": "Loading…",
+      "loadError": "Failed to load custom styles.",
+      "atMax": "You can save up to {{max}} custom styles.",
+      "deleteConfirm": "Delete this style? This cannot be undone.",
+      "signInRequired": "Sign in to use custom styles."
+    }
   },
   "admin": {
     "unauthorized": "Access Denied",

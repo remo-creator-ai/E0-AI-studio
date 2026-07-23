@@ -29,6 +29,13 @@ import {
   type StudioAspect, type GenerateFailure,
 } from '../services/imageStudioService';
 import { createAsset, listAssets, type Asset } from '../services/assetService';
+import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
+
+/** 스타일 선택 상태: 프리셋(VisualStyle enum) 또는 사용자 커스텀(id + 즉시 사용할 프롬프트 스냅샷).
+ *  커스텀은 스냅샷을 잡아두어 사용자가 설정에서 지운 뒤에도 이 생성 세션 안에서는 계속 유효하다. */
+type SelectedStyle =
+  | { kind: 'preset'; value: VisualStyle }
+  | { kind: 'custom'; id: string; name: string; icon: string; prompt: string };
 
 type Mode = 'text' | 'image';
 
@@ -148,8 +155,11 @@ export const ImageStudio: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [aspect, setAspect] = useState<StudioAspect>(DEFAULT_ASPECT);
   // 스타일 기본값은 "선택 없음". Cinematic 을 강제하면 로고·라인아트 등의 결과가 왜곡된다.
-  const [style, setStyle] = useState<VisualStyle | null>(null);
+  const [style, setStyle] = useState<SelectedStyle | null>(null);
   const [isStylePopup, setIsStylePopup] = useState(false);
+  // 사용자 커스텀 스타일 목록 (Settings 에서 편집). 팝업 열 때 최신 상태로 로드한다.
+  const [customStyles, setCustomStyles] = useState<CustomStyle[] | null>(null);
+  const [customStylesLoading, setCustomStylesLoading] = useState(false);
   const [refs, setRefs] = useState<RefItem[]>([]);
   const [refError, setRefError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -211,6 +221,21 @@ export const ImageStudio: React.FC = () => {
     setRefError(null);
   }, []);
 
+  // 스타일 팝업을 열 때마다 커스텀 스타일을 다시 로드한다.
+  // 사용자가 방금 Settings 에서 추가했을 수도 있으므로 캐시하지 않는다.
+  const openStylePicker = useCallback(async () => {
+    setIsStylePopup(true);
+    if (!user) { setCustomStyles([]); return; }
+    setCustomStylesLoading(true);
+    try {
+      setCustomStyles(await listCustomStyles(user.id));
+    } catch {
+      setCustomStyles([]);
+    } finally {
+      setCustomStylesLoading(false);
+    }
+  }, [user]);
+
   const openLibraryPicker = useCallback(async () => {
     setIsLibraryPickOpen(true);
     if (!user) return;
@@ -257,7 +282,7 @@ export const ImageStudio: React.FC = () => {
   const composedPrompt = useCallback(() => {
     const base = prompt.trim();
     if (!style) return base;
-    const guide = STYLE_PROMPT_GUIDES[style];
+    const guide = style.kind === 'preset' ? STYLE_PROMPT_GUIDES[style.value] : style.prompt;
     return guide ? `${guide}. ${base}` : base;
   }, [prompt, style]);
 
@@ -275,7 +300,8 @@ export const ImageStudio: React.FC = () => {
       setImage(res.imageUrl);
       setImagePrompt(snapshot);
       // IMAGE-08: 성공한 생성에만 차감한다.
-      await deduct(cost, `image_studio:${mode}:${aspect}:${style ?? 'none'}`);
+      const styleLabel = style ? (style.kind === 'preset' ? style.value : `custom:${style.id}`) : 'none';
+      await deduct(cost, `image_studio:${mode}:${aspect}:${styleLabel}`);
     } else {
       setFailure(res.failure ?? 'error');
     }
@@ -449,12 +475,14 @@ export const ImageStudio: React.FC = () => {
         <label className="text-xs font-bold text-zinc-600">{t('imageStudio.style.label')}</label>
         <button
           type="button"
-          onClick={() => setIsStylePopup(true)}
+          onClick={openStylePicker}
           className="mt-1.5 mb-5 w-full flex items-center gap-2.5 px-4 py-3 rounded-2xl border border-zinc-200 hover:border-primary/40 text-left transition-colors"
         >
-          <span className="text-lg leading-none">{style ? STYLE_ICONS[style] ?? '🎨' : '🎨'}</span>
+          <span className="text-lg leading-none">
+            {style ? (style.kind === 'preset' ? (STYLE_ICONS[style.value] ?? '🎨') : (style.icon || '🎨')) : '🎨'}
+          </span>
           <span className={`text-sm font-bold ${style ? 'text-zinc-900' : 'text-zinc-500'}`}>
-            {style ?? t('imageStudio.style.none')}
+            {style ? (style.kind === 'preset' ? style.value : style.name) : t('imageStudio.style.none')}
           </span>
           <ChevronRight size={16} className="text-zinc-400 ml-auto" />
         </button>
@@ -691,8 +719,9 @@ export const ImageStudio: React.FC = () => {
                 <X size={18} />
               </button>
             </div>
+
+            {/* 스타일 미적용(None) — 로고·라인아트 등 스타일 프리셋이 오히려 방해가 되는 경우 */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {/* 스타일 미적용(None) — 로고·라인아트 등 스타일 프리셋이 오히려 방해가 되는 경우 */}
               <button
                 type="button"
                 onClick={() => { setStyle(null); setIsStylePopup(false); }}
@@ -707,24 +736,84 @@ export const ImageStudio: React.FC = () => {
                   {t('imageStudio.style.none')}
                 </div>
               </button>
-              {Object.values(VisualStyle).map((s) => {
-                const selected = style === s;
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => { setStyle(s); setIsStylePopup(false); }}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
-                      selected
-                        ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
-                        : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <span className="text-3xl">{STYLE_ICONS[s] || '🎨'}</span>
-                    <div className={`text-sm font-bold ${selected ? 'text-primary' : 'text-zinc-600'}`}>{s}</div>
-                  </button>
-                );
-              })}
+            </div>
+
+            {/* 나만의 스타일 — 사용자가 Settings 에서 등록한 프리셋 */}
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  {t('imageStudio.style.customGroup')}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setIsStylePopup(false); goTo(ProjectStep.SETTINGS); }}
+                  className="text-[11px] text-primary font-bold hover:underline"
+                >
+                  {t('imageStudio.style.manageInSettings')} →
+                </button>
+              </div>
+              {customStylesLoading ? (
+                <div className="py-6 text-center text-xs text-zinc-400">
+                  {t('settings.customStyles.loading')}
+                </div>
+              ) : customStyles && customStyles.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {customStyles.map((s) => {
+                    const selected = style?.kind === 'custom' && style.id === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setStyle({ kind: 'custom', id: s.id, name: s.name, icon: s.icon_emoji, prompt: s.prompt_guide });
+                          setIsStylePopup(false);
+                        }}
+                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
+                          selected
+                            ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                            : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span className="text-3xl">{s.icon_emoji || '🎨'}</span>
+                        <div className={`text-sm font-bold truncate w-full ${selected ? 'text-primary' : 'text-zinc-700'}`}>
+                          {s.name}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-4 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 rounded-xl">
+                  {t('settings.customStyles.empty')}
+                </div>
+              )}
+            </div>
+
+            {/* 기본 스타일 — VisualStyle 10종 */}
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+                {t('imageStudio.style.presetGroup')}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.values(VisualStyle).map((s) => {
+                  const selected = style?.kind === 'preset' && style.value === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => { setStyle({ kind: 'preset', value: s }); setIsStylePopup(false); }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
+                        selected
+                          ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                          : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                      }`}
+                    >
+                      <span className="text-3xl">{STYLE_ICONS[s] || '🎨'}</span>
+                      <div className={`text-sm font-bold ${selected ? 'text-primary' : 'text-zinc-600'}`}>{s}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

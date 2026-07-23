@@ -338,6 +338,35 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_custom_styles: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          icon_emoji: string;
+          prompt_guide: string;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          name: string;
+          icon_emoji?: string;
+          prompt_guide: string;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          icon_emoji?: string;
+          prompt_guide?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       intro_survey_responses: {
         Row: {
           id: string;
