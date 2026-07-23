@@ -132,7 +132,10 @@ export async function generate3x3GridImage(prompt: string, referenceImagesBase64
         parts: [
           ...imageParts,
           ...categorizedParts,
-          { text: `${styleInstruction}\n\nPROMPT: ${prompt}. High quality, 4k, cinematic, professional studio lighting, detailed textures.` }
+          // "cinematic, professional studio lighting" 은 광고 시트 톤을 유발해 모델이
+          // 하단에 브랜드 캡션("○○ AI Studio | 상상을 현실로." 같은)을 환각으로 그려 넣는
+          // 원인이 된다. 품질 신호는 유지하되 광고 어휘는 제거한다.
+          { text: `${styleInstruction}\n\nPROMPT: ${prompt}. High quality, 4k resolution, detailed textures, natural lighting. No text or captions of any kind on the image.` }
         ],
       },
       config: {

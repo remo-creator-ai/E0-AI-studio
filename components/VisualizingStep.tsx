@@ -228,7 +228,7 @@ CRITICAL RULES:
 - Maintain consistent character appearance and art style across all panels
 - Each panel uses VERTICAL portrait framing (taller than wide)
 - 4K quality, cinematic lighting
-- NO text, NO labels, NO panel numbers
+- Absolutely NO text anywhere: no watermarks, no brand logos, no captions, no signatures, no studio names, no taglines, no panel numbers, no scene titles, no letters, no numerals of any kind
 - Clear thin white borders between panels`;
     }
 
@@ -249,7 +249,7 @@ CRITICAL RULES:
 - Maintain consistent character appearance and art style across all panels
 - Each panel uses HORIZONTAL widescreen framing (wider than tall)
 - 4K quality, cinematic lighting
-- NO text, NO labels, NO panel numbers
+- Absolutely NO text anywhere: no watermarks, no brand logos, no captions, no signatures, no studio names, no taglines, no panel numbers, no scene titles, no letters, no numerals of any kind
 - Clear thin white borders between panels`;
   };
 

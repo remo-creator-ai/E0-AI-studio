@@ -399,8 +399,8 @@
     }
   },
   "visualizing": {
-    "title": "Visual",
-    "titleHighlight": "Matrix",
+    "title": "Storyboard",
+    "titleHighlight": "Builder",
     "subtitle": "Generate and manage cinematic matrices based on your Step 1 planning data.",
     "navigation": "Navigation",
     "unitProgress": "UNIT {{current}} / {{total}}",
@@ -680,8 +680,28 @@
     "mode": {
       "label": "Mode",
       "text": "From text",
-      "reference": "With reference",
-      "referenceSoon": "Asset library integration is coming soon."
+      "reference": "From reference image"
+    },
+    "reference": {
+      "label": "Reference images",
+      "dropHere": "Drop images here or click to select",
+      "hint": "PNG · JPEG · WebP · up to {{mb}}MB each · max {{count}} images",
+      "maxCount": "You can add up to {{count}} reference images.",
+      "badType": "Only PNG, JPEG, and WebP files are supported.",
+      "tooLarge": "Files must be no larger than {{mb}}MB.",
+      "orDivider": "or",
+      "fromLibrary": "Pick from asset library",
+      "libraryTitle": "Pick reference image from library",
+      "librarySubtitle": "Click to add to references. Up to {{count}}.",
+      "libraryEmpty": "You have no assets saved to your library.",
+      "libraryLoading": "Loading assets…",
+      "libraryFetchFail": "Could not load image.",
+      "libraryClose": "Close"
+    },
+    "style": {
+      "label": "Style",
+      "none": "None",
+      "popupTitle": "Select style"
     },
     "prompt": {
       "label": "What to create",
@@ -702,14 +722,23 @@
     "empty": "Describe the image on the left and generate it.",
     "loading": "Creating your image.",
     "result": {
-      "download": "Download",
-      "regenerate": "Regenerate"
+      "saveToLibrary": "Save to library",
+      "saveToLibraryHint": "Kept permanently in the app",
+      "download": "Download PNG",
+      "downloadHint": "Save file to your device",
+      "regenerate": "Regenerate",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "viewInLibrary": "View asset",
+      "saveError": "Save failed: {{message}}",
+      "saveNoUser": "Please sign in to save."
     },
     "error": {
       "noApiKey": "No image generation API key is registered. Please add one in the admin console first.",
       "blocked": "This request cannot be generated due to content policy. Try rewording your description.",
       "failed": "Image generation failed. Please try again in a moment.",
-      "notEnoughCredits": "Not enough credits. Need {{cost}} · You have {{balance}}"
+      "notEnoughCredits": "Not enough credits. Need {{cost}} · You have {{balance}}",
+      "needReference": "Please add at least one reference image."
     }
   },
   "settings": {
