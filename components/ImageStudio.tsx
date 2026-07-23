@@ -30,7 +30,8 @@ import {
   STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
   type StudioAspect, type GenerateFailure,
 } from '../services/imageStudioService';
-import { createAsset, listAssets, type Asset } from '../services/assetService';
+import { createAsset, type Asset } from '../services/assetService';
+import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import {
   saveHistory, markHistorySaved, listHistory, deleteHistoryItem,
@@ -96,19 +97,6 @@ const readAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-/** 자산 보관함의 signed URL 을 fetch 해 base64 dataUrl 로 바꾼다.
- *  Gemini 는 참고 이미지를 inlineData(base64) 로만 받기 때문에 URL 그대로 넘길 수 없다. */
-const urlToDataUrl = async (url: string): Promise<string> => {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-  const blob = await res.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-};
 
 /** 결과 이미지를 캔버스로 재렌더링해 PNG File 로 변환한다.
  *  - 실제(Gemini): data:image/png;base64,... → 그대로 PNG
@@ -169,12 +157,8 @@ export const ImageStudio: React.FC = () => {
   const [refs, setRefs] = useState<RefItem[]>([]);
   const [refError, setRefError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // 자산 보관함에서 참고 이미지 불러오기 팝업
+  // 자산 보관함에서 참고 이미지 불러오기 팝업 (공용 AssetLibraryPicker 사용)
   const [isLibraryPickOpen, setIsLibraryPickOpen] = useState(false);
-  const [libraryAssets, setLibraryAssets] = useState<Asset[] | null>(null);
-  const [libraryLoading, setLibraryLoading] = useState(false);
-  const [libraryError, setLibraryError] = useState<string | null>(null);
-  const [libraryPending, setLibraryPending] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   // 저장 시점에 프롬프트가 바뀌어도 흔들리지 않도록, 성공한 생성의 프롬프트를 스냅샷으로 잡는다.
@@ -311,47 +295,15 @@ export const ImageStudio: React.FC = () => {
     }
   }, [modalConfirm, t, currentHistoryId]);
 
-  const openLibraryPicker = useCallback(async () => {
-    setIsLibraryPickOpen(true);
-    if (!user) return;
-    // 이미 로드했으면 재사용 — 팝업을 껐다 켜도 매번 목록을 다시 가져오지 않는다.
-    if (libraryAssets !== null) return;
-    setLibraryLoading(true);
-    setLibraryError(null);
-    try {
-      const rows = await listAssets(user.id);
-      setLibraryAssets(rows);
-    } catch (e) {
-      setLibraryError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLibraryLoading(false);
-    }
-  }, [user, libraryAssets]);
-
-  const pickFromLibrary = useCallback(async (asset: Asset) => {
-    if (!asset.primary_url) return;
-    if (refs.length >= MAX_REFS) {
-      setRefError(t('imageStudio.reference.maxCount', { count: MAX_REFS }));
-      return;
-    }
-    setLibraryPending((prev) => new Set(prev).add(asset.id));
+  // AssetLibraryPicker onPick 콜백: 팝업이 이미 fetch·dataUrl 변환까지 마쳐서 넘겨준다.
+  // 중복 방지는 팝업에 excludeIds 로 전달, 상한 초과는 maxRemaining 으로 전달한다.
+  const handleAssetPicked = useCallback((result: { asset: Asset; dataUrl: string }) => {
     setRefError(null);
-    try {
-      const dataUrl = await urlToDataUrl(asset.primary_url);
-      setRefs((prev) => [
-        ...prev,
-        { id: `lib-${asset.id}-${Date.now().toString(36)}`, dataUrl },
-      ]);
-    } catch {
-      setRefError(t('imageStudio.reference.libraryFetchFail'));
-    } finally {
-      setLibraryPending((prev) => {
-        const next = new Set(prev);
-        next.delete(asset.id);
-        return next;
-      });
-    }
-  }, [refs.length, t]);
+    setRefs((prev) => [
+      ...prev,
+      { id: `lib-${result.asset.id}-${Date.now().toString(36)}`, dataUrl: result.dataUrl },
+    ]);
+  }, []);
 
   // 스타일 프리셋을 앞에 붙여 톤을 맞춘다. 프롬프트가 비어있을 때는 원본을 그대로 둔다.
   const composedPrompt = useCallback(() => {
@@ -608,7 +560,7 @@ export const ImageStudio: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={openLibraryPicker}
+              onClick={() => setIsLibraryPickOpen(true)}
               disabled={refs.length >= MAX_REFS}
               className="mb-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border border-zinc-200 hover:border-primary/40 disabled:border-zinc-100 disabled:text-zinc-300 text-zinc-700 text-xs font-bold transition-colors"
             >
@@ -852,87 +804,15 @@ export const ImageStudio: React.FC = () => {
         </div>
       )}
 
-      {/* ================= 자산 보관함 참고 이미지 선택 팝업 ================= */}
-      {isLibraryPickOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md p-4">
-          <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-4 max-w-3xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h4 className="text-lg font-black tracking-tight text-zinc-900">
-                  {t('imageStudio.reference.libraryTitle')}
-                </h4>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  {t('imageStudio.reference.librarySubtitle', { count: MAX_REFS })}
-                  <span className="ml-2 text-zinc-400">· {refs.length}/{MAX_REFS}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsLibraryPickOpen(false)}
-                className="p-2 hover:bg-zinc-100 rounded-lg transition-colors shrink-0"
-                aria-label={t('imageStudio.reference.libraryClose')}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {libraryLoading && (
-              <div className="py-16 text-center text-sm text-zinc-500">
-                {t('imageStudio.reference.libraryLoading')}
-              </div>
-            )}
-            {libraryError && !libraryLoading && (
-              <div className="py-16 text-center text-sm text-red-600">
-                {libraryError}
-              </div>
-            )}
-            {!libraryLoading && !libraryError && libraryAssets && libraryAssets.length === 0 && (
-              <div className="py-16 text-center">
-                <Package size={28} className="mx-auto text-zinc-300 mb-2" />
-                <p className="text-sm text-zinc-500">{t('imageStudio.reference.libraryEmpty')}</p>
-              </div>
-            )}
-            {!libraryLoading && libraryAssets && libraryAssets.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {libraryAssets.map((a) => {
-                  const disabled = !a.primary_url || refs.length >= MAX_REFS;
-                  const pending = libraryPending.has(a.id);
-                  return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => pickFromLibrary(a)}
-                      disabled={disabled || pending}
-                      className={`group flex flex-col items-stretch text-left rounded-xl border overflow-hidden transition-all ${
-                        disabled ? 'opacity-40 cursor-not-allowed border-zinc-200' : 'border-zinc-200 hover:border-primary hover:shadow-lg'
-                      }`}
-                    >
-                      <div className="aspect-square bg-zinc-50 relative">
-                        {a.primary_url ? (
-                          <img src={a.primary_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                            <ImagePlus size={24} />
-                          </div>
-                        )}
-                        {pending && (
-                          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                            <RefreshCw size={18} className="animate-spin text-primary" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="px-2 py-2">
-                        <div className="text-[11px] font-bold text-zinc-900 truncate">{a.name}</div>
-                        <div className="text-[10px] text-zinc-400 mt-0.5">{a.asset_type}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ================= 자산 보관함 참고 이미지 선택 팝업 (공용 컴포넌트) ================= */}
+      <AssetLibraryPicker
+        open={isLibraryPickOpen}
+        onClose={() => setIsLibraryPickOpen(false)}
+        onPick={handleAssetPicked}
+        maxRemaining={MAX_REFS - refs.length}
+        title={t('imageStudio.reference.libraryTitle')}
+        subtitle={`${t('imageStudio.reference.librarySubtitle', { count: MAX_REFS })} · ${refs.length}/${MAX_REFS}`}
+      />
 
       {/* ================= 스타일 선택 팝업 ================= */}
       {isStylePopup && (
