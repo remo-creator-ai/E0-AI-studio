@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ImagePlus, Download, RefreshCw, Sparkles, AlertCircle,
   ChevronRight, X, Upload, Bookmark, BookmarkCheck, Package,
-  Clock, Trash2, History as HistoryIcon,
+  Clock, Trash2, History as HistoryIcon, User, ShoppingBag, Type,
 } from 'lucide-react';
 import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
@@ -30,7 +30,7 @@ import {
   STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
   type StudioAspect, type GenerateFailure,
 } from '../services/imageStudioService';
-import { createAsset, type Asset } from '../services/assetService';
+import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import {
@@ -168,6 +168,8 @@ export const ImageStudio: React.FC = () => {
   const [failure, setFailure] = useState<GenerateFailure | null>(null);
   const [apiReady, setApiReady] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
+  // 보관함 저장 다이얼로그 — 사용자가 캐릭터/제품/로고/이미지 중 분류를 고르고 이름을 확인한다.
+  const [saveDraft, setSaveDraft] = useState<{ name: string; type: AssetType } | null>(null);
   // 히스토리 상태 — 마운트 시 서버에서 로드, 이후 saveHistory 성공 시 로컬로 prepend.
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -356,25 +358,33 @@ export const ImageStudio: React.FC = () => {
     setBusy(false);
   }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user]);
 
-  const save = useCallback(async () => {
+  // 보관함 저장 버튼: 다이얼로그를 열어 사용자가 분류(캐릭터/제품/로고/이미지)와 이름을 확인하게 한다.
+  // 자동 이름 후보는 프롬프트 첫 줄. 사용자가 그대로 저장하면 기존 흐름과 동일.
+  const openSaveDialog = () => {
     if (!image || saveState.kind === 'saving' || saveState.kind === 'saved') return;
     if (!user) { setSaveState({ kind: 'error', message: t('imageStudio.result.saveNoUser') }); return; }
+    setSaveDraft({ name: autoAssetName(imagePrompt), type: 'image' });
+  };
+
+  const commitSave = useCallback(async () => {
+    if (!saveDraft || !image || !user) return;
+    const trimmedName = saveDraft.name.trim();
+    if (!trimmedName) return;
     setSaveState({ kind: 'saving' });
     try {
-      const name = autoAssetName(imagePrompt);
-      const file = await dataUrlToPngFile(image, `${name.replace(/[\\/:*?"<>|]+/g, '_')}.png`);
+      const file = await dataUrlToPngFile(image, `${trimmedName.replace(/[\\/:*?"<>|]+/g, '_')}.png`);
       const res = await createAsset(
         user.id,
-        // asset_type: 'image' — 로고/캐릭터/제품 분류는 사용자가 자산 보관함에서 직접 정리한다.
         // source_type 은 assetService 가 기본 'upload' 로 넣는데, 스키마상 'generated' 도 허용된다.
         // 지금 API 시그니처가 source_type 을 받지 않으므로 여기서는 upload 로 저장되지만,
         // 후속 단계에서 시그니처 확장 시 'generated' 로 명시할 것.
-        { asset_type: 'image', name, description: imagePrompt },
+        { asset_type: saveDraft.type, name: trimmedName, description: imagePrompt },
         [{ file, role: 'primary' }],
       );
       if (res.ok && res.id) {
         const savedId = res.id;
         setSaveState({ kind: 'saved', assetId: savedId });
+        setSaveDraft(null);
         // 히스토리 뱃지에 반영 — 실패해도 자산 저장 자체는 이미 성공했으니 UI 상태를 되돌리지 않는다.
         if (currentHistoryId) {
           void markHistorySaved(currentHistoryId, savedId);
@@ -386,7 +396,7 @@ export const ImageStudio: React.FC = () => {
     } catch (e) {
       setSaveState({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     }
-  }, [image, imagePrompt, user, saveState.kind, currentHistoryId, t]);
+  }, [saveDraft, image, user, imagePrompt, currentHistoryId]);
 
   const download = useCallback(() => {
     if (!image) return;
@@ -699,7 +709,7 @@ export const ImageStudio: React.FC = () => {
               ) : (
                 <button
                   type="button"
-                  onClick={save}
+                  onClick={openSaveDialog}
                   disabled={saveState.kind === 'saving'}
                   className="flex flex-col items-center gap-0.5 px-5 py-2.5 bg-primary hover:bg-[#003E99] disabled:bg-primary/60 text-white rounded-full font-bold text-sm transition-all active:scale-95"
                 >
@@ -813,6 +823,104 @@ export const ImageStudio: React.FC = () => {
         title={t('imageStudio.reference.libraryTitle')}
         subtitle={`${t('imageStudio.reference.librarySubtitle', { count: MAX_REFS })} · ${refs.length}/${MAX_REFS}`}
       />
+
+      {/* ================= 보관함 저장 다이얼로그 (분류·이름 확인) ================= */}
+      {saveDraft && (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md p-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-5 max-w-md w-full">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-lg font-black tracking-tight text-zinc-900">
+                  {t('imageStudio.saveDialog.title')}
+                </h4>
+                <p className="text-xs text-zinc-500 mt-0.5">{t('imageStudio.saveDialog.subtitle')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaveDraft(null)}
+                disabled={saveState.kind === 'saving'}
+                className="p-2 hover:bg-zinc-100 rounded-lg transition-colors shrink-0 disabled:opacity-50"
+                aria-label={t('imageStudio.saveDialog.cancel')}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 분류 선택 — 4종 grid */}
+            <div>
+              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">
+                {t('imageStudio.saveDialog.typeLabel')}
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {ASSET_TYPES.map((tp) => {
+                  const selected = saveDraft.type === tp;
+                  const Icon = tp === 'character' ? User
+                    : tp === 'product' ? ShoppingBag
+                    : tp === 'logo' ? Type
+                    : ImagePlus;
+                  return (
+                    <button
+                      key={tp}
+                      type="button"
+                      onClick={() => setSaveDraft((d) => (d ? { ...d, type: tp } : d))}
+                      className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border font-bold transition-all active:scale-95 ${
+                        selected
+                          ? 'bg-primary border-primary text-white'
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:border-primary/40'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span className="text-[11px]">{t(`assets.types.${tp}`)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 이름 입력 */}
+            <div>
+              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">
+                {t('imageStudio.saveDialog.nameLabel')}
+              </label>
+              <input
+                type="text"
+                value={saveDraft.name}
+                onChange={(e) => setSaveDraft((d) => (d ? { ...d, name: e.target.value } : d))}
+                className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm outline-none focus:border-primary"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSaveDraft(null)}
+                disabled={saveState.kind === 'saving'}
+                className="px-4 py-2 rounded-full text-zinc-500 hover:bg-zinc-100 text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                {t('imageStudio.saveDialog.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={commitSave}
+                disabled={saveState.kind === 'saving' || !saveDraft.name.trim()}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
+              >
+                {saveState.kind === 'saving' ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    {t('imageStudio.saveDialog.confirming')}
+                  </>
+                ) : (
+                  <>
+                    <Bookmark size={14} />
+                    {t('imageStudio.saveDialog.confirm')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================= 스타일 선택 팝업 ================= */}
       {isStylePopup && (

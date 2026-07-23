@@ -741,6 +741,15 @@
       "saveError": "Save failed: {{message}}",
       "saveNoUser": "Please sign in to save."
     },
+    "saveDialog": {
+      "title": "Save to library",
+      "subtitle": "Pick a type and confirm the name.",
+      "typeLabel": "Type",
+      "nameLabel": "Name",
+      "cancel": "Cancel",
+      "confirm": "Save",
+      "confirming": "Saving…"
+    },
     "error": {
       "noApiKey": "No image generation API key is registered. Please add one in the admin console first.",
       "blocked": "This request cannot be generated due to content policy. Try rewording your description.",

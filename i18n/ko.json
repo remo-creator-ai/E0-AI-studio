@@ -741,6 +741,15 @@
       "saveError": "저장 실패: {{message}}",
       "saveNoUser": "저장하려면 로그인이 필요합니다."
     },
+    "saveDialog": {
+      "title": "보관함에 저장",
+      "subtitle": "분류를 선택하고 이름을 확인해 주세요.",
+      "typeLabel": "분류",
+      "nameLabel": "이름",
+      "cancel": "취소",
+      "confirm": "저장",
+      "confirming": "저장 중…"
+    },
     "error": {
       "noApiKey": "이미지 생성 API 키가 등록되지 않았습니다. 관리자 콘솔에서 먼저 등록해 주세요.",
       "blocked": "콘텐츠 정책에 따라 이 요청은 생성할 수 없습니다. 설명을 바꿔서 다시 시도해 주세요.",
