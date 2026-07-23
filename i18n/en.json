@@ -676,7 +676,10 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "deleteConfirm": "Delete this asset? Its images will be removed as well.",
-      "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation. Continue?"
+      "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation. Continue?",
+      "nameLabel": "Name",
+      "descLabel": "Description · Prompt",
+      "generateFromHere": "Generate an image with this asset"
     }
   },
   "imageStudio": {

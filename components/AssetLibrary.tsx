@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, X, ImagePlus, Trash2, Pencil, Package } from 'lucide-react';
+import { Plus, Search, X, ImagePlus, Trash2, Pencil, Package, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useStore } from '../store';
+import { ProjectStep } from '../types';
 import { useModal } from './ui/ModalProvider';
 import {
   listAssets, getAsset, createAsset, updateAsset, deleteAsset,
@@ -114,6 +116,11 @@ export const AssetLibrary: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-sm font-bold text-zinc-800 truncate mt-1.5">{a.name}</p>
+                {a.description && (
+                  <p className="text-[11px] text-zinc-500 mt-1 line-clamp-2 leading-snug" title={a.description}>
+                    {a.description}
+                  </p>
+                )}
               </div>
             </button>
           ))}
@@ -242,6 +249,8 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
   const { t } = useTranslation();
   const { confirm } = useModal();
   const user = useAuthStore((s) => s.user);
+  const setStep = useStore((s) => s.setStep);
+  const setPendingRef = useStore((s) => s.setPendingImageStudioRef);
   const [asset, setAsset] = useState<Asset | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -292,8 +301,17 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
   const isMulti = asset ? maxReferenceCount(asset.asset_type) > 0 : false;
   const refs = asset?.files.filter((f) => f.file_role === 'reference') ?? [];
 
+  // "여기서부터 생성" — 이 자산을 참고 이미지로 preload 한 채 이미지 생성 화면으로 이동.
+  // 실제 dataUrl 변환은 ImageStudio 마운트 useEffect 가 담당한다 (모듈 격리 유지).
+  const generateFromHere = () => {
+    if (!asset?.primary_url) return;
+    setPendingRef({ assetId: asset.id, primaryUrl: asset.primary_url, name: asset.name });
+    setStep(ProjectStep.IMAGE_STUDIO);
+    onClose();
+  };
+
   return (
-    <ModalWrap onClose={onClose} title={asset ? asset.name : ''}>
+    <ModalWrap onClose={onClose} title={asset ? asset.name : ''} size="wide">
       {!asset ? (
         <div className="flex justify-center py-10"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
       ) : (
@@ -302,9 +320,11 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${TYPE_BADGE[asset.asset_type]}`}>{t(`assets.types.${asset.asset_type}`)}</span>
           </div>
 
-          {/* 대표 이미지 */}
-          <div className="aspect-video bg-zinc-100 rounded-2xl overflow-hidden flex items-center justify-center mb-4">
-            {asset.primary_url ? <img src={asset.primary_url} alt="" className="w-full h-full object-contain" /> : <ImagePlus size={32} className="text-zinc-300" />}
+          {/* 대표 이미지 — aspect 강제하지 않고 자연 비율 유지, 최대 60vh 로 캡 */}
+          <div className="bg-zinc-100 rounded-2xl overflow-hidden flex items-center justify-center mb-4">
+            {asset.primary_url
+              ? <img src={asset.primary_url} alt="" className="max-w-full max-h-[60vh] w-auto h-auto object-contain" />
+              : <div className="w-full aspect-video flex items-center justify-center"><ImagePlus size={32} className="text-zinc-300" /></div>}
           </div>
 
           {/* 참고 이미지 (캐릭터·제품) */}
@@ -325,30 +345,54 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
             </div>
           )}
 
-          {/* 이름·설명 (편집) */}
+          {/* 이름·설명(프롬프트) */}
           {editing ? (
             <div className="space-y-3 mb-4">
-              <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary" />
-              <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary resize-none" />
+              <div>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                  {t('assets.detail.nameLabel')}
+                </label>
+                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                  {t('assets.detail.descLabel')}
+                </label>
+                <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm outline-none focus:border-primary resize-none" />
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-zinc-600 mb-4 whitespace-pre-line">{asset.description || '—'}</p>
+            <div className="mb-4">
+              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">
+                {t('assets.detail.descLabel')}
+              </div>
+              <p className="text-sm text-zinc-700 whitespace-pre-line leading-relaxed">{asset.description || '—'}</p>
+            </div>
           )}
 
           {/* 액션 */}
-          <div className="flex gap-2">
-            {editing ? (
-              <>
-                <button onClick={save} disabled={busy} className="flex-1 py-2.5 bg-primary hover:bg-[#003E99] text-white rounded-full font-bold text-sm disabled:opacity-50">{t('assets.detail.save')}</button>
-                <button onClick={() => { setEditing(false); setName(asset.name); setDesc(asset.description); }} className="px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-full font-bold text-sm">{t('assets.detail.cancel')}</button>
-              </>
-            ) : (
-              <>
+          {editing ? (
+            <div className="flex gap-2">
+              <button onClick={save} disabled={busy} className="flex-1 py-2.5 bg-primary hover:bg-[#003E99] text-white rounded-full font-bold text-sm disabled:opacity-50">{t('assets.detail.save')}</button>
+              <button onClick={() => { setEditing(false); setName(asset.name); setDesc(asset.description); }} className="px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-full font-bold text-sm">{t('assets.detail.cancel')}</button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {/* 주 액션: 이 자산으로 이미지 생성 */}
+              <button
+                onClick={generateFromHere}
+                disabled={!asset.primary_url}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-colors"
+              >
+                <Sparkles size={16} /> {t('assets.detail.generateFromHere')}
+              </button>
+              {/* 보조 액션 */}
+              <div className="flex gap-2">
                 <button onClick={() => setEditing(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-full font-bold text-sm"><Pencil size={14} /> {t('assets.detail.edit')}</button>
                 <button onClick={del} disabled={busy} className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-white border border-red-200 hover:bg-red-50 text-red-500 rounded-full font-bold text-sm disabled:opacity-50"><Trash2 size={14} /> {t('assets.detail.delete')}</button>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </ModalWrap>
@@ -356,10 +400,17 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
 };
 
 /* ============================= Modal wrapper ============================= */
-const ModalWrap: React.FC<{ title: string; onClose: () => void; children: React.ReactNode }> = ({ title, onClose, children }) => (
+const ModalWrap: React.FC<{
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  size?: 'default' | 'wide';   // 'wide' = 상세 모달(이미지를 크게 보여주기 위한 폭)
+}> = ({ title, onClose, children, size = 'default' }) => (
   <div className="fixed inset-0 z-[230] flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-md"
     onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <div className="relative bg-white border border-zinc-200 rounded-[2rem] w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+    <div className={`relative bg-white border border-zinc-200 rounded-[2rem] w-full shadow-2xl flex flex-col max-h-[92vh] ${
+      size === 'wide' ? 'max-w-3xl' : 'max-w-lg'
+    }`}>
       <div className="flex items-center justify-between p-6 pb-4 shrink-0">
         <h2 className="text-lg font-black tracking-tight text-zinc-900 truncate pr-4">{title}</h2>
         <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-xl transition-all shrink-0"><X size={18} className="text-zinc-400" /></button>

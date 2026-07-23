@@ -144,6 +144,9 @@ export const ImageStudio: React.FC = () => {
   const hasEnough = useCreditStore((s) => s.hasEnough);
   const user = useAuthStore((s) => s.user);
   const goTo = useStore((s) => s.setStep);
+  // 자산 보관함 상세 '이 자산으로 이미지 생성' 이 세팅한 프리로드 힌트.
+  const pendingRef = useStore((s) => s.pendingImageStudioRef);
+  const clearPendingRef = useStore((s) => s.setPendingImageStudioRef);
 
   const [mode, setMode] = useState<Mode>('text');
   const [prompt, setPrompt] = useState('');
@@ -195,13 +198,46 @@ export const ImageStudio: React.FC = () => {
         setHistory(h);
         setCustomStyles(cs);
       } catch (e) {
-        if (!cancelled) setHistoryError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setHistoryError(e instanceof Error ? e.message : String(e))
       } finally {
         if (!cancelled) setHistoryLoading(false);
       }
     })();
     return () => { cancelled = true; };
   }, [user]);
+
+  // 자산 보관함의 '이 자산으로 이미지 생성' 이 세팅한 힌트를 소비한다.
+  // primaryUrl(signed) → base64 dataUrl 변환 후 refs 에 추가하고 이미지 모드로 전환.
+  // 성공/실패 무관하게 힌트를 즉시 초기화해 재실행 방지.
+  useEffect(() => {
+    if (!pendingRef) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(pendingRef.primaryUrl);
+        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        if (cancelled) return;
+        setMode('image');
+        setRefs((prev) => (
+          prev.length >= MAX_REFS
+            ? prev
+            : [...prev, { id: `pending-${pendingRef.assetId}-${Date.now().toString(36)}`, dataUrl }]
+        ));
+      } catch {
+        // 조용히 무시 — 사용자가 다시 자산 보관함에서 시도할 수 있다.
+      } finally {
+        if (!cancelled) clearPendingRef(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pendingRef, clearPendingRef]);
 
   const cost = IMAGE_STUDIO_CREDIT_COST;
   const enoughCredits = hasEnough(cost);
