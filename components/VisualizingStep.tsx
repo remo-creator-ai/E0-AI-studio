@@ -212,32 +212,55 @@ export const VisualizingStep: React.FC = () => {
   const createGridPrompt = (unitIdx: number) => {
     const { rows, cols, scenesPerUnit } = gridLayout;
     const unitScenes = project.scenes.slice(unitIdx * scenesPerUnit, (unitIdx * scenesPerUnit) + scenesPerUnit);
-    const sceneDescriptions = unitScenes.map((s, i) => `Panel ${i+1}: ${s.image_prompt_en}`).join("\n");
 
-    if (isPortrait) {
-      return `Create a ${rows}x${cols} storyboard grid sheet with exactly ${unitScenes.length} panels.
-Layout: ${rows} rows, ${cols} columns. 9:16 VERTICAL portrait orientation.
-Each panel must be a separate, clearly distinct scene with visible grid dividers between them.
+    // REFERENCE IMAGE N 인덱스는 generate3x3GridImage 가 refImages 배열 순서 그대로
+    // categorizedParts 로 첨부하므로 refImages[i] → REFERENCE IMAGE (i+1) 대응이 안정적이다.
+    // 정체성(캐릭터/제품/악세사리)은 씬마다 재등장이 필요해 per-panel 삽입 대상.
+    // 배경은 톤/무드만 참조하면 되므로 최종 리마인더에서만 언급한다.
+    const indexed = refImages.map((r, i) => ({ ...r, index: i + 1 }));
+    const identityRefs = indexed.filter(
+      (r) => r.category === 'character' || r.category === 'product' || r.category === 'accessory',
+    );
+    const backgroundRefs = indexed.filter((r) => r.category === 'background');
 
-Project Theme: ${project.idea}
-Visual Style: ${project.style}. ${customStylePrompt}
+    // (B) 각 패널 프롬프트 뒤에 붙는 짧은 리마인더 — 씬 설명이 캐릭터/제품을 언급하지 않아도
+    // 모델이 참조를 스킵하지 않도록 매 패널마다 명시적으로 요구한다.
+    const perPanelParts = identityRefs.map((r) => {
+      if (r.category === 'character') return `the same character as REFERENCE IMAGE ${r.index}`;
+      if (r.category === 'product') return `the same product as REFERENCE IMAGE ${r.index}`;
+      return `the same outfit/accessories as REFERENCE IMAGE ${r.index}`;
+    });
+    const panelSuffix = perPanelParts.length > 0 ? ` — include ${perPanelParts.join(', ')}.` : '';
+    const sceneDescriptions = unitScenes
+      .map((s, i) => `Panel ${i + 1}: ${s.image_prompt_en}${panelSuffix}`)
+      .join('\n');
 
-Panel descriptions:
-${sceneDescriptions}
-
-CRITICAL RULES:
-- Generate EXACTLY ${unitScenes.length} panels in a ${rows}x${cols} grid
-- Each panel is a SEPARATE scene showing a DIFFERENT moment/angle
-- Panels are arranged left-to-right, top-to-bottom
-- Maintain consistent character appearance and art style across all panels
-- Each panel uses VERTICAL portrait framing (taller than wide)
-- 4K quality, cinematic lighting
-- Absolutely NO text anywhere: no watermarks, no brand logos, no captions, no signatures, no studio names, no taglines, no panel numbers, no scene titles, no letters, no numerals of any kind
-- Clear thin white borders between panels`;
+    // (A) 최종 리마인더 — CRITICAL RULES 아래에 별도 블록으로 배치해 가장 마지막으로 모델이 읽게 한다.
+    const reminders: string[] = [];
+    identityRefs.forEach((r) => {
+      if (r.category === 'character') {
+        reminders.push(`The character in EVERY panel must be identical to REFERENCE IMAGE ${r.index} (same face, hair, body, and outfit).`);
+      } else if (r.category === 'product') {
+        reminders.push(`The product in EVERY panel must be identical to REFERENCE IMAGE ${r.index} (same shape, color, branding, and design details).`);
+      } else {
+        reminders.push(`The outfit/accessories in EVERY panel must match REFERENCE IMAGE ${r.index} (same styling and props).`);
+      }
+    });
+    if (backgroundRefs.length > 0) {
+      const list = backgroundRefs.map((r) => `REFERENCE IMAGE ${r.index}`).join(', ');
+      reminders.push(`The environment, lighting mood, and color atmosphere across all panels must match ${list}.`);
     }
+    const finalReminder = reminders.length > 0
+      ? `\n\nFINAL REMINDER (highest priority): ${reminders.join(' ')} Panels that omit or contradict the reference subject are invalid.`
+      : '';
+
+    const orientation = isPortrait ? '9:16 VERTICAL portrait' : '16:9 HORIZONTAL widescreen';
+    const framing = isPortrait
+      ? 'VERTICAL portrait framing (taller than wide)'
+      : 'HORIZONTAL widescreen framing (wider than tall)';
 
     return `Create a ${rows}x${cols} storyboard grid sheet with exactly ${unitScenes.length} panels.
-Layout: ${rows} rows, ${cols} columns. 16:9 HORIZONTAL widescreen orientation.
+Layout: ${rows} rows, ${cols} columns. ${orientation} orientation.
 Each panel must be a separate, clearly distinct scene with visible grid dividers between them.
 
 Project Theme: ${project.idea}
@@ -251,10 +274,10 @@ CRITICAL RULES:
 - Each panel is a SEPARATE scene showing a DIFFERENT moment/angle
 - Panels are arranged left-to-right, top-to-bottom
 - Maintain consistent character appearance and art style across all panels
-- Each panel uses HORIZONTAL widescreen framing (wider than tall)
+- Each panel uses ${framing}
 - 4K quality, cinematic lighting
 - Absolutely NO text anywhere: no watermarks, no brand logos, no captions, no signatures, no studio names, no taglines, no panel numbers, no scene titles, no letters, no numerals of any kind
-- Clear thin white borders between panels`;
+- Clear thin white borders between panels${finalReminder}`;
   };
 
   const handleGenerateGrid = async () => {
