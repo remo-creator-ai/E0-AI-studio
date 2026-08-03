@@ -13,12 +13,15 @@
 
 import React, { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Film, Layers, ArrowLeft, Sparkles, Wand2, Info, Send } from 'lucide-react';
+import { Film, Layers, ArrowLeft, Wand2, Info, Send } from 'lucide-react';
 import { useStore } from '../store';
 import { useModal } from './ui/ModalProvider';
 
 const ProductionStep = React.lazy(() =>
   import('./ProductionStep').then((m) => ({ default: m.ProductionStep })),
+);
+const ProductionModeA = React.lazy(() =>
+  import('./production/ProductionModeA').then((m) => ({ default: m.ProductionModeA })),
 );
 
 type Mode = 'landing' | 'modeA' | 'modeB';
@@ -125,27 +128,6 @@ const Landing: React.FC<{ onSelect: (m: Mode) => void }> = ({ onSelect }) => (
   </div>
 );
 
-const ModeAPlaceholder: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <div className="max-w-2xl mx-auto text-center py-16 space-y-4">
-    <div className="w-20 h-20 rounded-3xl bg-primary/10 mx-auto flex items-center justify-center">
-      <Sparkles size={32} className="text-primary" />
-    </div>
-    <h3 className="text-xl font-black text-zinc-900">스토리보드 통합 영상</h3>
-    <p className="text-sm text-zinc-500 max-w-md mx-auto">
-      스토리보드 이미지 1장 + 시퀀스 프롬프트로 통합 영상 1편을 만드는 기능입니다.
-      곧 지원 예정입니다.
-    </p>
-    <div className="pt-4">
-      <button
-        onClick={onBack}
-        className="px-5 py-2.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-sm font-bold text-zinc-700 inline-flex items-center gap-2"
-      >
-        <ArrowLeft size={16} /> 모드 선택으로
-      </button>
-    </div>
-  </div>
-);
-
 export const ProductionStepShell: React.FC = () => {
   const { t } = useTranslation();
   const { alert } = useModal();
@@ -199,7 +181,17 @@ export const ProductionStepShell: React.FC = () => {
 
       {/* Body */}
       {mode === 'landing' && <Landing onSelect={setMode} />}
-      {mode === 'modeA' && <ModeAPlaceholder onBack={() => setMode('landing')} />}
+      {mode === 'modeA' && (
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-24">
+              <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            </div>
+          }
+        >
+          <ProductionModeA onBack={() => setMode('landing')} />
+        </Suspense>
+      )}
       {mode === 'modeB' && (
         <Suspense
           fallback={
