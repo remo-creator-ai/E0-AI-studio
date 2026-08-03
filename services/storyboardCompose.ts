@@ -17,26 +17,39 @@ export interface GridSize {
   cols: number;
 }
 
-/** 씬 개수와 최종 종횡비에 맞춰 가장 정사각에 가까운 격자를 산정한다.
- *  Landscape(16:9): 열이 행보다 많이. Portrait(9:16): 행이 열보다 많이.
- *  Square(1:1): 정사각. */
+/** 씬 개수와 최종 종횡비에 맞춰 격자를 산정한다.
+ *
+ *  표준 스토리보드 씬 카운트(4·8·9·18)는 VisualizingStep 과 동일한 배치로 하드코딩.
+ *  9씬 = 3x3 (2x5 아님) — 사용자가 스토리보드 만들기 단계에서 봐온 배치와 일치시켜
+ *  일관성 확보. Kling 이 요구하는 것은 canvas 총 종횡비뿐이고 그건 composeScenesToGrid
+ *  가 target aspect 로 강제하므로 여기서는 씬 배치 관습만 지키면 된다.
+ *
+ *  비표준 카운트(5/6/7/10 등)는 aspect 기반 자동 산정.
+ */
 export function pickGridLayout(sceneCount: number, aspect: '16:9' | '9:16' | '1:1'): GridSize {
   const n = Math.max(1, sceneCount);
-  if (n === 1) return { rows: 1, cols: 1 };
+  const isPortrait = aspect === '9:16';
 
-  // 이상적인 열 개수를 aspect 로 편향해서 계산
+  // ── 표준 씬 카운트 (VisualizingStep 과 동일) ──
+  if (n === 1) return { rows: 1, cols: 1 };
+  if (n === 4) return { rows: 2, cols: 2 };
+  if (n === 8) return isPortrait ? { rows: 4, cols: 2 } : { rows: 2, cols: 4 };
+  if (n === 9) return { rows: 3, cols: 3 };
+  if (n === 18) return isPortrait ? { rows: 6, cols: 3 } : { rows: 3, cols: 6 };
+
+  // ── 비표준 카운트: aspect 기반 자동 (정사각에 가까움 + 빈 셀 최소화) ──
   const targetRatio = aspect === '16:9' ? 16 / 9 : aspect === '9:16' ? 9 / 16 : 1;
   let best: GridSize = { rows: 1, cols: n };
   let bestScore = Infinity;
 
   for (let cols = 1; cols <= n; cols++) {
     const rows = Math.ceil(n / cols);
-    // 셀 하나가 대체로 정사각이라고 가정할 때, 전체 캔버스 비율은 cols/rows.
-    // 목표 비율과의 로그 거리 + 빈 셀 페널티.
     const ratio = cols / rows;
     const shape = Math.abs(Math.log(ratio) - Math.log(targetRatio));
     const empty = rows * cols - n;
-    const score = shape + empty * 0.15;
+    // 빈 셀 페널티를 크게 (0.35) — 딱 맞는 격자를 강하게 선호.
+    // 이전 0.15 일 때는 9씬에서 2x5(1개 빈 셀) 가 3x3(0개 빈 셀) 을 이겼음.
+    const score = shape + empty * 0.35;
     if (score < bestScore) {
       bestScore = score;
       best = { rows, cols };

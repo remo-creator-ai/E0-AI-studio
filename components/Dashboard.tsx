@@ -434,31 +434,47 @@ export const Dashboard: React.FC = () => {
                 <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {myRequests.map((req) => {
-                  const statusKey = (req.status || 'pending') as RequestStatus;
-                  const validKey: RequestStatus = ['pending', 'in_progress', 'completed', 'cancelled'].includes(statusKey)
-                    ? statusKey
-                    : 'pending';
-                  return (
-                    <div
-                      key={req.id}
-                      className="bg-white border border-zinc-200 rounded-2xl p-4 space-y-3 hover:border-zinc-300 hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-sm text-zinc-900 truncate flex-1">{req.project_title}</h4>
-                        <span className={`shrink-0 px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase ${REQUEST_STATUS_COLORS[validKey]}`}>
-                          {t(`status.${validKey === 'in_progress' ? 'inProgress' : validKey}`)}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-500 line-clamp-2">{req.purpose}</p>
-                      <div className="flex items-center gap-1 text-[10px] text-zinc-400">
-                        <Clock size={10} />
-                        {formatDate(req.created_at)}
-                      </div>
-                    </div>
-                  );
-                })}
+              // 표 리스트 형태 (사용자 요청: 카드뷰 대신 컴팩트한 테이블)
+              <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wider text-zinc-400 bg-zinc-50">
+                      <th className="text-left font-black px-4 py-3 border-b border-zinc-100">프로젝트</th>
+                      <th className="text-left font-black px-4 py-3 border-b border-zinc-100 hidden md:table-cell">요청 서비스</th>
+                      <th className="text-left font-black px-4 py-3 border-b border-zinc-100 whitespace-nowrap">일시</th>
+                      <th className="text-right font-black px-4 py-3 border-b border-zinc-100">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myRequests.map((req) => {
+                      const statusKey = (req.status || 'pending') as RequestStatus;
+                      const validKey: RequestStatus = ['pending', 'in_progress', 'completed', 'cancelled'].includes(statusKey)
+                        ? statusKey
+                        : 'pending';
+                      return (
+                        <tr key={req.id} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50 transition-colors">
+                          <td className="px-4 py-3 text-zinc-900 font-bold max-w-[280px] truncate" title={req.project_title}>
+                            {req.project_title}
+                          </td>
+                          <td className="px-4 py-3 text-zinc-600 text-xs line-clamp-1 hidden md:table-cell max-w-[380px]" title={req.purpose}>
+                            {req.purpose}
+                          </td>
+                          <td className="px-4 py-3 text-zinc-400 text-xs whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock size={11} />
+                              {formatDate(req.created_at)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className={`inline-block px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase ${REQUEST_STATUS_COLORS[validKey]}`}>
+                              {t(`status.${validKey === 'in_progress' ? 'inProgress' : validKey}`)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

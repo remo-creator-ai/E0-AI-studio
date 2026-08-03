@@ -86,8 +86,14 @@ interface JobCardProps {
   job: VideoJob;
   onRemove: () => void;
   onRemixPrompt: () => void;
+  /** 같은 파라미터로 새 생성 (사용자 요청 "다시 생성"). */
+  onRegenerate?: () => void;
+  /** 히스토리에서 삭제 (Storage + row). */
+  onDeleteHistory?: () => void;
+  /** 자산 보관함에 저장 — 향후 asset_type='video' 지원 후 활성화. */
+  onSaveToLibrary?: () => void;
 }
-const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt, onRegenerate, onDeleteHistory, onSaveToLibrary }) => {
   const promptPreview = job.prompt.length > 80 ? job.prompt.slice(0, 80) + '…' : job.prompt;
 
   return (
@@ -148,12 +154,36 @@ const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt }) => {
             >
               <Download size={14} /> 다운로드
             </a>
+            {onSaveToLibrary && (
+              <button
+                onClick={onSaveToLibrary}
+                className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
+              >
+                <Package size={14} /> 보관함 저장
+              </button>
+            )}
+            {onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                className="px-3 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-xs font-black text-white flex items-center gap-1.5"
+              >
+                <RefreshCw size={14} /> 다시 생성
+              </button>
+            )}
             <button
               onClick={onRemixPrompt}
               className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
             >
-              <RefreshCw size={14} /> 프롬프트 복원
+              <Wand2 size={14} /> 프롬프트 복원
             </button>
+            {onDeleteHistory && (
+              <button
+                onClick={onDeleteHistory}
+                className="ml-auto px-3 py-2 rounded-xl bg-white border border-red-200 hover:bg-red-50 text-xs font-bold text-red-600 flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> 히스토리 삭제
+              </button>
+            )}
           </div>
         </>
       )}
@@ -421,10 +451,23 @@ export const VideoStudio: React.FC = () => {
   };
 
   const remixFromHistory = (item: VideoHistoryItem) => {
-    // Remix: 프롬프트/종횡비/길이 폼에 되채움. 실제 재생은 히스토리 스트립에서 직접.
+    // 1) 폼 필드를 되채움 (사용자가 그대로 편집해서 재생성 가능)
     setPrompt(item.prompt);
     setAspect(item.aspect as VideoAspect);
     setDuration((item.duration_sec === 10 ? 10 : 5) as VideoDuration);
+    // 2) 중앙 스택에도 완료 상태로 추가해서 즉시 재생 가능하게 함
+    //    (이전 UI 는 중앙에서 재생됐음 — 그 흐름 복원)
+    const jobId = crypto.randomUUID();
+    addJob({
+      id: jobId,
+      prompt: item.prompt,
+      aspect: item.aspect as ConcreteAspect,
+      durationSec: (item.duration_sec === 10 ? 10 : 5) as VideoDuration,
+      hasStartFrame: item.has_start_frame,
+      hasEndFrame: item.has_end_frame,
+    });
+    // addJob 은 status=generating 으로 넣으므로 즉시 done 으로 갱신
+    updateJob(jobId, { status: 'done', videoUrl: item.url, historyId: item.id });
   };
 
   const deleteFromHistory = async (item: VideoHistoryItem) => {
@@ -607,6 +650,31 @@ export const VideoStudio: React.FC = () => {
                 job={job}
                 onRemove={() => removeJob(job.id)}
                 onRemixPrompt={() => setPrompt(job.prompt)}
+                onRegenerate={job.status === 'done' ? () => {
+                  // 폼 필드를 잡의 파라미터로 되돌리고 generate 재실행
+                  setPrompt(job.prompt);
+                  setAspect(job.aspect);
+                  setDuration(job.durationSec);
+                  // 사용자에게 확인 없이 즉시 실행 (버튼 클릭 자체가 승낙)
+                  setTimeout(() => generate(), 100);
+                } : undefined}
+                onDeleteHistory={job.historyId ? async () => {
+                  const target = history?.find((h) => h.id === job.historyId);
+                  if (!target) return;
+                  const ok = await confirm('이 동영상을 히스토리에서 삭제할까요? (크레딧은 반환되지 않습니다)');
+                  if (!ok) return;
+                  await deleteVideoHistoryItem(target.id, target.storage_path);
+                  removeJob(job.id);
+                  loadHistory();
+                } : undefined}
+                onSaveToLibrary={job.status === 'done' ? async () => {
+                  // TODO: user_assets 에 asset_type='video' 지원 후 실제 저장.
+                  // 마이그레이션 필요 (asset_type enum 확장 + storage 정책).
+                  await alert(
+                    '동영상 자산 저장 기능은 다음 업데이트에서 지원됩니다. 지금은 다운로드로 보관해 주세요.',
+                    { type: 'info' },
+                  );
+                } : undefined}
               />
             ))}
             <div ref={stackEndRef} />
@@ -631,30 +699,34 @@ export const VideoStudio: React.FC = () => {
             </div>
           )}
           {history?.map((item) => (
-            <div key={item.id} className="group relative rounded-xl overflow-hidden border border-zinc-200 bg-zinc-900 aspect-video">
+            // 카드 전체 클릭 = 중앙 스택에 표시 (remixFromHistory).
+            // 삭제 버튼은 클릭 전파 중단으로 카드 클릭과 분리.
+            <button
+              key={item.id}
+              onClick={() => remixFromHistory(item)}
+              className="group relative rounded-xl overflow-hidden border border-zinc-200 bg-zinc-900 aspect-video text-left w-full cursor-pointer hover:border-primary/60 hover:shadow-lg transition-all"
+              title="클릭하면 중앙 화면에서 재생/편집합니다"
+            >
               <video
                 src={item.url}
                 muted
                 playsInline
+                loop
                 onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
-                onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
-                className="w-full h-full object-contain"
+                onMouseLeave={(e) => { const el = e.target as HTMLVideoElement; el.pause(); el.currentTime = 0; }}
+                className="w-full h-full object-contain pointer-events-none"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                <button
-                  onClick={() => remixFromHistory(item)}
-                  className="px-2 py-1 rounded-md bg-white text-zinc-900 text-[10px] font-bold flex items-center gap-1"
-                >
-                  <Play size={10} /> 다시 열기
-                </button>
-                <button
-                  onClick={() => deleteFromHistory(item)}
-                  className="px-2 py-1 rounded-md bg-red-600 text-white text-[10px] font-bold flex items-center gap-1"
-                >
-                  <Trash2 size={10} /> 삭제
-                </button>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); deleteFromHistory(item); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); deleteFromHistory(item); } }}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                aria-label="삭제"
+              >
+                <Trash2 size={11} />
               </div>
-              <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between">
+              <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between pointer-events-none">
                 <span className="text-[9px] text-white/80 bg-black/60 px-1.5 py-0.5 rounded">
                   {item.duration_sec}s
                 </span>
@@ -663,7 +735,7 @@ export const VideoStudio: React.FC = () => {
                   {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
                 </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
