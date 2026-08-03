@@ -17,7 +17,8 @@ import {
   Shield,
   HelpCircle,
   Package,
-  ImagePlus
+  ImagePlus,
+  Film
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
@@ -132,6 +133,12 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
               label={t('nav.imageStudio')}
               active={currentStep === ProjectStep.IMAGE_STUDIO}
               onClick={() => handleNavigate(ProjectStep.IMAGE_STUDIO)}
+            />
+            <SidebarItem
+              icon={Film}
+              label={t('nav.videoStudio')}
+              active={currentStep === ProjectStep.VIDEO_STUDIO}
+              onClick={() => handleNavigate(ProjectStep.VIDEO_STUDIO)}
             />
             <SidebarItem
               icon={Package}

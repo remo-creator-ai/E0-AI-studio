@@ -18,6 +18,7 @@ const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m
 const AdminPage = React.lazy(() => import('./components/AdminPage').then(m => ({ default: m.AdminPage })));
 const AssetLibrary = React.lazy(() => import('./components/AssetLibrary').then(m => ({ default: m.AssetLibrary })));
 const ImageStudio = React.lazy(() => import('./components/ImageStudio').then(m => ({ default: m.ImageStudio })));
+const VideoStudio = React.lazy(() => import('./components/VideoStudio').then(m => ({ default: m.VideoStudio })));
 const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 const App: React.FC = () => {
@@ -90,6 +91,8 @@ const App: React.FC = () => {
         return <ProductionStep />;
       case ProjectStep.IMAGE_STUDIO:
         return <ImageStudio />;
+      case ProjectStep.VIDEO_STUDIO:
+        return <VideoStudio />;
       case ProjectStep.ASSETS:
         return <AssetLibrary />;
       case ProjectStep.SETTINGS:

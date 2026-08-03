@@ -368,6 +368,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      video_generation_history: {
+        Row: {
+          id: string;
+          owner_id: string;
+          prompt: string;
+          aspect: string;
+          duration_sec: number;
+          model: string;
+          has_start_frame: boolean;
+          has_end_frame: boolean;
+          storage_path: string;
+          thumbnail_path: string | null;
+          saved_asset_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          prompt: string;
+          aspect: string;
+          duration_sec: number;
+          model: string;
+          has_start_frame?: boolean;
+          has_end_frame?: boolean;
+          storage_path: string;
+          thumbnail_path?: string | null;
+          saved_asset_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          saved_asset_id?: string | null;
+          thumbnail_path?: string | null;
+        };
+        Relationships: [];
+      };
       user_custom_styles: {
         Row: {
           id: string;
