@@ -313,7 +313,10 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                           {t('nav.projects')}
                         </button>
                         <ChevronRight size={14} className="text-zinc-300" />
-                        <span className="text-zinc-900 font-black text-base truncate max-w-[200px]">
+                        <span
+                          className="text-zinc-900 font-black text-base truncate max-w-[240px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-none"
+                          title={project?.title || t('nav.untitled')}
+                        >
                           {project?.title || t('nav.untitled')}
                         </span>
                       </div>
