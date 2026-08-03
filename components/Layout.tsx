@@ -18,7 +18,10 @@ import {
   HelpCircle,
   Package,
   ImagePlus,
-  Film
+  Film,
+  Pencil,
+  Check as CheckIcon,
+  X,
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
@@ -27,6 +30,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { ProjectStep } from '../types';
 import { isAdmin } from '../services/adminConfigService';
 import { CreditRequestModal } from './CreditRequestModal';
+import { renameProject } from '../services/projectService';
 
 interface SidebarItemProps {
   icon: React.FC<{ size?: number }>;
@@ -52,8 +56,35 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) =
 
 export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' | 'saving' | 'saved' | 'error' | 'forbidden'; flushSave?: () => Promise<void> }> = ({ children, saveStatus, flushSave }) => {
   const { t } = useTranslation();
-  const { currentStep, setStep, project } = useStore();
+  const { currentStep, setStep, project, setProject } = useStore();
   const { user, signOut } = useAuthStore();
+
+  // 프로젝트 제목 인라인 편집
+  const [titleEditing, setTitleEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  const [titleSaving, setTitleSaving] = useState(false);
+  const openTitleEdit = () => {
+    if (!project) return;
+    setTitleDraft(project.title || '');
+    setTitleEditing(true);
+  };
+  const saveTitle = async () => {
+    if (!project) return;
+    const clean = titleDraft.trim();
+    if (!clean || clean === project.title) { setTitleEditing(false); return; }
+    setTitleSaving(true);
+    try {
+      await renameProject(project.id, clean);
+      setProject({ ...project, title: clean });
+      setTitleEditing(false);
+    } catch (e) {
+      // 실패 시 편집 상태 유지 (사용자가 재시도 가능). 콘솔에만 남긴다.
+      console.error('renameProject failed:', e);
+    } finally {
+      setTitleSaving(false);
+    }
+  };
+  const cancelTitleEdit = () => setTitleEditing(false);
   const { balance, maxCredits } = useCreditStore();
   const { requestTourReplay } = useSettingsStore();
 
@@ -313,12 +344,54 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                           {t('nav.projects')}
                         </button>
                         <ChevronRight size={14} className="text-zinc-300" />
-                        <span
-                          className="text-zinc-900 font-black text-base truncate max-w-[240px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-none"
-                          title={project?.title || t('nav.untitled')}
-                        >
-                          {project?.title || t('nav.untitled')}
-                        </span>
+                        {titleEditing ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              autoFocus
+                              value={titleDraft}
+                              onChange={(e) => setTitleDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveTitle();
+                                else if (e.key === 'Escape') cancelTitleEdit();
+                              }}
+                              className="text-zinc-900 font-black text-base bg-white border border-primary/40 rounded-lg px-2 py-0.5 outline-none focus:ring-2 focus:ring-primary/30 min-w-[240px]"
+                              disabled={titleSaving}
+                            />
+                            <button
+                              onClick={saveTitle}
+                              disabled={titleSaving}
+                              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 disabled:opacity-40"
+                              title="저장 (Enter)"
+                            >
+                              <CheckIcon size={14} />
+                            </button>
+                            <button
+                              onClick={cancelTitleEdit}
+                              disabled={titleSaving}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-100 disabled:opacity-40"
+                              title="취소 (Esc)"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 group">
+                            <span
+                              className="text-zinc-900 font-black text-base truncate max-w-[240px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-none"
+                              title={project?.title || t('nav.untitled')}
+                            >
+                              {project?.title || t('nav.untitled')}
+                            </span>
+                            <button
+                              onClick={openTitleEdit}
+                              className="p-1 rounded-md text-zinc-300 hover:text-primary hover:bg-primary/5 transition"
+                              title="제목 수정"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

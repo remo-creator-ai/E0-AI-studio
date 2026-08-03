@@ -79,13 +79,22 @@ function drawImageContain(
 export interface ComposeInput {
   imageUrls: string[];              // 씬 이미지 URL 배열 (오름차순: 씬 1 → N)
   layout?: GridSize;                // 없으면 aspect 기반 자동
-  aspect?: '16:9' | '9:16' | '1:1'; // layout 자동 산정에 사용
-  cellWidth?: number;               // 개별 셀 폭 (default: 512)
-  gap?: number;                     // 셀 사이 간격 px (default: 4)
-  background?: string;              // 캔버스 배경/gap 색 (default: white)
+  aspect?: '16:9' | '9:16' | '1:1'; // 최종 캔버스 비율 (Kling API 가 검증한다)
+  canvasWidth?: number;             // 최종 캔버스 폭 (default: 1280 for 16:9)
+  gap?: number;                     // 셀 사이 간격 px (default: 8)
+  background?: string;              // 캔버스 배경/gap 색 (default: black)
 }
 
-/** 씬 이미지들을 그리드 한 장으로 합쳐 data URL 반환. */
+/** 씬 이미지들을 그리드 한 장으로 합쳐 data URL 반환.
+ *
+ *  ⚠️ 이 캔버스는 Kling I2V 의 start image 로 전달되므로 **캔버스 전체 비율이
+ *  요청한 aspect(16:9/9:16/1:1) 와 정확히 일치해야 한다**. 안 그러면 Kling 이
+ *  "Image aspect ratio is invalid" 로 거부한다.
+ *
+ *  따라서 셀 크기를 먼저 정하지 않고, 캔버스 총 크기를 target aspect 로 고정한
+ *  뒤 그 안에 그리드를 배치한다. 셀 자체의 종횡비는 씬 이미지의 비율과 다를 수
+ *  있고, 이 차이는 contain-fit(letterbox)으로 흡수한다.
+ */
 export async function composeScenesToGrid(input: ComposeInput): Promise<{
   dataUrl: string;
   layout: GridSize;
@@ -97,47 +106,46 @@ export async function composeScenesToGrid(input: ComposeInput): Promise<{
 
   const aspect = input.aspect ?? '16:9';
   const layout = input.layout ?? pickGridLayout(imageUrls.length, aspect);
-  const cellWidth = input.cellWidth ?? 512;
-  const gap = input.gap ?? 4;
-  const background = input.background ?? '#FFFFFF';
+  const gap = input.gap ?? 8;
+  const background = input.background ?? '#000000';
 
   // 로드 (실패한 이미지는 스킵하지 않고 에러 냄 — 조용한 셀 누락은 사용자에게 혼란)
   const images = await Promise.all(imageUrls.map(loadImage));
 
-  // 셀 높이는 첫 이미지의 실제 비율로 결정 (대부분 씬은 같은 비율이라 안전)
-  const first = images[0];
-  const firstRatio = first.naturalWidth / first.naturalHeight || 16 / 9;
-  const cellHeight = Math.round(cellWidth / firstRatio);
+  // 최종 캔버스 크기 = target aspect 정확히 일치. 폭 기준으로 높이 산정.
+  const targetRatio = aspect === '16:9' ? 16 / 9 : aspect === '9:16' ? 9 / 16 : 1;
+  const canvasWidth = input.canvasWidth ?? (aspect === '9:16' ? 720 : 1280);
+  const canvasHeight = Math.round(canvasWidth / targetRatio);
 
-  const width = layout.cols * cellWidth + (layout.cols + 1) * gap;
-  const height = layout.rows * cellHeight + (layout.rows + 1) * gap;
+  // 셀 영역: 캔버스에서 gap 을 빼고 격자 나눔.
+  const usableWidth = canvasWidth - (layout.cols + 1) * gap;
+  const usableHeight = canvasHeight - (layout.rows + 1) * gap;
+  const cellWidth = usableWidth / layout.cols;
+  const cellHeight = usableHeight / layout.rows;
 
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas 2d context unavailable');
 
-  // 배경(구분선 색 = 배경색으로 자연스러운 white gap 구현)
+  // 캔버스 배경 (letterbox 색)
   ctx.fillStyle = background;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // 각 셀 그리기
+  // 각 셀 그리기 — 셀 안에서 contain 방식으로 원본 비율 유지
   for (let i = 0; i < images.length; i++) {
     const row = Math.floor(i / layout.cols);
     const col = i % layout.cols;
     const x = gap + col * (cellWidth + gap);
     const y = gap + row * (cellHeight + gap);
-    // 셀 배경 (검정)
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(x, y, cellWidth, cellHeight);
     drawImageContain(ctx, images[i], x, y, cellWidth, cellHeight);
   }
 
   return {
     dataUrl: canvas.toDataURL('image/png'),
     layout,
-    width,
-    height,
+    width: canvasWidth,
+    height: canvasHeight,
   };
 }

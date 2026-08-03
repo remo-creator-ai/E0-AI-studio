@@ -106,6 +106,17 @@ export async function loadProject(projectId: string): Promise<Project | null> {
   } as Project;
 }
 
+/** 프로젝트 제목만 업데이트 (전체 saveProject 는 무거워서 헤더 인라인 편집엔 부적합). */
+export async function renameProject(projectId: string, title: string): Promise<void> {
+  const clean = title.trim();
+  if (!clean) throw new Error('제목이 비어 있습니다.');
+  const { error } = await supabase
+    .from('projects')
+    .update({ title: clean, updated_at: new Date().toISOString() })
+    .eq('id', projectId);
+  if (error) throw error;
+}
+
 export async function deleteProject(projectId: string): Promise<void> {
   const { error } = await supabase
     .from('projects')
