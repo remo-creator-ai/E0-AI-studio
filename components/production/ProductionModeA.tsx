@@ -12,8 +12,11 @@
 //  씬별 편집기 UI 추가 예정. 이번 커밋은 기본 프리셋(시간대 명시) 만 노출.
 // =============================================================
 
-import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Sparkles, Play, Download, RefreshCw, AlertCircle, Loader2, Info, Wand2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowLeft, Sparkles, Play, Download, RefreshCw, AlertCircle, Loader2, Info, Wand2,
+  Clock, Waves, Scissors, Film as FilmIcon, ChevronDown, X as XIcon, Check,
+} from 'lucide-react';
 import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
 import { useAuthStore } from '../../store/authStore';
@@ -21,6 +24,15 @@ import { useModal } from '../ui/ModalProvider';
 import { generateStudioVideo, videoStudioCreditCost } from '../../services/videoStudioService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
 import type { Scene } from '../../types';
+
+export type SequencePreset = 'timed' | 'flow' | 'compressed' | 'cinematic';
+
+const PRESET_INFO: Record<SequencePreset, { label: string; hint: string; icon: React.FC<{ size?: number }> }> = {
+  timed:      { label: '시간대 명시 (기본)',       hint: '각 씬을 정확한 초 구간에 매핑',                icon: Clock },
+  flow:       { label: '시간 없이 스토리 흐름',    hint: 'AI 가 자연스럽게 밀도 조절',                    icon: Waves },
+  compressed: { label: '핵심 씬만 축약',           hint: '균등 간격 4~5씬만 사용해 10초 안에 밀도 완화', icon: Scissors },
+  cinematic:  { label: '시네마틱 리터치',           hint: '트랜지션·조명·무드 지시문 강화',               icon: FilmIcon },
+};
 
 function getGridLayout(sceneCount: number, aspectRatio?: string) {
   const isPortrait = aspectRatio === '9:16';
@@ -33,19 +45,31 @@ function getGridLayout(sceneCount: number, aspectRatio?: string) {
   }
 }
 
-/** 시간 세그먼트를 균등 분배해서 씬별 프롬프트 조립. Kling 최대 duration=10s 기준. */
+/** 균등 간격으로 씬 인덱스를 선택 (compressed 프리셋용) — 시작·끝은 반드시 포함. */
+function pickEvenlySpaced(total: number, pick: number): number[] {
+  if (pick >= total) return Array.from({ length: total }, (_, i) => i);
+  if (pick <= 1) return [0];
+  const idxs: number[] = [];
+  for (let i = 0; i < pick; i++) {
+    idxs.push(Math.round((i * (total - 1)) / (pick - 1)));
+  }
+  return Array.from(new Set(idxs));
+}
+
+/** 시퀀스 프롬프트 조립. preset 과 활성 씬 인덱스 배열에 따라 분기. */
 function buildSequencePrompt(opts: {
   scenes: Scene[];
+  activeIdxs: number[];         // 사용할 씬 인덱스 (오름차순)
   durationSec: number;
   rows: number;
   cols: number;
   language: 'ko' | 'en';
   style: string;
+  preset: SequencePreset;
 }): string {
-  const { scenes, durationSec, rows, cols, language, style } = opts;
-  const n = Math.min(scenes.length, rows * cols);
-  const usedScenes = scenes.slice(0, n);
-  const segLen = durationSec / n;
+  const { scenes, activeIdxs, durationSec, rows, cols, language, style, preset } = opts;
+  const used = activeIdxs.map((i) => scenes[i]).filter(Boolean);
+  const n = used.length;
 
   const langHint = language === 'ko'
     ? 'IMPORTANT: All spoken dialogue, on-screen text (if any), and character speech must be KOREAN. Use quotation marks for dialogue.\n'
@@ -58,18 +82,41 @@ function buildSequencePrompt(opts: {
     `Create a full-screen cinematic animation with smooth, fast transitions between the story moments.\n` +
     `Visual style: ${style}.\n`;
 
-  const segments = usedScenes.map((s, i) => {
-    const start = (i * segLen).toFixed(1).replace(/\.0$/, '');
-    const end = ((i + 1) * segLen).toFixed(1).replace(/\.0$/, '');
-    const motion = s.video_motion_en?.trim() || '';
-    const prompt = s.image_prompt_en?.trim() || '';
-    const body = motion ? `${prompt}. Motion: ${motion}` : prompt;
-    return `${start}-${end}s: ${body}`;
-  }).join('\n');
+  const cinematicExtra = preset === 'cinematic'
+    ? '\nCinematic direction: Use smooth match cuts, subtle motion blur, warm cinematic color grading, ' +
+      'and gentle camera movements (dolly-in, pan, tilt) to enhance emotional flow. ' +
+      'Prioritize visual continuity and atmospheric depth between transitions.\n'
+    : '';
 
-  const anchor = `\nMaintain identical characters, outfits, and product appearance across all moments — treat the storyboard panels as canonical identity references.`;
+  const anchor =
+    `\nMaintain identical characters, outfits, and product appearance across all moments — treat the storyboard panels as canonical identity references.`;
 
-  return `${header}\n${segments}${anchor}`;
+  let body: string;
+
+  if (preset === 'flow' || preset === 'cinematic') {
+    // 시간 없이 씬 흐름만 나열. cinematic 은 헤더에 지시문이 추가됐다.
+    const lines = used.map((s, i) => {
+      const motion = s.video_motion_en?.trim() || '';
+      const prompt = s.image_prompt_en?.trim() || '';
+      const combined = motion ? `${prompt}. Motion: ${motion}` : prompt;
+      return `${i + 1}. ${combined}`;
+    }).join('\n');
+    body = `Scene flow (natural pacing, no strict timing — AI distributes across the ${durationSec}s):\n${lines}`;
+  } else {
+    // timed / compressed — 균등 시간 분배
+    const segLen = durationSec / Math.max(n, 1);
+    const lines = used.map((s, i) => {
+      const start = (i * segLen).toFixed(1).replace(/\.0$/, '');
+      const end = ((i + 1) * segLen).toFixed(1).replace(/\.0$/, '');
+      const motion = s.video_motion_en?.trim() || '';
+      const prompt = s.image_prompt_en?.trim() || '';
+      const combined = motion ? `${prompt}. Motion: ${motion}` : prompt;
+      return `${start}-${end}s: ${combined}`;
+    }).join('\n');
+    body = lines;
+  }
+
+  return `${header}${cinematicExtra}\n${body}${anchor}`;
 }
 
 interface ModeAProps {
@@ -89,6 +136,12 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [manualPrompt, setManualPrompt] = useState<string | null>(null);
+  const [preset, setPreset] = useState<SequencePreset>('timed');
+  const [presetOpen, setPresetOpen] = useState(false);
+  // 활성 씬 인덱스 (사용자가 체크박스로 조정). 최초에는 프로젝트 씬 전체.
+  const [activeIdxs, setActiveIdxs] = useState<number[]>(
+    () => (project?.scenes ?? []).map((_, i) => i),
+  );
 
   const gridLayout = useMemo(
     () => getGridLayout(project?.scene_count || 9, project?.aspect_ratio),
@@ -103,13 +156,45 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
     if (!project) return '';
     return buildSequencePrompt({
       scenes: project.scenes,
+      activeIdxs,
       durationSec: duration,
       rows: gridLayout.rows,
       cols: gridLayout.cols,
       language,
       style: project.style,
+      preset,
     });
-  }, [project, duration, gridLayout, language]);
+  }, [project, activeIdxs, duration, gridLayout, language, preset]);
+
+  // preset / activeIdxs / duration 변경 시 수동 편집을 초기화 (사용자가 명시적으로 편집한 게 아니면 새 자동값 표시)
+  useEffect(() => { setManualPrompt(null); }, [preset, activeIdxs, duration]);
+
+  const applyPreset = (p: SequencePreset) => {
+    setPreset(p);
+    setPresetOpen(false);
+    if (!project) return;
+    // compressed 는 씬 자동 축약 (10s 안에 밀도 완화)
+    if (p === 'compressed') {
+      const total = project.scenes.length;
+      const target = Math.min(5, Math.max(3, Math.floor(duration / 2)));
+      setActiveIdxs(pickEvenlySpaced(total, target));
+    } else {
+      // 나머지는 전체 씬 사용
+      setActiveIdxs(project.scenes.map((_, i) => i));
+    }
+  };
+
+  const toggleScene = (idx: number) => {
+    setActiveIdxs((cur) => {
+      if (cur.includes(idx)) return cur.filter((i) => i !== idx);
+      return [...cur, idx].sort((a, b) => a - b);
+    });
+  };
+
+  const resetActive = () => {
+    if (!project) return;
+    setActiveIdxs(project.scenes.map((_, i) => i));
+  };
 
   const prompt = manualPrompt ?? autoPrompt;
   const cost = videoStudioCreditCost({ durationSec: duration });
@@ -242,6 +327,97 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
             )}
           </div>
 
+          {/* Preset selector */}
+          <div>
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
+              프롬프트 방식
+            </label>
+            <div className="mt-1.5 relative">
+              <button
+                onClick={() => setPresetOpen((v) => !v)}
+                disabled={busy}
+                className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-left flex items-center justify-between gap-2 text-sm"
+              >
+                <span className="flex items-center gap-2 font-bold text-zinc-800">
+                  {React.createElement(PRESET_INFO[preset].icon, { size: 14 })}
+                  {PRESET_INFO[preset].label}
+                </span>
+                <ChevronDown size={16} className={`text-zinc-400 transition-transform ${presetOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {presetOpen && (
+                <div className="absolute z-20 mt-1 w-full rounded-xl border border-zinc-200 bg-white shadow-lg overflow-hidden">
+                  {(Object.keys(PRESET_INFO) as SequencePreset[]).map((k) => {
+                    const info = PRESET_INFO[k];
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => applyPreset(k)}
+                        className={`w-full text-left px-3 py-2.5 hover:bg-primary/5 flex items-start gap-2 border-b border-zinc-100 last:border-b-0 ${
+                          k === preset ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        {React.createElement(info.icon, { size: 14 })}
+                        <div className="flex-1">
+                          <div className="text-xs font-bold text-zinc-800">{info.label}</div>
+                          <div className="text-[11px] text-zinc-500 mt-0.5">{info.hint}</div>
+                        </div>
+                        {k === preset && <Check size={12} className="text-primary mt-1" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+              {preset === 'compressed' && '핵심 씬만 자동 선택돼 밀도가 낮아집니다. 아래 씬 목록에서 세밀 조정 가능.'}
+              {preset === 'flow' && '시간 세그먼트 없이 씬 흐름만 전달 — AI 가 밀도를 배분합니다.'}
+              {preset === 'cinematic' && '전문 영상 느낌의 트랜지션·조명·무드 지시문이 프롬프트 상단에 추가됩니다.'}
+              {preset === 'timed' && '각 씬을 정확한 초 구간에 매핑 — 씬 수가 많으면 씬당 시간이 짧아집니다.'}
+            </p>
+          </div>
+
+          {/* Scene selection */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
+                포함할 씬 ({activeIdxs.length}/{project.scenes.length})
+              </label>
+              <button
+                onClick={resetActive}
+                disabled={busy || activeIdxs.length === project.scenes.length}
+                className="text-[11px] font-bold text-primary hover:underline disabled:opacity-40 disabled:no-underline flex items-center gap-1"
+              >
+                <RefreshCw size={11} /> 전체 선택
+              </button>
+            </div>
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-9 gap-1.5">
+              {project.scenes.map((s, i) => {
+                const active = activeIdxs.includes(i);
+                return (
+                  <button
+                    key={s.id ?? i}
+                    onClick={() => toggleScene(i)}
+                    disabled={busy}
+                    title={s.image_prompt_en?.slice(0, 80) ?? `씬 ${i + 1}`}
+                    className={`aspect-square rounded-lg text-xs font-black border-2 transition-all relative ${
+                      active
+                        ? 'border-primary bg-primary text-white shadow-[0_2px_8px_rgba(0,80,191,0.25)]'
+                        : 'border-zinc-200 bg-white text-zinc-400 hover:border-primary/40'
+                    }`}
+                  >
+                    {i + 1}
+                    {!active && (
+                      <XIcon size={10} className="absolute top-0.5 right-0.5 text-zinc-400" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {activeIdxs.length === 0 && (
+              <p className="mt-1.5 text-[11px] text-red-600 font-bold">최소 1개 씬은 선택해야 합니다.</p>
+            )}
+          </div>
+
           {/* Sequence prompt */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -265,7 +441,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
               className="w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-xs font-mono resize-none leading-relaxed"
             />
             <div className="mt-1 text-[10px] text-zinc-400 flex items-center gap-1">
-              <Wand2 size={10} /> Phase 4 에서 재생성 프리셋(시간대명시 / 시간없이흐름 / 핵심씬축약 / 시네마틱) 추가 예정
+              <Wand2 size={10} /> 프리셋을 바꾸거나 씬을 토글하면 자동 재생성 · 수동 편집도 가능
             </div>
           </div>
 
@@ -282,7 +458,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
             </p>
             <button
               onClick={generate}
-              disabled={busy || !prompt.trim()}
+              disabled={busy || !prompt.trim() || activeIdxs.length === 0}
               className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {busy ? (
