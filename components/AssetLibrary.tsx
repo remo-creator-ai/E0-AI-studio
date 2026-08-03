@@ -12,22 +12,19 @@ import {
 
   type Asset, type AssetType, type AssetFile, type NewAssetFile,
 } from '../services/assetService';
-import {
-  listVideoHistory, deleteVideoHistoryItem,
-  type VideoHistoryItem,
-} from '../services/videoHistoryService';
-
 const TYPE_BADGE: Record<AssetType, string> = {
   character: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]',
   product:   'bg-emerald-50 text-emerald-700 border-emerald-200',
   logo:      'bg-amber-50 text-amber-700 border-amber-200',
   image:     'bg-zinc-100 text-zinc-600 border-zinc-200',
+  video:     'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-// 자산 보관함 필터: 기존 이미지 카테고리 + 'video' 가상 필터 (video_generation_history 소스).
-// 오디오는 향후 tts_generation_history 소스로 'audio' 추가 예정.
-type LibraryFilter = AssetType | 'all' | 'video';
-const LIBRARY_FILTERS: LibraryFilter[] = ['all', ...ASSET_TYPES, 'video'];
+// 자산 보관함 필터: user_assets 의 asset_type 그대로 (video 포함).
+// video 는 사용자가 VideoStudio 에서 "보관함 저장" 을 명시적으로 눌러야만 여기 표시됨.
+// (video_generation_history 는 별개 · VideoStudio 내부 히스토리 스트립에서만 접근)
+type LibraryFilter = AssetType | 'all';
+const LIBRARY_FILTERS: LibraryFilter[] = ['all', ...ASSET_TYPES];
 
 /* ============================= Library ============================= */
 export const AssetLibrary: React.FC = () => {
@@ -36,8 +33,6 @@ export const AssetLibrary: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState<LibraryFilter>('all');
-  const [videos, setVideos] = useState<VideoHistoryItem[]>([]);
-  const { confirm } = useModal();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'recent' | 'name'>('recent');
   const [showCreate, setShowCreate] = useState(false);
@@ -46,45 +41,22 @@ export const AssetLibrary: React.FC = () => {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    if (type === 'video') {
-      // 동영상 필터: video_generation_history 를 소스로 사용
-      const items = await listVideoHistory(user.id);
-      const filtered = search
-        ? items.filter((v) => v.prompt.toLowerCase().includes(search.toLowerCase()))
-        : items;
-      setVideos(sort === 'name' ? [...filtered].sort((a, b) => a.prompt.localeCompare(b.prompt)) : filtered);
-      setAssets([]);
-    } else {
-      // 이미지 필터: user_assets
-      setAssets(await listAssets(user.id, { type: type === 'all' ? 'all' : type, search, sort }));
-      setVideos([]);
-    }
+    setAssets(await listAssets(user.id, { type, search, sort }));
     setLoading(false);
   }, [user, type, search, sort]);
   useEffect(() => { load(); }, [load]);
 
-  const removeVideo = async (item: VideoHistoryItem) => {
-    const ok = await confirm('이 동영상을 삭제할까요? (30일 자동 삭제와 무관하게 즉시 제거됩니다)');
-    if (!ok) return;
-    await deleteVideoHistoryItem(item.id, item.storage_path);
-    setVideos((cur) => cur.filter((v) => v.id !== item.id));
-  };
-
-  const typeChip = (val: LibraryFilter) => {
-    // 동영상 라벨은 i18n 이 없어도 하드코딩으로 노출
-    const label = val === 'video' ? '동영상' : t(`assets.types.${val}`);
-    return (
-      <button
-        key={val}
-        onClick={() => setType(val)}
-        className={`px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${
-          type === val ? 'bg-primary border-primary text-white' : 'bg-white border-zinc-200 text-zinc-600 hover:border-primary/40'
-        }`}
-      >
-        {label}
-      </button>
-    );
-  };
+  const typeChip = (val: LibraryFilter) => (
+    <button
+      key={val}
+      onClick={() => setType(val)}
+      className={`px-3.5 py-1.5 rounded-full text-sm font-bold border transition-all ${
+        type === val ? 'bg-primary border-primary text-white' : 'bg-white border-zinc-200 text-zinc-600 hover:border-primary/40'
+      }`}
+    >
+      {t(`assets.types.${val}`)}
+    </button>
+  );
 
   return (
     <div className="space-y-6">
@@ -126,50 +98,6 @@ export const AssetLibrary: React.FC = () => {
       {/* Grid / Empty */}
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
-      ) : type === 'video' ? (
-        // ── 동영상 카드 그리드 (video_generation_history 소스) ──
-        videos.length === 0 ? (
-          <div className="text-center py-20">
-            <Package size={40} className="text-zinc-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-zinc-500">아직 생성한 동영상이 없어요</p>
-            <p className="text-xs text-zinc-400 mt-1">사이드바 "동영상 생성" 에서 만들 수 있어요</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {videos.map((v) => (
-              <div key={v.id} className="group relative bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200">
-                <video
-                  src={v.url}
-                  muted
-                  playsInline
-                  loop
-                  onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
-                  onMouseLeave={(e) => { const el = e.target as HTMLVideoElement; el.pause(); el.currentTime = 0; }}
-                  className="w-full aspect-video object-contain"
-                />
-                <div className="absolute top-1.5 left-1.5 flex gap-1">
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold border bg-purple-50 text-purple-700 border-purple-200">동영상</span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-black/60 text-white">{v.duration_sec}s</span>
-                </div>
-                <button
-                  onClick={() => removeVideo(v)}
-                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                  title="삭제"
-                >
-                  <Trash2 size={11} />
-                </button>
-                <div className="p-2 bg-white">
-                  <p className="text-[11px] text-zinc-700 line-clamp-2 leading-snug" title={v.prompt}>
-                    {v.prompt}
-                  </p>
-                  <p className="mt-1 text-[10px] text-zinc-400">
-                    {new Date(v.created_at).toLocaleDateString('ko-KR')}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
       ) : assets.length === 0 ? (
         <div className="text-center py-20">
           <Package size={40} className="text-zinc-300 mx-auto mb-3" />
@@ -184,9 +112,21 @@ export const AssetLibrary: React.FC = () => {
               className="text-left bg-white border border-zinc-150 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all active:scale-[0.98]"
             >
               <div className="aspect-square bg-zinc-100 flex items-center justify-center overflow-hidden">
-                {a.primary_url
-                  ? <img src={a.primary_url} alt={a.name} className="w-full h-full object-contain" />
-                  : <ImagePlus size={28} className="text-zinc-300" />}
+                {!a.primary_url ? (
+                  <ImagePlus size={28} className="text-zinc-300" />
+                ) : a.asset_type === 'video' ? (
+                  <video
+                    src={a.primary_url}
+                    muted
+                    playsInline
+                    loop
+                    onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                    onMouseLeave={(e) => { const el = e.target as HTMLVideoElement; el.pause(); el.currentTime = 0; }}
+                    className="w-full h-full object-contain bg-black"
+                  />
+                ) : (
+                  <img src={a.primary_url} alt={a.name} className="w-full h-full object-contain" />
+                )}
               </div>
               <div className="p-3">
                 <div className="flex items-center gap-1.5">

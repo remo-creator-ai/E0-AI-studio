@@ -653,7 +653,8 @@
       "character": "캐릭터",
       "product": "제품",
       "logo": "로고",
-      "image": "일반 이미지"
+      "image": "일반 이미지",
+      "video": "동영상"
     },
     "create": {
       "title": "자산 추가",

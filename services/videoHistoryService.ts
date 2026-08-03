@@ -139,14 +139,24 @@ export async function saveVideoHistory(
 }
 
 // ================= 목록 =================
+/**
+ * 히스토리 페이지네이션 조회.
+ *   offset: 건너뛸 개수 (0 = 최신부터)
+ *   limit:  가져올 개수 (기본 20)
+ * 100편까지 저장되어도 초기엔 20편만 로드 → 초기 렌더 부하 완화.
+ *
+ * signed URL 은 배치 발급(createSignedUrls) 로 요청 1회에 처리.
+ * 개별 발급은 20개면 20회 왕복이라 초기 로딩이 눈에 띄게 느려진다.
+ */
 export async function listVideoHistory(
   ownerId: string,
-  limit = VIDEO_HISTORY_MAX_PER_USER,
+  limit = 20,
+  offset = 0,
 ): Promise<VideoHistoryItem[]> {
   if (MOCK_MODE) {
     return mockRows()
       .filter((r) => r.owner_id === ownerId)
-      .slice(0, limit)
+      .slice(offset, offset + limit)
       .map(toItemMock);
   }
   const { data, error } = await supabase
@@ -154,14 +164,33 @@ export async function listVideoHistory(
     .select('*')
     .eq('owner_id', ownerId)
     .order('created_at', { ascending: false })
-    .limit(limit);
-  if (error || !data) return [];
-  return Promise.all(
-    data.map(async (r) => ({
-      ...(r as unknown as VideoHistoryItem),
-      url: await signedUrl(r.storage_path),
-    })),
-  );
+    .range(offset, offset + limit - 1);
+  if (error || !data || data.length === 0) return [];
+
+  // signed URL 배치 발급 (1회 요청). 개별 loop 대비 왕복 대폭 감소.
+  const paths = data.map((r) => (r as unknown as { storage_path: string }).storage_path);
+  const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, SIGNED_TTL);
+  const urlMap = new Map<string, string>();
+  (signed ?? []).forEach((s) => {
+    if (s.path && s.signedUrl) urlMap.set(s.path, s.signedUrl);
+  });
+
+  return data.map((r) => ({
+    ...(r as unknown as VideoHistoryItem),
+    url: urlMap.get((r as unknown as { storage_path: string }).storage_path) ?? '',
+  }));
+}
+
+/** 전체 개수만 반환 (더 보기 버튼 활성/비활성 판정용, 가벼운 count 쿼리). */
+export async function countVideoHistory(ownerId: string): Promise<number> {
+  if (MOCK_MODE) {
+    return mockRows().filter((r) => r.owner_id === ownerId).length;
+  }
+  const { count } = await supabase
+    .from('video_generation_history')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', ownerId);
+  return count ?? 0;
 }
 
 // ================= 개별 삭제 =================

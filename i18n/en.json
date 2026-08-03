@@ -653,7 +653,8 @@
       "character": "Character",
       "product": "Product",
       "logo": "Logo",
-      "image": "Image"
+      "image": "Image",
+      "video": "Video"
     },
     "create": {
       "title": "Add Asset",

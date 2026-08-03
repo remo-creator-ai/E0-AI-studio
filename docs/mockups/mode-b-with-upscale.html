@@ -26,7 +26,7 @@
 
     /* ── 씬 카드 ── */
     .scene-card {
-      scroll-margin-top: 140px;           /* sticky 컨트롤 바(125px) + 여백 */
+      scroll-margin-top: 155px;           /* sticky 컨트롤 바(137px) + 여백 */
       transition: box-shadow .25s, border-color .25s, transform .25s;
     }
     .scene-card.is-active {
@@ -127,16 +127,40 @@
     .status-dot.failed  { background: #EF4444; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-    /* ── 상단 씬 레일 ── */
+    /* ── 상단 씬 레일 (썸네일 클릭으로 이동) ── */
     .rail-chip {
-      flex: none; display:flex; align-items:center; gap:7px;
-      padding: 7px 14px; border-radius: 999px;
+      flex: none; display:flex; align-items:center; gap: 9px;
+      padding: 5px 13px 5px 5px; border-radius: 14px;
       border: 2px solid #E2E7EE; background:#fff;
       font-size: 13px; font-weight: 900; color:#475569;
       cursor: pointer; transition: all .18s; white-space: nowrap;
     }
     .rail-chip:hover { border-color:#B9C4D3; }
-    .rail-chip.is-active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .rail-chip:hover .rail-thumb { transform: scale(1.04); }
+    .rail-chip.is-active {
+      border-color: var(--primary); background: var(--primary-light); color: var(--primary);
+    }
+    .rail-chip.is-active .rail-thumb { box-shadow: inset 0 0 0 2px var(--primary); }
+
+    .rail-thumb {
+      position: relative; flex: none;
+      width: 62px; height: 35px; border-radius: 9px; overflow: hidden;
+      transition: transform .18s;
+      background: repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 6px, #EFF2F6 6px, #EFF2F6 12px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 900; color: #8A94A4; letter-spacing: .02em;
+    }
+    /* 썸네일 위 진행률 (업스케일 / 영상 생성 중) */
+    .rail-thumb > b {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+      background: rgba(15,23,42,.14);
+    }
+    .rail-thumb > b > i { display: block; height: 100%; }
+    /* 실패 표시 */
+    .rail-thumb.is-failed { box-shadow: inset 0 0 0 2px #EF4444; }
+    .rail-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1; }
+    .rail-state { font-size: 10px; font-weight: 800; color: #94A3B8; }
+    .rail-chip.is-active .rail-state { color: #3B7FD4; }
 
     /* ── 플로팅 위/아래 네비 ── */
     .nav-fab {
@@ -230,12 +254,36 @@
         <div class="mt-3 flex items-center gap-2">
           <span class="text-[11px] font-black text-zinc-400 uppercase tracking-widest shrink-0 hidden md:inline">SCENES</span>
           <div class="flex-1 flex items-center gap-2 overflow-x-auto pb-1" id="rail">
-            <button class="rail-chip" data-jump="1"><span class="status-dot done"></span>씬 1</button>
-            <button class="rail-chip" data-jump="2"><span class="status-dot pending"></span>씬 2</button>
-            <button class="rail-chip" data-jump="3"><span class="status-dot working"></span>씬 3</button>
-            <button class="rail-chip" data-jump="4"><span class="status-dot pending"></span>씬 4</button>
-            <button class="rail-chip" data-jump="5"><span class="status-dot working"></span>씬 5</button>
-            <button class="rail-chip" data-jump="6"><span class="status-dot failed"></span>씬 6</button>
+            <button class="rail-chip" data-jump="1" title="씬 1 · 영상 완료">
+              <span class="rail-thumb">SCENE 1</span>
+              <span class="rail-label"><span>씬 1</span><span class="rail-state">영상 완료</span></span>
+              <span class="status-dot done"></span>
+            </button>
+            <button class="rail-chip" data-jump="2" title="씬 2 · 업스케일 필요">
+              <span class="rail-thumb">SCENE 2</span>
+              <span class="rail-label"><span>씬 2</span><span class="rail-state">업스케일 필요</span></span>
+              <span class="status-dot pending"></span>
+            </button>
+            <button class="rail-chip" data-jump="3" title="씬 3 · 업스케일 60%">
+              <span class="rail-thumb">SCENE 3<b><i style="width:60%; background:#2563EB;"></i></b></span>
+              <span class="rail-label"><span>씬 3</span><span class="rail-state">업스케일 60%</span></span>
+              <span class="status-dot working"></span>
+            </button>
+            <button class="rail-chip" data-jump="4" title="씬 4 · 영상 대기">
+              <span class="rail-thumb">SCENE 4</span>
+              <span class="rail-label"><span>씬 4</span><span class="rail-state">영상 대기</span></span>
+              <span class="status-dot pending"></span>
+            </button>
+            <button class="rail-chip" data-jump="5" title="씬 5 · 영상 생성 45%">
+              <span class="rail-thumb">SCENE 5<b><i style="width:45%; background:#0050BF;"></i></b></span>
+              <span class="rail-label"><span>씬 5</span><span class="rail-state">영상 45%</span></span>
+              <span class="status-dot working"></span>
+            </button>
+            <button class="rail-chip" data-jump="6" title="씬 6 · 실패">
+              <span class="rail-thumb is-failed">SCENE 6</span>
+              <span class="rail-label"><span>씬 6</span><span class="rail-state">실패</span></span>
+              <span class="status-dot failed"></span>
+            </button>
           </div>
           <span class="shrink-0 px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-black text-zinc-500 flex items-center gap-1.5">
             <i class="lucide-languages text-[11px]"></i> 프롬프트 · 한국어
@@ -773,7 +821,7 @@
     const navUp = document.getElementById('navUp');
     const navDown = document.getElementById('navDown');
 
-    const HEADER = 140;          // sticky 컨트롤 바(125px) + 여백
+    const HEADER = 155;          // sticky 컨트롤 바(137px) + 여백
     let animating = false;
 
     // 브라우저 설정과 무관하게 항상 부드럽게 이동 (scroll-behavior:smooth 미지원 대비)

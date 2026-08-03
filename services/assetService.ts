@@ -7,7 +7,7 @@
 import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
 
-export type AssetType = 'character' | 'product' | 'logo' | 'image';
+export type AssetType = 'character' | 'product' | 'logo' | 'image' | 'video';
 export type FileRole = 'primary' | 'reference';
 
 export interface AssetFile {
@@ -42,9 +42,11 @@ export interface NewAssetFile {
   role: FileRole;
 }
 
-export const ASSET_TYPES: AssetType[] = ['character', 'product', 'logo', 'image'];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (ASSET-06)
+export const ASSET_TYPES: AssetType[] = ['character', 'product', 'logo', 'image', 'video'];
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 이미지 상한 10MB (ASSET-06)
+export const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 동영상 상한 100MB (037 마이그레이션과 일치)
 export const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
+export const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/webm'];
 const BUCKET = 'user-assets';
 const SIGNED_TTL = 3600;
 
@@ -54,8 +56,15 @@ export function maxReferenceCount(type: AssetType): number {
 }
 
 export function validateFile(file: File): string | null {
-  if (!ALLOWED_MIME.includes(file.type)) return 'PNG·JPEG·WebP 형식만 업로드할 수 있습니다.';
-  if (file.size > MAX_FILE_SIZE) return '파일당 최대 10MB까지 업로드할 수 있습니다.';
+  // 이미지 · 동영상 mime 을 모두 허용. 동영상은 사이즈 상한이 훨씬 큼.
+  const isImage = ALLOWED_MIME.includes(file.type);
+  const isVideo = ALLOWED_VIDEO_MIME.includes(file.type);
+  if (!isImage && !isVideo) return 'PNG·JPEG·WebP 이미지 또는 MP4·WebM 동영상만 업로드할 수 있습니다.';
+  const limit = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+  if (file.size > limit) {
+    const mb = Math.floor(limit / 1024 / 1024);
+    return `파일당 최대 ${mb}MB까지 업로드할 수 있습니다.`;
+  }
   return null;
 }
 

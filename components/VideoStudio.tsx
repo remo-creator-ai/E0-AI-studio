@@ -30,11 +30,14 @@ import {
   type VideoAspect, type ConcreteAspect, type VideoDuration, type GenerateVideoFailure,
 } from '../services/videoStudioService';
 import {
-  saveVideoHistory, listVideoHistory, deleteVideoHistoryItem,
+  saveVideoHistory, listVideoHistory, deleteVideoHistoryItem, countVideoHistory,
   type VideoHistoryItem,
 } from '../services/videoHistoryService';
+import { saveVideoAsAsset } from '../services/videoLibraryService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { useVideoGenStore, type VideoJob } from '../store/videoGenStore';
+
+const HISTORY_PAGE_SIZE = 20;
 
 const MAX_FRAME_MB = 10;
 const ACCEPT_MIME = ['image/png', 'image/jpeg', 'image/webp'];
@@ -81,52 +84,98 @@ interface FrameSlotProps {
   disabled?: boolean;
 }
 
-/** 결과 스택의 한 카드 — 생성중 / 완료 / 실패 상태를 하나의 컴포넌트로 처리 */
-interface JobCardProps {
-  job: VideoJob;
-  onRemove: () => void;
-  onRemixPrompt: () => void;
-  /** 같은 파라미터로 새 생성 (사용자 요청 "다시 생성"). */
-  onRegenerate?: () => void;
-  /** 히스토리에서 삭제 (Storage + row). */
-  onDeleteHistory?: () => void;
-  /** 자산 보관함에 저장 — 향후 asset_type='video' 지원 후 활성화. */
-  onSaveToLibrary?: () => void;
+/** 중앙 포커스 뷰
+ *
+ *  단일 컨텐츠 표시: 진행 중 잡 · 히스토리 항목 · 빈 상태 중 하나.
+ *  프롬프트는 항상 볼 수 있게 하단에 노출 (복사 가능).
+ *  액션: [다시 생성] · [다운로드] · [보관함 저장] · [삭제]
+ */
+interface FocusViewProps {
+  job?: VideoJob;
+  historyItem?: VideoHistoryItem;
+  history: VideoHistoryItem[];
+  hasActiveJob: boolean;
+  onRegenerate: (prompt: string, aspect: ConcreteAspect, durationSec: VideoDuration) => void;
+  onCopyPrompt: (text: string) => void;
+  onSaveToLibrary: (item: VideoHistoryItem) => void;
+  onDeleteHistory: (item: VideoHistoryItem) => void;
 }
-const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt, onRegenerate, onDeleteHistory, onSaveToLibrary }) => {
-  const promptPreview = job.prompt.length > 80 ? job.prompt.slice(0, 80) + '…' : job.prompt;
+const FocusView: React.FC<FocusViewProps> = ({
+  job, historyItem, history, hasActiveJob,
+  onRegenerate, onCopyPrompt, onSaveToLibrary, onDeleteHistory,
+}) => {
+  // 화면에 표시할 통합 데이터. 잡이 우선(진행 중일 수 있음), 없으면 히스토리.
+  const source: {
+    id: string;
+    prompt: string;
+    aspect: ConcreteAspect;
+    durationSec: VideoDuration;
+    status: 'generating' | 'done' | 'failed';
+    videoUrl?: string;
+    error?: string;
+    historyItem?: VideoHistoryItem;
+  } | null = job
+    ? {
+        id: job.id,
+        prompt: job.prompt,
+        aspect: job.aspect,
+        durationSec: job.durationSec,
+        status: job.status,
+        videoUrl: job.videoUrl,
+        error: job.error,
+        // 잡이 완료된 후 히스토리에 연결되어 있으면 보관함 저장/삭제 대상.
+        historyItem: job.historyId ? history.find((h) => h.id === job.historyId) : undefined,
+      }
+    : historyItem
+      ? {
+          id: historyItem.id,
+          prompt: historyItem.prompt,
+          aspect: historyItem.aspect as ConcreteAspect,
+          durationSec: (historyItem.duration_sec === 10 ? 10 : 5) as VideoDuration,
+          status: 'done' as const,
+          videoUrl: historyItem.url,
+          historyItem,
+        }
+      : null;
+
+  if (!source) {
+    return (
+      <div className="relative w-full rounded-3xl aspect-video flex items-center justify-center border-2 border-dashed border-zinc-200 bg-transparent">
+        <div className="text-center space-y-2">
+          <Video className="w-12 h-12 text-zinc-300 mx-auto" />
+          <p className="text-zinc-400 text-sm">프롬프트를 입력하고 생성 버튼을 눌러주세요</p>
+          {hasActiveJob && <p className="text-primary text-xs">백그라운드 생성 중...</p>}
+        </div>
+      </div>
+    );
+  }
+
+  const isSaved = !!source.historyItem?.saved_asset_id;
 
   return (
     <div className="relative w-full rounded-3xl overflow-hidden border border-zinc-200 bg-white">
       {/* 상단 메타 */}
-      <div className="px-4 py-2.5 flex items-center justify-between gap-3 border-b border-zinc-100">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`shrink-0 w-2 h-2 rounded-full ${
-            job.status === 'generating' ? 'bg-primary animate-pulse'
-            : job.status === 'done' ? 'bg-emerald-500'
-            : 'bg-red-500'
-          }`} />
-          <span className="text-xs font-black text-zinc-800">
-            {job.status === 'generating' ? '생성 중' : job.status === 'done' ? '완료' : '실패'}
+      <div className="px-4 py-2.5 flex items-center gap-3 border-b border-zinc-100">
+        <span className={`shrink-0 w-2 h-2 rounded-full ${
+          source.status === 'generating' ? 'bg-primary animate-pulse'
+          : source.status === 'done' ? 'bg-emerald-500'
+          : 'bg-red-500'
+        }`} />
+        <span className="text-xs font-black text-zinc-800">
+          {source.status === 'generating' ? '생성 중' : source.status === 'done' ? '완료' : '실패'}
+        </span>
+        <span className="text-[11px] text-zinc-500 font-mono">
+          {source.aspect} · {source.durationSec}s
+        </span>
+        {isSaved && (
+          <span className="ml-auto px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+            보관함 저장됨
           </span>
-          <span className="text-[11px] text-zinc-500 font-mono shrink-0">
-            {job.aspect} · {job.durationSec}s
-          </span>
-          <span className="text-[11px] text-zinc-400 truncate">
-            {promptPreview}
-          </span>
-        </div>
-        <button
-          onClick={onRemove}
-          className="shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700"
-          title="이 카드 닫기 (히스토리에는 남아 있어요)"
-        >
-          <X size={14} />
-        </button>
+        )}
       </div>
 
       {/* 본체 */}
-      {job.status === 'generating' && (
+      {source.status === 'generating' && (
         <div className="bg-zinc-900 aspect-video flex items-center justify-center">
           <div className="text-center space-y-3">
             <Loader2 className="w-10 h-10 text-white/60 mx-auto animate-spin" />
@@ -135,64 +184,76 @@ const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt, onRegen
           </div>
         </div>
       )}
-      {job.status === 'done' && job.videoUrl && (
-        <>
-          <div className="bg-zinc-900 flex items-center justify-center">
-            <video
-              src={job.videoUrl}
-              controls
-              autoPlay={false}
-              loop
-              className="w-full max-h-[60vh] object-contain"
-            />
-          </div>
-          <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-zinc-100">
-            <a
-              href={job.videoUrl}
-              download={`sodam-video-${job.id}.mp4`}
-              className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
-            >
-              <Download size={14} /> 다운로드
-            </a>
-            {onSaveToLibrary && (
-              <button
-                onClick={onSaveToLibrary}
-                className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
-              >
-                <Package size={14} /> 보관함 저장
-              </button>
-            )}
-            {onRegenerate && (
-              <button
-                onClick={onRegenerate}
-                className="px-3 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-xs font-black text-white flex items-center gap-1.5"
-              >
-                <RefreshCw size={14} /> 다시 생성
-              </button>
-            )}
-            <button
-              onClick={onRemixPrompt}
-              className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
-            >
-              <Wand2 size={14} /> 프롬프트 복원
-            </button>
-            {onDeleteHistory && (
-              <button
-                onClick={onDeleteHistory}
-                className="ml-auto px-3 py-2 rounded-xl bg-white border border-red-200 hover:bg-red-50 text-xs font-bold text-red-600 flex items-center gap-1.5"
-              >
-                <Trash2 size={14} /> 히스토리 삭제
-              </button>
-            )}
-          </div>
-        </>
+      {source.status === 'done' && source.videoUrl && (
+        <div className="bg-zinc-900 flex items-center justify-center">
+          <video
+            src={source.videoUrl}
+            controls
+            autoPlay={false}
+            loop
+            className="w-full max-h-[60vh] object-contain"
+          />
+        </div>
       )}
-      {job.status === 'failed' && (
+      {source.status === 'failed' && (
         <div className="bg-red-50 aspect-video flex items-center justify-center">
           <div className="text-center space-y-2 px-6">
             <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
-            <p className="text-red-700 text-sm font-bold">{job.error ?? '생성 실패'}</p>
+            <p className="text-red-700 text-sm font-bold">{source.error ?? '생성 실패'}</p>
           </div>
+        </div>
+      )}
+
+      {/* 프롬프트 (항상 노출, 복사 가능) */}
+      <div className="px-4 pt-3">
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+            프롬프트
+          </label>
+          <button
+            onClick={() => onCopyPrompt(source.prompt)}
+            className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
+          >
+            📋 복사
+          </button>
+        </div>
+        <div className="rounded-xl bg-zinc-50 border border-zinc-100 px-3 py-2 text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
+          {source.prompt}
+        </div>
+      </div>
+
+      {/* 액션 버튼 */}
+      {source.status === 'done' && source.videoUrl && (
+        <div className="px-4 py-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => onRegenerate(source.prompt, source.aspect, source.durationSec)}
+            className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-xs font-black text-white flex items-center gap-1.5"
+          >
+            <RefreshCw size={14} /> 다시 생성
+          </button>
+          <a
+            href={source.videoUrl}
+            download={`sodam-video-${source.id}.mp4`}
+            className="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
+          >
+            <Download size={14} /> 다운로드
+          </a>
+          {source.historyItem && !isSaved && (
+            <button
+              onClick={() => onSaveToLibrary(source.historyItem!)}
+              className="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
+            >
+              <Package size={14} /> 보관함 저장
+            </button>
+          )}
+          {source.historyItem && (
+            <button
+              onClick={() => onDeleteHistory(source.historyItem!)}
+              className="ml-auto px-4 py-2 rounded-xl bg-white border border-red-200 hover:bg-red-50 text-xs font-bold text-red-600 flex items-center gap-1.5"
+            >
+              <Trash2 size={14} /> 히스토리 삭제
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -280,22 +341,42 @@ export const VideoStudio: React.FC = () => {
   // 보관함 픽커 상태 — 'start' | 'end' | null
   const [libraryTarget, setLibraryTarget] = useState<'start' | 'end' | null>(null);
 
-  // 히스토리
-  const [history, setHistory] = useState<VideoHistoryItem[] | null>(null);
+  // 히스토리 (페이지네이션)
+  const [history, setHistory] = useState<VideoHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyTotal, setHistoryTotal] = useState(0);
 
-  // 전역 생성 큐 (Kling 스타일) — 이탈해도 백그라운드로 계속, 결과는 스택으로 축적
+  // 전역 생성 큐 (이탈해도 백그라운드로 계속)
   const jobs = useVideoGenStore((s) => s.jobs);
   const addJob = useVideoGenStore((s) => s.addJob);
   const updateJob = useVideoGenStore((s) => s.updateJob);
   const removeJob = useVideoGenStore((s) => s.removeJob);
   const hasActiveJob = jobs.some((j) => j.status === 'generating');
 
-  // 결과 스택 자동 스크롤 (새 카드가 뷰포트에 들어오도록)
-  const stackEndRef = useRef<HTMLDivElement>(null);
+  // 중앙 포커스 — 현재 표시할 대상 (히스토리 아이템 또는 진행 중 잡)
+  //   focusKind:  'job' | 'history' | null
+  //   focusId  :  job id 또는 history id
+  const [focusKind, setFocusKind] = useState<'job' | 'history' | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const focusJob = focusKind === 'job' ? jobs.find((j) => j.id === focusId) : undefined;
+  const focusHistory = focusKind === 'history' ? history.find((h) => h.id === focusId) : undefined;
+
+  // 새 잡이 생기면 자동으로 포커스 이동 (마지막에 시작한 것 우선)
   useEffect(() => {
-    if (jobs.length > 0) stackEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [jobs.length]);
+    if (jobs.length === 0) return;
+    const latest = jobs[jobs.length - 1];
+    // 사용자가 히스토리 하나에 포커스 두고 있으면 방해하지 않음.
+    // 새 잡이 진행 중이면서 포커스가 없거나 완료된 잡을 보고 있을 때만 이동.
+    if (focusKind !== 'history' && (focusKind !== 'job' || !jobs.some((j) => j.id === focusId))) {
+      setFocusKind('job');
+      setFocusId(latest.id);
+    }
+  }, [jobs, focusKind, focusId]);
+
+  // 저장 다이얼로그 상태
+  const [saveTarget, setSaveTarget] = useState<VideoHistoryItem | null>(null);
+  const [saveName, setSaveName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // 프롬프트 자동 추천 상태
   const [suggesting, setSuggesting] = useState(false);
@@ -303,15 +384,30 @@ export const VideoStudio: React.FC = () => {
   const cost = videoStudioCreditCost({ durationSec: duration, hasEndFrame: !!endFrame });
 
   const loadHistory = useCallback(async () => {
-    if (!user?.id) { setHistory([]); return; }
+    if (!user?.id) { setHistory([]); setHistoryTotal(0); return; }
     setHistoryLoading(true);
     try {
-      const items = await listVideoHistory(user.id);
+      const [items, total] = await Promise.all([
+        listVideoHistory(user.id, HISTORY_PAGE_SIZE, 0),
+        countVideoHistory(user.id),
+      ]);
       setHistory(items);
+      setHistoryTotal(total);
     } finally {
       setHistoryLoading(false);
     }
   }, [user?.id]);
+
+  const loadMoreHistory = useCallback(async () => {
+    if (!user?.id) return;
+    setHistoryLoading(true);
+    try {
+      const more = await listVideoHistory(user.id, HISTORY_PAGE_SIZE, history.length);
+      setHistory((cur) => [...cur, ...more]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user?.id, history.length]);
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
@@ -450,31 +546,51 @@ export const VideoStudio: React.FC = () => {
     }
   };
 
-  const remixFromHistory = (item: VideoHistoryItem) => {
-    // 1) 폼 필드를 되채움 (사용자가 그대로 편집해서 재생성 가능)
-    setPrompt(item.prompt);
-    setAspect(item.aspect as VideoAspect);
-    setDuration((item.duration_sec === 10 ? 10 : 5) as VideoDuration);
-    // 2) 중앙 스택에도 완료 상태로 추가해서 즉시 재생 가능하게 함
-    //    (이전 UI 는 중앙에서 재생됐음 — 그 흐름 복원)
-    const jobId = crypto.randomUUID();
-    addJob({
-      id: jobId,
-      prompt: item.prompt,
-      aspect: item.aspect as ConcreteAspect,
-      durationSec: (item.duration_sec === 10 ? 10 : 5) as VideoDuration,
-      hasStartFrame: item.has_start_frame,
-      hasEndFrame: item.has_end_frame,
-    });
-    // addJob 은 status=generating 으로 넣으므로 즉시 done 으로 갱신
-    updateJob(jobId, { status: 'done', videoUrl: item.url, historyId: item.id });
+  const focusOnHistory = (item: VideoHistoryItem) => {
+    // 히스토리 아이템 클릭 → 중앙 포커스 이동. 스택에 새 카드를 쌓지 않음.
+    setFocusKind('history');
+    setFocusId(item.id);
   };
 
   const deleteFromHistory = async (item: VideoHistoryItem) => {
     const ok = await confirm('이 히스토리 항목을 삭제할까요? (크레딧은 반환되지 않습니다)');
     if (!ok) return;
     const success = await deleteVideoHistoryItem(item.id, item.storage_path);
-    if (success) loadHistory();
+    if (success) {
+      // 포커스 대상이었으면 해제
+      if (focusKind === 'history' && focusId === item.id) {
+        setFocusKind(null); setFocusId(null);
+      }
+      loadHistory();
+    }
+  };
+
+  /** 저장 다이얼로그 열기 (히스토리 아이템 대상) */
+  const openSaveDialog = (item: VideoHistoryItem) => {
+    setSaveTarget(item);
+    setSaveName(item.prompt.slice(0, 40).trim() || '동영상');
+  };
+
+  const performSave = async () => {
+    if (!saveTarget || !user?.id) return;
+    setSaving(true);
+    try {
+      const result = await saveVideoAsAsset({
+        ownerId: user.id,
+        history: saveTarget,
+        name: saveName,
+        description: saveTarget.prompt,
+      });
+      if (result.ok) {
+        await alert('자산 보관함에 저장되었습니다.', { type: 'info' });
+        setSaveTarget(null);
+        loadHistory();
+      } else {
+        await alert(`저장 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -632,54 +748,30 @@ export const VideoStudio: React.FC = () => {
         </p>
       </aside>
 
-      {/* Center: 결과 스택 (Kling 스타일 · 새 카드가 아래에 추가됨) */}
+      {/* Center: 단일 포커스 뷰 (스택 X · 히스토리 클릭 또는 새 잡 → 포커스 이동) */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
-        {jobs.length === 0 ? (
-          <div className="relative w-full rounded-3xl aspect-video flex items-center justify-center border-2 border-dashed border-zinc-200 bg-transparent">
-            <div className="text-center space-y-2">
-              <Video className="w-12 h-12 text-zinc-300 mx-auto" />
-              <p className="text-zinc-400 text-sm">프롬프트를 입력하고 생성 버튼을 눌러주세요</p>
-              <p className="text-zinc-300 text-xs">여러 개 생성 시 아래로 쌓입니다</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {jobs.map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onRemove={() => removeJob(job.id)}
-                onRemixPrompt={() => setPrompt(job.prompt)}
-                onRegenerate={job.status === 'done' ? () => {
-                  // 폼 필드를 잡의 파라미터로 되돌리고 generate 재실행
-                  setPrompt(job.prompt);
-                  setAspect(job.aspect);
-                  setDuration(job.durationSec);
-                  // 사용자에게 확인 없이 즉시 실행 (버튼 클릭 자체가 승낙)
-                  setTimeout(() => generate(), 100);
-                } : undefined}
-                onDeleteHistory={job.historyId ? async () => {
-                  const target = history?.find((h) => h.id === job.historyId);
-                  if (!target) return;
-                  const ok = await confirm('이 동영상을 히스토리에서 삭제할까요? (크레딧은 반환되지 않습니다)');
-                  if (!ok) return;
-                  await deleteVideoHistoryItem(target.id, target.storage_path);
-                  removeJob(job.id);
-                  loadHistory();
-                } : undefined}
-                onSaveToLibrary={job.status === 'done' ? async () => {
-                  // TODO: user_assets 에 asset_type='video' 지원 후 실제 저장.
-                  // 마이그레이션 필요 (asset_type enum 확장 + storage 정책).
-                  await alert(
-                    '동영상 자산 저장 기능은 다음 업데이트에서 지원됩니다. 지금은 다운로드로 보관해 주세요.',
-                    { type: 'info' },
-                  );
-                } : undefined}
-              />
-            ))}
-            <div ref={stackEndRef} />
-          </div>
-        )}
+        <FocusView
+          job={focusJob}
+          historyItem={focusHistory}
+          history={history}
+          hasActiveJob={hasActiveJob}
+          onRegenerate={(prompt, aspect, durationSec) => {
+            setPrompt(prompt);
+            setAspect(aspect);
+            setDuration(durationSec);
+            setTimeout(() => generate(), 100);
+          }}
+          onCopyPrompt={async (text) => {
+            try {
+              await navigator.clipboard.writeText(text);
+              await alert('프롬프트를 복사했어요.', { type: 'info' });
+            } catch {
+              await alert('복사에 실패했어요.', { type: 'error' });
+            }
+          }}
+          onSaveToLibrary={openSaveDialog}
+          onDeleteHistory={deleteFromHistory}
+        />
       </div>
 
       {/* Right: history */}
@@ -687,23 +779,25 @@ export const VideoStudio: React.FC = () => {
         <div className="flex items-center gap-2">
           <HistoryIcon size={16} className="text-zinc-400" />
           <h3 className="text-sm font-black text-zinc-700">히스토리</h3>
-          <span className="text-[10px] text-zinc-400 ml-auto">최대 100편 · 30일</span>
+          <span className="text-[10px] text-zinc-400 ml-auto">
+            {historyTotal > 0 ? `${history.length}/${historyTotal}` : '최대 100편 · 30일'}
+          </span>
         </div>
         <div className="grid grid-cols-2 xl:grid-cols-1 gap-2 max-h-[70vh] overflow-y-auto">
-          {historyLoading && !history && (
+          {historyLoading && history.length === 0 && (
             <div className="col-span-full text-center py-6 text-xs text-zinc-400">불러오는 중...</div>
           )}
-          {history && history.length === 0 && (
+          {!historyLoading && history.length === 0 && (
             <div className="col-span-full text-center py-6 text-xs text-zinc-400">
               아직 생성한 동영상이 없어요.
             </div>
           )}
-          {history?.map((item) => (
+          {history.map((item) => (
             // 카드 전체 클릭 = 중앙 스택에 표시 (remixFromHistory).
             // 삭제 버튼은 클릭 전파 중단으로 카드 클릭과 분리.
             <button
               key={item.id}
-              onClick={() => remixFromHistory(item)}
+              onClick={() => focusOnHistory(item)}
               className="group relative rounded-xl overflow-hidden border border-zinc-200 bg-zinc-900 aspect-video text-left w-full cursor-pointer hover:border-primary/60 hover:shadow-lg transition-all"
               title="클릭하면 중앙 화면에서 재생/편집합니다"
             >
@@ -738,6 +832,20 @@ export const VideoStudio: React.FC = () => {
             </button>
           ))}
         </div>
+        {/* 페이지네이션 · 더 보기 (100편까지 무한 스크롤 대신 명시 버튼) */}
+        {history.length < historyTotal && (
+          <button
+            onClick={loadMoreHistory}
+            disabled={historyLoading}
+            className="w-full py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          >
+            {historyLoading ? (
+              <><Loader2 size={12} className="animate-spin" /> 불러오는 중...</>
+            ) : (
+              <>더 보기 ({historyTotal - history.length}편 남음)</>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Library picker */}
@@ -750,6 +858,49 @@ export const VideoStudio: React.FC = () => {
           title={libraryTarget === 'start' ? '시작 프레임 선택' : '끝 프레임 선택'}
           subtitle="보관함에서 이미지 하나를 선택해 주세요."
         />
+      )}
+
+      {/* 저장 다이얼로그 (이미지 저장 다이얼로그 패턴 재사용) */}
+      {saveTarget && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget && !saving) setSaveTarget(null); }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-lg font-black text-zinc-900 mb-1">동영상을 자산 보관함에 저장</h3>
+            <p className="text-xs text-zinc-500 mb-5">
+              이 이름으로 자산 보관함(동영상)에 저장됩니다. 30일 자동 삭제 없이 영구 보관돼요.
+            </p>
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">이름</label>
+            <input
+              type="text"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              disabled={saving}
+              className="mt-1.5 w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+              maxLength={100}
+            />
+            <p className="mt-1 text-[10px] text-zinc-400">
+              설명은 프롬프트({saveTarget.prompt.length}자) 로 자동 채워집니다.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setSaveTarget(null)}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={performSave}
+                disabled={saving || !saveName.trim()}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {saving ? <><Loader2 size={14} className="animate-spin" /> 저장 중...</> : <><Package size={14} /> 저장</>}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

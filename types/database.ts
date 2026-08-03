@@ -265,7 +265,7 @@ export interface Database {
         Row: {
           id: string;
           owner_id: string;
-          asset_type: 'character' | 'product' | 'logo' | 'image';
+          asset_type: 'character' | 'product' | 'logo' | 'image' | 'video';
           name: string;
           description: string;
           source_type: 'upload' | 'generated';
@@ -275,7 +275,7 @@ export interface Database {
         Insert: {
           id?: string;
           owner_id: string;
-          asset_type: 'character' | 'product' | 'logo' | 'image';
+          asset_type: 'character' | 'product' | 'logo' | 'image' | 'video';
           name: string;
           description?: string;
           source_type?: 'upload' | 'generated';
@@ -285,7 +285,7 @@ export interface Database {
         Update: {
           name?: string;
           description?: string;
-          asset_type?: 'character' | 'product' | 'logo' | 'image';
+          asset_type?: 'character' | 'product' | 'logo' | 'image' | 'video';
         };
         Relationships: [];
       };
