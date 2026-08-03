@@ -437,8 +437,14 @@ export const VideoStudio: React.FC = () => {
         </button>
 
         <p className="text-[11px] text-zinc-400 leading-relaxed">
-          모델: {VIDEO_STUDIO_MODEL} · 시작 프레임 유무에 따라 T2V/I2V 자동 선택.
-          {endFrame && ' · 끝 프레임 사용 시 +5cr'}
+          {!prompt.trim() ? (
+            <span className="text-amber-600 font-bold">💡 프롬프트를 입력하면 생성 버튼이 활성화됩니다.</span>
+          ) : (
+            <>
+              모델: {VIDEO_STUDIO_MODEL} · 시작 프레임 유무에 따라 T2V/I2V 자동 선택.
+              {endFrame && ' · 끝 프레임 사용 시 +5cr'}
+            </>
+          )}
         </p>
       </div>
 
