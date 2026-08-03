@@ -11,8 +11,9 @@
 //
 // Secrets (supabase secrets set):
 //   GEMINI_API_KEY            — Google AI Studio 키
-//   KLING_ACCESS_KEY_ID       — (4단계에서 사용)
-//   KLING_ACCESS_KEY_SECRET   — (4단계에서 사용)
+//   KLING_API_KEY             — 신규 단일 키 방식 (트라이얼/간편, Bearer 직전달) — 우선순위 1
+//   KLING_ACCESS_KEY_ID       — Legacy JWT 방식 (엔터프라이즈) — 폴백
+//   KLING_ACCESS_KEY_SECRET   — Legacy JWT 방식 — 폴백
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 는 프로젝트에 기본 주입됨
 //
 // 라우팅:
@@ -47,12 +48,25 @@ async function geminiKey(admin: ReturnType<typeof createClient>): Promise<string
   return config(admin, 'gemini_api_key', 'GEMINI_API_KEY')
 }
 
-async function klingKeys(
-  admin: ReturnType<typeof createClient>,
-): Promise<{ id: string; secret: string } | null> {
+/**
+ * Kling 인증 자격증명.
+ *   kind='single'  : 신규 단일 API Key (Bearer 로 직접 전달)
+ *   kind='legacy'  : AK+SK 조합 (서버가 JWT 서명)
+ * 우선순위: single → legacy → null
+ * 사용자가 어느 쪽을 세팅했든 자동 감지된다.
+ */
+type KlingCreds =
+  | { kind: 'single'; token: string }
+  | { kind: 'legacy'; id: string; secret: string }
+
+async function klingKeys(admin: ReturnType<typeof createClient>): Promise<KlingCreds | null> {
+  const single = await config(admin, 'kling_api_key', 'KLING_API_KEY')
+  if (single) return { kind: 'single', token: single }
+
   const id = await config(admin, 'kling_access_key_id', 'KLING_ACCESS_KEY_ID')
   const secret = await config(admin, 'kling_access_key_secret', 'KLING_ACCESS_KEY_SECRET')
-  return id && secret ? { id, secret } : null
+  if (id && secret) return { kind: 'legacy', id, secret }
+  return null
 }
 
 /** admin_config(DB) → Function Secret 순으로 설정값을 읽는다. */
@@ -178,17 +192,18 @@ Deno.serve(async (req) => {
   // (덤: 기존 '/api/kling' 은 vite dev 전용 프록시라 프로덕션 빌드에서는 아예
   //  동작하지 않았다. 이 경로로 옮기면 배포 환경에서도 동작한다.)
   if (rest.startsWith('/kling')) {
-    const keys = await klingKeys(admin)
-    if (!keys) return json({ error: 'Kling API 키가 설정되지 않았습니다.' }, 503)
+    const creds = await klingKeys(admin)
+    if (!creds) return json({ error: 'Kling API 키가 설정되지 않았습니다.' }, 503)
 
     const target = `${KLING_HOST}${rest.slice('/kling'.length)}${url.search}`
-    const jwt = await klingJwt(keys.id, keys.secret)
+    // single: 발급된 키를 그대로 Bearer 로. legacy: 서버에서 매 요청마다 JWT 서명.
+    const bearer = creds.kind === 'single' ? creds.token : await klingJwt(creds.id, creds.secret)
 
     const upstream = await fetch(target, {
       method: req.method,
       headers: {
         'Content-Type': req.headers.get('Content-Type') ?? 'application/json',
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${bearer}`,
       },
       body: req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.text(),
     })

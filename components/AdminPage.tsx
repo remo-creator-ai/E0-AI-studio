@@ -27,12 +27,18 @@ import {
   Coins, ArrowRight,
 } from 'lucide-react';
 
-/* ============================= API Keys config ============================= */
-interface ApiKeyField { key: AdminConfigKey; label: string; placeholder: string; }
+/* ============================= API Keys config =============================
+ * Kling 인증은 두 방식 중 하나만 채우면 됩니다.
+ *  1) 신규 단일 API Key (트라이얼·간편) — kling_api_key 만 입력
+ *  2) Legacy AK+SK (엔터프라이즈) — kling_access_key_id + kling_access_key_secret
+ * ai-proxy 는 단일 키를 우선적으로 사용하고, 없으면 legacy 로 폴백합니다.
+ */
+interface ApiKeyField { key: AdminConfigKey; label: string; placeholder: string; hint?: string; }
 const API_KEY_FIELDS: ApiKeyField[] = [
   { key: 'gemini_api_key', label: 'Gemini API Key', placeholder: 'AIza...' },
-  { key: 'kling_access_key_id', label: 'Kling Access Key ID', placeholder: 'ak-...' },
-  { key: 'kling_access_key_secret', label: 'Kling Access Key Secret', placeholder: 'sk-...' },
+  { key: 'kling_api_key', label: 'Kling API Key (신규 단일 키 · 권장)', placeholder: 'sk-... 또는 발급된 단일 키', hint: '트라이얼/일반 계정은 이 한 값만 입력하세요' },
+  { key: 'kling_access_key_id', label: 'Kling Access Key ID (Legacy)', placeholder: 'ak-...', hint: 'Legacy JWT 방식용 — 신규 단일 키가 있으면 비워두세요' },
+  { key: 'kling_access_key_secret', label: 'Kling Access Key Secret (Legacy)', placeholder: 'sk-...', hint: 'Legacy JWT 방식용' },
 ];
 
 type AdminTab = 'dashboard' | 'accounts' | 'credit-requests' | 'usage' | 'requests' | 'api-keys';
@@ -834,6 +840,9 @@ const ApiKeysTab: React.FC = () => {
                 {saving === field.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common.save')}
               </button>
             </div>
+            {field.hint && (
+              <p className="mt-2 text-[11px] text-zinc-500 leading-relaxed">{field.hint}</p>
+            )}
           </div>
         ))}
       </div>
