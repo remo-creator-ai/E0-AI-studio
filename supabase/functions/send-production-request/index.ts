@@ -10,9 +10,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const TO_EMAIL = 'remoimagevideo@gmail.com'
+// supabase secrets set ADMIN_EMAIL=... 로 수신자 변경 가능
+const TO_EMAIL = Deno.env.get('ADMIN_EMAIL') || 'remoimagevideo@gmail.com'
+
+// 브라우저(supabase.functions.invoke)에서 직접 호출하므로 preflight 처리가 필요하다.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
   try {
     const payload = await req.json()
 
@@ -37,7 +47,7 @@ serve(async (req) => {
     if (!RESEND_API_KEY) {
       return new Response(
         JSON.stringify({ error: 'RESEND_API_KEY not configured' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -55,7 +65,7 @@ serve(async (req) => {
             <tr><td style="padding: 8px 0; color: #888; font-size: 12px; font-weight: 700;">프로젝트명</td><td style="padding: 8px 0; font-weight: 700;">${project_title}</td></tr>
             <tr><td style="padding: 8px 0; color: #888; font-size: 12px; font-weight: 700;">비율</td><td style="padding: 8px 0;">${aspect_ratio}</td></tr>
             <tr><td style="padding: 8px 0; color: #888; font-size: 12px; font-weight: 700;">씬 수</td><td style="padding: 8px 0;">${scene_count}컷</td></tr>
-            <tr><td style="padding: 8px 0; color: #888; font-size: 12px; font-weight: 700;">영상 용도</td><td style="padding: 8px 0; font-weight: 700;">${purpose}</td></tr>
+            <tr><td style="padding: 8px 0; color: #888; font-size: 12px; font-weight: 700;">요청 서비스</td><td style="padding: 8px 0; font-weight: 700;">${purpose}</td></tr>
           </table>
           ${additional_notes ? `<div style="margin-top: 16px; padding: 16px; background: #1A1A1A; border-radius: 8px;"><p style="color: #888; font-size: 12px; font-weight: 700; margin: 0 0 8px;">추가 요청사항</p><p style="margin: 0; font-size: 14px;">${additional_notes}</p></div>` : ''}
           <div style="margin-top: 24px; padding: 20px; background: #1A1A1A; border-radius: 12px;">
@@ -100,19 +110,19 @@ serve(async (req) => {
       console.error('Resend error:', result)
       return new Response(
         JSON.stringify({ error: 'Email send failed', details: result }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     return new Response(
       JSON.stringify({ success: true, id: result.id }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
       JSON.stringify({ error: 'Internal error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

@@ -17,7 +17,7 @@ import React, { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Film, Layers, ArrowLeft, Wand2, Info, Send } from 'lucide-react';
 import { useStore } from '../store';
-import { useModal } from './ui/ModalProvider';
+import { CommissionModal } from './CommissionModal';
 
 const ProductionModeA = React.lazy(() =>
   import('./production/ProductionModeA').then((m) => ({ default: m.ProductionModeA })),
@@ -28,7 +28,7 @@ const ProductionModeB = React.lazy(() =>
 
 type Mode = 'landing' | 'modeA' | 'modeB';
 
-/** 오른쪽 상단 "전문가에게 의뢰하기" — Phase 7 에서 실제 모달로 대체 */
+/** 오른쪽 상단 "전문가에게 의뢰하기" */
 const CommissionButton: React.FC<{ onClick: () => void }> = ({ onClick }) => (
   <button
     onClick={onClick}
@@ -132,14 +132,9 @@ const Landing: React.FC<{ onSelect: (m: Mode) => void }> = ({ onSelect }) => (
 
 export const ProductionStepShell: React.FC = () => {
   const { t } = useTranslation();
-  const { alert } = useModal();
   const project = useStore((s) => s.project);
   const [mode, setMode] = useState<Mode>('landing');
-
-  const handleCommission = () => {
-    // Phase 7 에서 모달·DB·이메일 배선. 지금은 안내만.
-    alert('전문가 의뢰 기능은 곧 오픈 예정입니다. 현재는 프로젝트 내부에서 직접 제작을 진행해 주세요.', { type: 'info' });
-  };
+  const [commissionOpen, setCommissionOpen] = useState(false);
 
   if (!project) {
     return (
@@ -178,8 +173,10 @@ export const ProductionStepShell: React.FC = () => {
             <p className="text-sm text-zinc-500 mt-0.5">{project.title}</p>
           </div>
         </div>
-        <CommissionButton onClick={handleCommission} />
+        <CommissionButton onClick={() => setCommissionOpen(true)} />
       </div>
+
+      <CommissionModal open={commissionOpen} onClose={() => setCommissionOpen(false)} />
 
       {/* Body */}
       {mode === 'landing' && <Landing onSelect={setMode} />}

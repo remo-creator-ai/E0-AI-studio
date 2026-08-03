@@ -295,8 +295,14 @@ export async function listRequests(): Promise<MasterRequest[]> {
     purpose: String(r.purpose ?? ''),
     recipient_email: String(r.requester_email ?? 'momo.ai.fren@gmail.com'),
     status: (r.status as MasterRequest['status']) ?? 'pending',
-    attachments: [],
+    attachments: Array.isArray(r.extra_file_urls) ? (r.extra_file_urls as string[]) : [],
     created_at: String(r.created_at ?? ''),
+    requester_name: String(r.requester_name ?? ''),
+    additional_notes: (r.additional_notes as string | null) ?? null,
+    storyboard_url: (r.storyboard_url as string | null) ?? null,
+    assets_url: (r.assets_url as string | null) ?? null,
+    scene_count: Number(r.scene_count ?? 0),
+    aspect_ratio: String(r.aspect_ratio ?? ''),
   }));
 }
 

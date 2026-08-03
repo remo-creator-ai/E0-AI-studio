@@ -58,12 +58,17 @@ export const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [toast, setToast] = useState<string | null>(null);
   const [creditReqPending, setCreditReqPending] = useState<number>(0);
+  const [prodReqPending, setProdReqPending] = useState<number>(0);
 
-  // 대기 중 크레딧 신청 건수 폴링 (탭 뱃지 및 대시보드 CTA 용)
+  // 대기 중 크레딧 신청 · 제작 의뢰 건수 폴링 (탭 뱃지 및 대시보드 CTA 용)
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      getDashboardStats().then((s) => { if (!cancelled) setCreditReqPending(s.creditRequestsPending); });
+      getDashboardStats().then((s) => {
+        if (cancelled) return;
+        setCreditReqPending(s.creditRequestsPending);
+        setProdReqPending(s.requestsPending);
+      });
     };
     load();
     const t = window.setInterval(load, 15000);
@@ -92,7 +97,7 @@ export const AdminPage: React.FC = () => {
     { id: 'credit-requests', label: '크레딧 신청', icon: <Coins className="w-4 h-4" />, badge: creditReqPending },
     { id: 'accounts', label: '사용자 관리', icon: <Users className="w-4 h-4" /> },
     { id: 'usage', label: '사용 이력', icon: <History className="w-4 h-4" /> },
-    { id: 'requests', label: '제작 의뢰', icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'requests', label: '제작 의뢰', icon: <ClipboardList className="w-4 h-4" />, badge: prodReqPending },
     { id: 'api-keys', label: 'API 키', icon: <Key className="w-4 h-4" /> },
   ];
 
@@ -692,9 +697,20 @@ const CreditRequestActionModal: React.FC<{
 };
 
 /* ============================= Requests Tab ============================= */
+type ReqFilter = 'all' | MasterRequest['status'];
+
+const REQ_FILTERS: { id: ReqFilter; label: string }[] = [
+  { id: 'all', label: '전체' },
+  { id: 'pending', label: '신규' },
+  { id: 'in_progress', label: '진행중' },
+  { id: 'completed', label: '완료' },
+  { id: 'cancelled', label: '취소' },
+];
+
 const RequestsTab: React.FC = () => {
   const [rows, setRows] = useState<MasterRequest[]>([]);
   const [selected, setSelected] = useState<MasterRequest | null>(null);
+  const [filter, setFilter] = useState<ReqFilter>('all');
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
@@ -709,30 +725,49 @@ const RequestsTab: React.FC = () => {
     setSelected((prev) => prev && prev.id === r.id ? { ...prev, status } : prev);
   };
 
+  const visible = filter === 'all' ? rows : rows.filter((r) => r.status === filter);
+  const countOf = (f: ReqFilter) => f === 'all' ? rows.length : rows.filter((r) => r.status === f).length;
+
   return (
     <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-black tracking-tight text-zinc-900">의뢰 기록</h2>
-        <p className="text-sm text-zinc-400 mt-1">수신 주소 고정 · <span className="font-mono text-zinc-500">momo.ai.fren@gmail.com</span></p>
+        <h2 className="text-2xl font-black tracking-tight text-zinc-900">제작 의뢰</h2>
+        <p className="text-sm text-zinc-400 mt-1">사용자가 보낸 견적 문의 · 첨부된 스토리보드와 에셋을 확인하고 상태를 관리합니다.</p>
       </div>
 
-      {loading ? <TabLoader /> : rows.length === 0 ? (
-        <div className="text-center py-16 text-zinc-400 text-sm">의뢰가 없습니다.</div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {REQ_FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-4 py-2 rounded-full text-xs font-black border transition-all ${
+              filter === f.id
+                ? 'bg-primary border-primary text-white shadow-[0_6px_16px_rgba(0,80,191,0.25)]'
+                : 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300'
+            }`}
+          >
+            {f.label} {countOf(f.id)}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <TabLoader /> : visible.length === 0 ? (
+        <div className="text-center py-16 text-zinc-400 text-sm">해당 상태의 의뢰가 없습니다.</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           {/* List */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
                   <th className="text-left font-black px-3 py-3 border-b border-zinc-100">일시</th>
-                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">의뢰 이메일</th>
-                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">목적</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">의뢰자</th>
+                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">프로젝트 / 요청 서비스</th>
                   <th className="text-left font-black px-3 py-3 border-b border-zinc-100">상태</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {visible.map((r) => (
                   <tr key={r.id} onClick={() => setSelected(r)}
                     className={`border-b border-zinc-100 last:border-0 cursor-pointer transition-colors ${selected?.id === r.id ? 'bg-primary/5' : 'hover:bg-zinc-100'}`}>
                     <td className="px-3 py-3 text-zinc-500 whitespace-nowrap">{r.created_at}</td>
@@ -751,13 +786,14 @@ const RequestsTab: React.FC = () => {
               <div className="text-[10px] text-primary font-black uppercase tracking-widest">의뢰 상세</div>
               <h4 className="text-base font-black tracking-tight mt-1.5 mb-4 text-zinc-900">{selected.project_title}</h4>
               {[
-                ['의뢰 이메일', selected.account_email],
+                ['담당자', selected.requester_name || '-'],
+                ['회신 이메일', selected.account_email],
                 ['의뢰 일시', selected.created_at],
-                ['수신 주소', selected.recipient_email],
-                ['목적', selected.purpose],
+                ['요청 서비스', selected.purpose],
+                ['씬 / 비율', `${selected.scene_count ?? 0}컷 · ${selected.aspect_ratio || '-'}`],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between py-2 border-b border-zinc-100 text-xs">
-                  <span className="text-zinc-400">{k}</span>
+                <div key={k} className="flex justify-between gap-3 py-2 border-b border-zinc-100 text-xs">
+                  <span className="text-zinc-400 shrink-0">{k}</span>
                   <span className="text-zinc-900 font-bold text-right">{v}</span>
                 </div>
               ))}
@@ -765,17 +801,46 @@ const RequestsTab: React.FC = () => {
                 <span className="text-zinc-400">상태</span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${REQ_STATUS[selected.status].cls}`}>{REQ_STATUS[selected.status].label}</span>
               </div>
-              {selected.attachments.length > 0 && (
+
+              {selected.additional_notes && (
                 <>
-                  <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-4 mb-2">첨부</div>
-                  {selected.attachments.map((f) => (
-                    <div key={f} className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-mono mb-1.5">{f}</div>
-                  ))}
+                  <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-4 mb-2">추가 요청사항</div>
+                  <p className="bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 whitespace-pre-wrap leading-relaxed">{selected.additional_notes}</p>
                 </>
               )}
-              <div className="flex gap-2 mt-4">
-                <button onClick={() => setStatus(selected, 'completed')} className="flex-1 py-2.5 rounded-full bg-primary hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-bold text-xs">완료 처리</button>
-                <button onClick={() => setStatus(selected, 'cancelled')} className="px-4 py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-xs">취소</button>
+
+              <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-4 mb-2">첨부</div>
+              {selected.storyboard_url && (
+                <a href={selected.storyboard_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#003E99] hover:border-primary/40 mb-1.5">
+                  <Download className="w-3.5 h-3.5" /> 스토리보드 · 스크립트 (.json)
+                </a>
+              )}
+              {selected.assets_url && (
+                <a href={selected.assets_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#003E99] hover:border-primary/40 mb-1.5">
+                  <Download className="w-3.5 h-3.5" /> 이미지 에셋 (.zip)
+                </a>
+              )}
+              {selected.attachments.map((f) => (
+                <a key={f} href={f} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-mono hover:border-primary/40 mb-1.5 truncate">
+                  {decodeURIComponent(f.split('/').pop() || f)}
+                </a>
+              ))}
+              {!selected.storyboard_url && !selected.assets_url && selected.attachments.length === 0 && (
+                <p className="text-xs text-zinc-400">첨부 파일 없음</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button onClick={() => setStatus(selected, 'in_progress')} disabled={selected.status === 'in_progress'}
+                  className="py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 font-bold text-xs">진행중</button>
+                <button onClick={() => setStatus(selected, 'completed')} disabled={selected.status === 'completed'}
+                  className="py-2.5 rounded-full bg-primary hover:bg-[#003E99] disabled:opacity-40 shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-bold text-xs">완료</button>
+                <button onClick={() => setStatus(selected, 'pending')} disabled={selected.status === 'pending'}
+                  className="py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 font-bold text-xs">신규로</button>
+                <button onClick={() => setStatus(selected, 'cancelled')} disabled={selected.status === 'cancelled'}
+                  className="py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 font-bold text-xs">취소</button>
               </div>
             </div>
           )}

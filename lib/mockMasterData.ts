@@ -39,8 +39,15 @@ export interface MasterRequest {
   purpose: string;
   recipient_email: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  /** extra_file_urls — 씬 영상 · 사용자 추가 첨부 */
   attachments: string[];
   created_at: string;
+  requester_name?: string;
+  additional_notes?: string | null;
+  storyboard_url?: string | null;
+  assets_url?: string | null;
+  scene_count?: number;
+  aspect_ratio?: string;
 }
 
 function acc(
