@@ -16,9 +16,43 @@ import { accessToken, PROXY_BASE } from '../lib/aiProxy';
 import { normalizeImageInput } from './imageUtils';
 
 // ---------- 종횡비 ----------
-export type VideoAspect = '16:9' | '9:16' | '1:1';
-export const VIDEO_ASPECTS: VideoAspect[] = ['16:9', '9:16', '1:1'];
-export const DEFAULT_VIDEO_ASPECT: VideoAspect = '16:9';
+// Kling API 에 실제로 전달되는 값은 concrete 3종. 'auto' 는 UI 개념으로,
+// 시작 이미지의 실제 비율을 감지해 가장 근접한 concrete 값으로 해석한다.
+// 시작 이미지가 없을 때(T2V) 'auto' 는 16:9 로 fallback.
+export type ConcreteAspect = '16:9' | '9:16' | '1:1';
+export type VideoAspect = 'auto' | ConcreteAspect;
+export const VIDEO_ASPECTS: VideoAspect[] = ['auto', '16:9', '9:16', '1:1'];
+export const CONCRETE_ASPECTS: ConcreteAspect[] = ['16:9', '9:16', '1:1'];
+export const DEFAULT_VIDEO_ASPECT: VideoAspect = 'auto';
+
+/** data URL / http URL 이미지의 자연 크기를 로드해 3종 종횡비 중 가장 가까운 값으로 매핑. */
+export function detectAspectFromImage(url: string): Promise<ConcreteAspect> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const w = img.naturalWidth || 1;
+      const h = img.naturalHeight || 1;
+      const ratio = w / h;
+      // 목표 비율: 16:9=1.777, 1:1=1.0, 9:16=0.5625
+      // 로그 스케일로 비교하면 상하 대칭이라 정확도가 낫다.
+      const targets: Array<[ConcreteAspect, number]> = [
+        ['16:9', 16 / 9],
+        ['1:1', 1],
+        ['9:16', 9 / 16],
+      ];
+      let best: ConcreteAspect = '16:9';
+      let bestDist = Infinity;
+      for (const [name, t] of targets) {
+        const d = Math.abs(Math.log(ratio) - Math.log(t));
+        if (d < bestDist) { bestDist = d; best = name; }
+      }
+      resolve(best);
+    };
+    img.onerror = () => resolve('16:9');
+    img.src = url;
+  });
+}
 
 // ---------- 길이 ----------
 // Kling 은 5초 또는 10초만 지원. 3초 옵션은 향후 다른 모델 추가시 대비해 미노출.
@@ -57,7 +91,8 @@ export interface GenerateVideoResult {
 
 export interface GenerateVideoInput {
   prompt: string;
-  aspect: VideoAspect;
+  /** 반드시 concrete 값 (16:9|9:16|1:1). UI 의 'auto' 는 호출 전에 detectAspectFromImage 로 해석. */
+  aspect: ConcreteAspect;
   durationSec: VideoDuration;
   /** data URL 또는 http URL. 있으면 I2V, 없으면 T2V. */
   startImage?: string;

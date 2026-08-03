@@ -24,10 +24,10 @@ import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
 import { useAuthStore } from '../store/authStore';
 import {
-  generateStudioVideo,
+  generateStudioVideo, detectAspectFromImage,
   VIDEO_ASPECTS, DEFAULT_VIDEO_ASPECT, VIDEO_DURATIONS, DEFAULT_VIDEO_DURATION,
   VIDEO_STUDIO_MODEL, videoStudioCreditCost,
-  type VideoAspect, type VideoDuration, type GenerateVideoFailure,
+  type VideoAspect, type ConcreteAspect, type VideoDuration, type GenerateVideoFailure,
 } from '../services/videoStudioService';
 import {
   saveVideoHistory, listVideoHistory, deleteVideoHistoryItem,
@@ -46,8 +46,19 @@ const readAsDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
-/** 종횡비 아이콘 (ImageStudio 와 동일 언어) */
+/** 종횡비 아이콘 — auto 는 "A" 텍스트, 나머지는 실제 비율의 사각형 */
 const AspectIcon: React.FC<{ aspect: VideoAspect; active: boolean }> = ({ aspect, active }) => {
+  if (aspect === 'auto') {
+    return (
+      <span
+        className={`h-5 w-5 flex items-center justify-center rounded-[4px] text-[10px] font-black transition-colors ${
+          active ? 'bg-white text-primary' : 'bg-zinc-200 text-zinc-600'
+        }`}
+      >
+        A
+      </span>
+    );
+  }
   const [w, h] = aspect === '1:1' ? [16, 16] : aspect === '16:9' ? [20, 11] : [11, 20];
   return (
     <span className="h-5 flex items-center justify-center">
@@ -202,6 +213,25 @@ export const VideoStudio: React.FC = () => {
       await alert(`크레딧이 부족합니다. (필요 ${cost}cr / 잔액 ${balance}cr)`, { type: 'warning' });
       return;
     }
+
+    // Auto: 시작 이미지 있으면 그 비율로 해석, 없으면 16:9 fallback.
+    // Concrete: 시작 이미지 비율과 다르면 사용자에게 경고 후 강행 여부 확인.
+    let resolvedAspect: ConcreteAspect;
+    if (aspect === 'auto') {
+      resolvedAspect = startFrame ? await detectAspectFromImage(startFrame) : '16:9';
+    } else {
+      resolvedAspect = aspect;
+      if (startFrame) {
+        const imgAspect = await detectAspectFromImage(startFrame);
+        if (imgAspect !== aspect) {
+          const ok = await confirm(
+            `시작 이미지와 생성 영상 비율이 맞지 않습니다.\n\n· 시작 이미지: ${imgAspect}\n· 선택한 종횡비: ${aspect}\n\n비율 차이가 크면 이미지가 잘리거나 여백이 생길 수 있습니다.\n그대로 진행하시겠습니까?`,
+          );
+          if (!ok) return;
+        }
+      }
+    }
+
     setBusy(true);
     setFailure(null);
     setErrorMessage(null);
@@ -209,7 +239,7 @@ export const VideoStudio: React.FC = () => {
     try {
       const result = await generateStudioVideo({
         prompt: prompt.trim(),
-        aspect,
+        aspect: resolvedAspect,
         durationSec: duration,
         startImage: startFrame ?? undefined,
         endImage: endFrame ?? undefined,
@@ -224,12 +254,13 @@ export const VideoStudio: React.FC = () => {
       setVideoPrompt(promptSnapshot);
       await deduct(cost, `동영상 생성 (${duration}s${endFrame ? ' · end frame' : ''})`);
 
-      // 히스토리에 저장 (Kling 링크는 24h 만료라 반드시 Storage 로 복제)
+      // 히스토리에 저장 (Kling 링크는 24h 만료라 반드시 Storage 로 복제).
+      // aspect 는 resolved 값(concrete)으로 저장 — 나중에 히스토리에서 재열기 시 정확한 비율 복원.
       if (user?.id) {
         const saveResult = await saveVideoHistory({
           ownerId: user.id,
           prompt: promptSnapshot,
-          aspect,
+          aspect: resolvedAspect,
           durationSec: duration,
           model: VIDEO_STUDIO_MODEL,
           hasStartFrame: !!startFrame,
@@ -251,6 +282,7 @@ export const VideoStudio: React.FC = () => {
 
   const remixFromHistory = (item: VideoHistoryItem) => {
     setPrompt(item.prompt);
+    // 히스토리에는 concrete 비율만 저장됨 — 사용자가 명시적으로 auto 로 다시 바꾸도록 유지
     setAspect(item.aspect as VideoAspect);
     setDuration((item.duration_sec === 10 ? 10 : 5) as VideoDuration);
     setVideoUrl(item.url);
@@ -340,23 +372,28 @@ export const VideoStudio: React.FC = () => {
         {/* Aspect */}
         <div>
           <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">종횡비</label>
-          <div className="mt-1.5 grid grid-cols-3 gap-2">
+          <div className="mt-1.5 grid grid-cols-4 gap-2">
             {VIDEO_ASPECTS.map((a) => (
               <button
                 key={a}
                 onClick={() => setAspect(a)}
                 disabled={busy}
-                className={`px-3 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                className={`px-2 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                   aspect === a
                     ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                 }`}
               >
                 <AspectIcon aspect={a} active={aspect === a} />
-                {a}
+                {a === 'auto' ? 'Auto' : a}
               </button>
             ))}
           </div>
+          <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+            {aspect === 'auto'
+              ? '시작 이미지의 비율에 자동으로 맞춥니다. 시작 이미지가 없으면 16:9.'
+              : '시작 이미지와 비율이 다르면 생성 전 경고합니다.'}
+          </p>
         </div>
 
         {/* Duration */}
@@ -407,14 +444,18 @@ export const VideoStudio: React.FC = () => {
 
       {/* Center: preview + actions */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
-        <div className="relative w-full bg-zinc-900 rounded-3xl overflow-hidden aspect-video flex items-center justify-center">
-          {busy ? (
+        {/* 빈 상태: 테두리만 · 배경 없음 (사용자 피드백 반영, 검은 큰 영역 제거)
+            생성 중 · 결과 · 실패: 진한 배경으로 재생 컨텍스트 강조 */}
+        {busy ? (
+          <div className="relative w-full bg-zinc-900 rounded-3xl overflow-hidden aspect-video flex items-center justify-center">
             <div className="text-center space-y-3">
               <Loader2 className="w-12 h-12 text-white/60 mx-auto animate-spin" />
               <p className="text-white/60 text-sm font-bold">동영상 생성 중...</p>
               <p className="text-white/40 text-xs">Kling API 처리 · 최대 5분</p>
             </div>
-          ) : videoUrl ? (
+          </div>
+        ) : videoUrl ? (
+          <div className="relative w-full bg-zinc-900 rounded-3xl overflow-hidden aspect-video flex items-center justify-center">
             <video
               src={videoUrl}
               controls
@@ -422,24 +463,28 @@ export const VideoStudio: React.FC = () => {
               loop
               className="w-full h-full object-contain"
             />
-          ) : failure ? (
+          </div>
+        ) : failure ? (
+          <div className="relative w-full rounded-3xl overflow-hidden aspect-video flex items-center justify-center border-2 border-red-200 bg-red-50/50">
             <div className="text-center space-y-2 px-6">
-              <AlertCircle className="w-10 h-10 text-red-400 mx-auto" />
-              <p className="text-white/80 text-sm font-bold">
+              <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+              <p className="text-red-700 text-sm font-bold">
                 {failure === 'blocked' ? '콘텐츠 정책에 의해 차단되었습니다.'
                   : failure === 'timeout' ? '생성이 시간 초과되었습니다.'
                   : failure === 'no_api_key' ? 'API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
                   : '생성 실패'}
               </p>
-              {errorMessage && <p className="text-white/40 text-xs">{errorMessage}</p>}
+              {errorMessage && <p className="text-red-500/70 text-xs">{errorMessage}</p>}
             </div>
-          ) : (
+          </div>
+        ) : (
+          <div className="relative w-full rounded-3xl aspect-video flex items-center justify-center border-2 border-dashed border-zinc-200 bg-transparent">
             <div className="text-center space-y-2">
-              <Video className="w-14 h-14 text-white/20 mx-auto" />
-              <p className="text-white/40 text-sm">프롬프트를 입력하고 생성 버튼을 눌러주세요</p>
+              <Video className="w-12 h-12 text-zinc-300 mx-auto" />
+              <p className="text-zinc-400 text-sm">프롬프트를 입력하고 생성 버튼을 눌러주세요</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {videoUrl && (
           <div className="flex flex-wrap gap-2">
