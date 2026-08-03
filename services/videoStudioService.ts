@@ -70,8 +70,10 @@ export function videoStudioCreditCost(input: { durationSec: number; hasEndFrame?
 }
 
 // ---------- 모델 ----------
-// Kling v1 기본. 향후 kling-v1-6, kling-v2 추가시 여기 확장.
-export const VIDEO_STUDIO_MODEL = 'kling-v1';
+// Kling v2.6 (Motion Control) — 2025년 후반 릴리스, v1 대비 정체성 보존과
+// 카메라 무빙 정확도가 크게 개선. 안정성·품질 균형이 좋아 기본값으로 사용한다.
+// 향후 kling-v3 (4K · 멀티샷) 옵션 추가 시 여기서 분기.
+export const VIDEO_STUDIO_MODEL = 'kling-v2-6';
 
 // Kling API 프롬프트 상한. 초과 시 400 (code 1201). 안전을 위해 여유(2400) 잡음.
 export const KLING_PROMPT_MAX = 2400;

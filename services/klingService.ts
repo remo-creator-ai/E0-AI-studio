@@ -49,7 +49,7 @@ export async function generateKlingVideo(
   signal?: AbortSignal
 ): Promise<string | null> {
   const body: Record<string, unknown> = {
-    model_name: 'kling-v1',
+    model_name: 'kling-v2-6',
     prompt: prompt,
     negative_prompt: '',
     cfg_scale: 0.5,
