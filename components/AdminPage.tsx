@@ -754,26 +754,47 @@ const RequestsTab: React.FC = () => {
       {loading ? <TabLoader /> : visible.length === 0 ? (
         <div className="text-center py-16 text-zinc-400 text-sm">해당 상태의 의뢰가 없습니다.</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-          {/* List */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6">
+          {/* List — 열별 너비 고정으로 정렬, 로그 컬럼 밀림 방지 */}
+          <div className="overflow-x-auto border border-zinc-100 rounded-2xl bg-white">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col style={{ width: 132 }} />
+                <col style={{ width: 200 }} />
+                <col />
+                <col style={{ width: 78 }} />
+              </colgroup>
+              <thead className="bg-zinc-50">
                 <tr className="text-[10px] uppercase tracking-wider text-zinc-400">
                   <th className="text-left font-black px-3 py-3 border-b border-zinc-100">일시</th>
                   <th className="text-left font-black px-3 py-3 border-b border-zinc-100">의뢰자</th>
                   <th className="text-left font-black px-3 py-3 border-b border-zinc-100">프로젝트 / 요청 서비스</th>
-                  <th className="text-left font-black px-3 py-3 border-b border-zinc-100">상태</th>
+                  <th className="text-right font-black px-3 py-3 border-b border-zinc-100">상태</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((r) => (
-                  <tr key={r.id} onClick={() => setSelected(r)}
-                    className={`border-b border-zinc-100 last:border-0 cursor-pointer transition-colors ${selected?.id === r.id ? 'bg-primary/5' : 'hover:bg-zinc-100'}`}>
-                    <td className="px-3 py-3 text-zinc-500 whitespace-nowrap">{r.created_at}</td>
-                    <td className="px-3 py-3 font-mono text-zinc-900">{r.account_email}</td>
-                    <td className="px-3 py-3 text-zinc-700">{r.project_title} / {r.purpose}</td>
-                    <td className="px-3 py-3"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${REQ_STATUS[r.status].cls}`}>{REQ_STATUS[r.status].label}</span></td>
+                  <tr
+                    key={r.id}
+                    onClick={() => setSelected(r)}
+                    className={`border-b border-zinc-100 last:border-0 cursor-pointer transition-colors ${selected?.id === r.id ? 'bg-primary/5' : 'hover:bg-zinc-50'}`}
+                  >
+                    <td className="px-3 py-3 text-zinc-500 text-xs whitespace-nowrap font-mono">
+                      {r.created_at}
+                    </td>
+                    <td className="px-3 py-3 font-mono text-zinc-900 text-xs truncate" title={r.account_email}>
+                      {r.account_email}
+                    </td>
+                    <td className="px-3 py-3 text-zinc-700 truncate" title={`${r.project_title} / ${r.purpose}`}>
+                      <span className="font-bold text-zinc-900">{r.project_title}</span>
+                      <span className="text-zinc-400"> · </span>
+                      <span className="text-xs text-zinc-500">{r.purpose}</span>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black border ${REQ_STATUS[r.status].cls}`}>
+                        {REQ_STATUS[r.status].label}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
