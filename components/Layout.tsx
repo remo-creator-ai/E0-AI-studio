@@ -394,6 +394,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           currentStep === ProjectStep.DASHBOARD ? 'max-w-7xl mx-auto' :
           currentStep === ProjectStep.ASSETS ? 'max-w-7xl mx-auto' :
           currentStep === ProjectStep.IMAGE_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
+          currentStep === ProjectStep.VIDEO_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
           currentStep === ProjectStep.SETTINGS ? 'max-w-4xl mx-auto' :
           currentStep === ProjectStep.ADMIN ? 'max-w-5xl mx-auto' :
           'max-w-6xl mx-auto'

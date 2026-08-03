@@ -34,6 +34,7 @@ import {
   type VideoHistoryItem,
 } from '../services/videoHistoryService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
+import { useVideoGenStore, type VideoJob } from '../store/videoGenStore';
 
 const MAX_FRAME_MB = 10;
 const ACCEPT_MIME = ['image/png', 'image/jpeg', 'image/webp'];
@@ -79,6 +80,94 @@ interface FrameSlotProps {
   onDropFile: (file: File) => void;
   disabled?: boolean;
 }
+
+/** 결과 스택의 한 카드 — 생성중 / 완료 / 실패 상태를 하나의 컴포넌트로 처리 */
+interface JobCardProps {
+  job: VideoJob;
+  onRemove: () => void;
+  onRemixPrompt: () => void;
+}
+const JobCard: React.FC<JobCardProps> = ({ job, onRemove, onRemixPrompt }) => {
+  const promptPreview = job.prompt.length > 80 ? job.prompt.slice(0, 80) + '…' : job.prompt;
+
+  return (
+    <div className="relative w-full rounded-3xl overflow-hidden border border-zinc-200 bg-white">
+      {/* 상단 메타 */}
+      <div className="px-4 py-2.5 flex items-center justify-between gap-3 border-b border-zinc-100">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`shrink-0 w-2 h-2 rounded-full ${
+            job.status === 'generating' ? 'bg-primary animate-pulse'
+            : job.status === 'done' ? 'bg-emerald-500'
+            : 'bg-red-500'
+          }`} />
+          <span className="text-xs font-black text-zinc-800">
+            {job.status === 'generating' ? '생성 중' : job.status === 'done' ? '완료' : '실패'}
+          </span>
+          <span className="text-[11px] text-zinc-500 font-mono shrink-0">
+            {job.aspect} · {job.durationSec}s
+          </span>
+          <span className="text-[11px] text-zinc-400 truncate">
+            {promptPreview}
+          </span>
+        </div>
+        <button
+          onClick={onRemove}
+          className="shrink-0 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700"
+          title="이 카드 닫기 (히스토리에는 남아 있어요)"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* 본체 */}
+      {job.status === 'generating' && (
+        <div className="bg-zinc-900 aspect-video flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <Loader2 className="w-10 h-10 text-white/60 mx-auto animate-spin" />
+            <p className="text-white/60 text-sm font-bold">동영상 생성 중...</p>
+            <p className="text-white/40 text-xs">Kling API 처리 · 최대 5분</p>
+          </div>
+        </div>
+      )}
+      {job.status === 'done' && job.videoUrl && (
+        <>
+          <div className="bg-zinc-900 flex items-center justify-center">
+            <video
+              src={job.videoUrl}
+              controls
+              autoPlay={false}
+              loop
+              className="w-full max-h-[60vh] object-contain"
+            />
+          </div>
+          <div className="px-4 py-3 flex flex-wrap gap-2 border-t border-zinc-100">
+            <a
+              href={job.videoUrl}
+              download={`sodam-video-${job.id}.mp4`}
+              className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
+            >
+              <Download size={14} /> 다운로드
+            </a>
+            <button
+              onClick={onRemixPrompt}
+              className="px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
+            >
+              <RefreshCw size={14} /> 프롬프트 복원
+            </button>
+          </div>
+        </>
+      )}
+      {job.status === 'failed' && (
+        <div className="bg-red-50 aspect-video flex items-center justify-center">
+          <div className="text-center space-y-2 px-6">
+            <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+            <p className="text-red-700 text-sm font-bold">{job.error ?? '생성 실패'}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const FrameSlot: React.FC<FrameSlotProps> = ({ label, dataUrl, onPick, onLibrary, onClear, onDropFile, disabled }) => {
   const [dragOver, setDragOver] = useState(false);
@@ -153,11 +242,6 @@ export const VideoStudio: React.FC = () => {
   const [duration, setDuration] = useState<VideoDuration>(DEFAULT_VIDEO_DURATION);
   const [startFrame, setStartFrame] = useState<string | null>(null);
   const [endFrame, setEndFrame] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoPrompt, setVideoPrompt] = useState('');
-  const [failure, setFailure] = useState<GenerateVideoFailure | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 파일 픽커 참조 (start / end 각각)
   const startFileRef = useRef<HTMLInputElement>(null);
@@ -170,9 +254,18 @@ export const VideoStudio: React.FC = () => {
   const [history, setHistory] = useState<VideoHistoryItem[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // AbortController — 컴포넌트 언마운트 시 진행 중인 생성 취소 (크레딧 미차감)
-  const abortRef = useRef<AbortController | null>(null);
-  useEffect(() => () => { abortRef.current?.abort(); }, []);
+  // 전역 생성 큐 (Kling 스타일) — 이탈해도 백그라운드로 계속, 결과는 스택으로 축적
+  const jobs = useVideoGenStore((s) => s.jobs);
+  const addJob = useVideoGenStore((s) => s.addJob);
+  const updateJob = useVideoGenStore((s) => s.updateJob);
+  const removeJob = useVideoGenStore((s) => s.removeJob);
+  const hasActiveJob = jobs.some((j) => j.status === 'generating');
+
+  // 결과 스택 자동 스크롤 (새 카드가 뷰포트에 들어오도록)
+  const stackEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (jobs.length > 0) stackEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [jobs.length]);
 
   // 프롬프트 자동 추천 상태
   const [suggesting, setSuggesting] = useState(false);
@@ -239,60 +332,70 @@ export const VideoStudio: React.FC = () => {
       }
     }
 
-    setBusy(true);
-    setFailure(null);
-    setErrorMessage(null);
-    setVideoUrl(null);
+    // 큐에 등록 후 fire-and-forget. 컴포넌트 언마운트되어도 백그라운드로 계속 진행.
+    // Kling 링크가 반환되면 스토리지로 복제 + 히스토리 저장 + 잡 완료 상태.
+    const jobId = crypto.randomUUID();
+    const promptSnapshot = prompt.trim();
+    const startImageSnapshot = startFrame ?? undefined;
+    const endImageSnapshot = endFrame ?? undefined;
 
-    const controller = new AbortController();
-    abortRef.current?.abort();
-    abortRef.current = controller;
+    addJob({
+      id: jobId,
+      prompt: promptSnapshot,
+      aspect: resolvedAspect,
+      durationSec: duration,
+      hasStartFrame: !!startImageSnapshot,
+      hasEndFrame: !!endImageSnapshot,
+    });
 
-    try {
-      const result = await generateStudioVideo({
-        prompt: prompt.trim(),
-        aspect: resolvedAspect,
-        durationSec: duration,
-        startImage: startFrame ?? undefined,
-        endImage: endFrame ?? undefined,
-        signal: controller.signal,
-      });
-      // 이탈로 취소된 경우: deduct / history 저장 모두 하지 않는다.
-      if (controller.signal.aborted) return;
-      if (!result.ok || !result.videoUrl) {
-        setFailure(result.failure ?? 'error');
-        setErrorMessage(result.message ?? null);
-        return;
-      }
-      const promptSnapshot = prompt.trim();
-      setVideoUrl(result.videoUrl);
-      setVideoPrompt(promptSnapshot);
-      await deduct(cost, `동영상 생성 (${duration}s${endFrame ? ' · end frame' : ''})`);
-
-      // 히스토리에 저장 (Kling 링크는 24h 만료라 반드시 Storage 로 복제).
-      // aspect 는 resolved 값(concrete)으로 저장 — 나중에 히스토리에서 재열기 시 정확한 비율 복원.
-      if (user?.id) {
-        const saveResult = await saveVideoHistory({
-          ownerId: user.id,
+    (async () => {
+      try {
+        const result = await generateStudioVideo({
           prompt: promptSnapshot,
           aspect: resolvedAspect,
           durationSec: duration,
-          model: VIDEO_STUDIO_MODEL,
-          hasStartFrame: !!startFrame,
-          hasEndFrame: !!endFrame,
-          videoUrl: result.videoUrl,
+          startImage: startImageSnapshot,
+          endImage: endImageSnapshot,
         });
-        if (saveResult.ok && saveResult.item) {
-          setVideoUrl(saveResult.item.url);  // signed URL 로 교체
-          loadHistory();
+        if (!result.ok || !result.videoUrl) {
+          updateJob(jobId, {
+            status: 'failed',
+            error: result.failure === 'blocked' ? '콘텐츠 정책에 의해 차단되었습니다.'
+              : result.failure === 'timeout' ? '생성이 시간 초과되었습니다.'
+              : result.failure === 'no_api_key' ? 'API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
+              : (result.message ?? '생성 실패'),
+          });
+          return;
         }
+        await deduct(cost, `동영상 생성 (${duration}s${endImageSnapshot ? ' · end frame' : ''})`);
+
+        if (user?.id) {
+          const saveResult = await saveVideoHistory({
+            ownerId: user.id,
+            prompt: promptSnapshot,
+            aspect: resolvedAspect,
+            durationSec: duration,
+            model: VIDEO_STUDIO_MODEL,
+            hasStartFrame: !!startImageSnapshot,
+            hasEndFrame: !!endImageSnapshot,
+            videoUrl: result.videoUrl,
+          });
+          if (saveResult.ok && saveResult.item) {
+            updateJob(jobId, {
+              status: 'done',
+              videoUrl: saveResult.item.url,
+              historyId: saveResult.item.id,
+            });
+            loadHistory();
+            return;
+          }
+        }
+        // 히스토리 저장 실패 시에도 Kling 원본 URL 로 결과는 보여준다 (24h 만료 안내는 UI 에서).
+        updateJob(jobId, { status: 'done', videoUrl: result.videoUrl });
+      } catch (e) {
+        updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
       }
-    } catch (e) {
-      setFailure('error');
-      setErrorMessage(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+    })();
   };
 
   const handleSuggestPrompt = async () => {
@@ -318,27 +421,22 @@ export const VideoStudio: React.FC = () => {
   };
 
   const remixFromHistory = (item: VideoHistoryItem) => {
+    // Remix: 프롬프트/종횡비/길이 폼에 되채움. 실제 재생은 히스토리 스트립에서 직접.
     setPrompt(item.prompt);
-    // 히스토리에는 concrete 비율만 저장됨 — 사용자가 명시적으로 auto 로 다시 바꾸도록 유지
     setAspect(item.aspect as VideoAspect);
     setDuration((item.duration_sec === 10 ? 10 : 5) as VideoDuration);
-    setVideoUrl(item.url);
-    setVideoPrompt(item.prompt);
-    // 시작/끝 프레임은 원본 이미지를 갖고있지 않으므로 재적용 불가 — 사용자에게 안내
   };
 
   const deleteFromHistory = async (item: VideoHistoryItem) => {
     const ok = await confirm('이 히스토리 항목을 삭제할까요? (크레딧은 반환되지 않습니다)');
     if (!ok) return;
     const success = await deleteVideoHistoryItem(item.id, item.storage_path);
-    if (success) {
-      loadHistory();
-      if (videoUrl === item.url) { setVideoUrl(null); setVideoPrompt(''); }
-    }
+    if (success) loadHistory();
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8 max-w-[1600px] mr-auto w-full">
+    // Layout 이 이미 p-4 md:p-8 + max-w-[1600px] 을 감싸므로 여기서는 3분할만 처리.
+    <div className="flex flex-col lg:flex-row gap-6">
       {/* Left: controls — ImageStudio 와 동일한 카드 스타일/폭 (w-[380px]) */}
       <aside className="w-full lg:w-[380px] lg:shrink-0 flex flex-col gap-5 bg-white border border-zinc-200 rounded-3xl p-6">
         <div>
@@ -358,7 +456,7 @@ export const VideoStudio: React.FC = () => {
             onLibrary={() => setLibraryTarget('start')}
             onClear={() => setStartFrame(null)}
             onDropFile={(f) => handleFrameFile('start', f)}
-            disabled={busy}
+            disabled={hasActiveJob}
           />
           <div className="flex items-center justify-center pt-6">
             <ArrowRightLeft size={16} className="text-zinc-400" />
@@ -370,7 +468,7 @@ export const VideoStudio: React.FC = () => {
             onLibrary={() => setLibraryTarget('end')}
             onClear={() => setEndFrame(null)}
             onDropFile={(f) => handleFrameFile('end', f)}
-            disabled={busy || !startFrame}
+            disabled={!startFrame}
           />
         </div>
         {!startFrame && (
@@ -401,7 +499,7 @@ export const VideoStudio: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSuggestPrompt}
-                disabled={busy || suggesting || !hasEnough(SUGGEST_PROMPT_COST)}
+                disabled={suggesting || !hasEnough(SUGGEST_PROMPT_COST)}
                 className="text-[11px] font-bold text-primary hover:underline disabled:opacity-40 disabled:no-underline flex items-center gap-1"
                 title={`이미지에서 프롬프트 추천 (${SUGGEST_PROMPT_COST}cr)`}
               >
@@ -416,7 +514,7 @@ export const VideoStudio: React.FC = () => {
             placeholder="원하는 장면·모션·분위기를 자세히 적어주세요. 예) 소녀가 창가에서 미소짓는 슬로우 줌인"
             rows={4}
             className="mt-1.5 w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
-            disabled={busy}
+            disabled={hasActiveJob}
           />
         </div>
 
@@ -428,7 +526,7 @@ export const VideoStudio: React.FC = () => {
               <button
                 key={a}
                 onClick={() => setAspect(a)}
-                disabled={busy}
+                disabled={hasActiveJob}
                 className={`px-2 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                   aspect === a
                     ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
@@ -455,7 +553,7 @@ export const VideoStudio: React.FC = () => {
               <button
                 key={d}
                 onClick={() => setDuration(d)}
-                disabled={busy}
+                disabled={hasActiveJob}
                 className={`px-3 py-2 rounded-xl font-bold text-xs transition-all ${
                   duration === d
                     ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
@@ -468,23 +566,15 @@ export const VideoStudio: React.FC = () => {
           </div>
         </div>
 
-        {/* Generate */}
+        {/* Generate — 진행 중이어도 새 잡을 추가할 수 있게 항상 활성 (Kling 스타일 큐) */}
         <button
           onClick={generate}
-          disabled={busy || !prompt.trim()}
+          disabled={!prompt.trim()}
           className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
-          {busy ? (
-            <>
-              <Loader2 className="animate-spin" size={18} />
-              생성 중... (1~3분)
-            </>
-          ) : (
-            <>
-              <Video size={18} />
-              🔥 {cost}cr · 동영상 생성
-            </>
-          )}
+          <Video size={18} />
+          🔥 {cost}cr · 동영상 생성
+          {hasActiveJob && <span className="ml-1 text-[10px] opacity-80">(대기열에 추가)</span>}
         </button>
 
         <p className="text-[11px] text-zinc-400 leading-relaxed">
@@ -499,65 +589,27 @@ export const VideoStudio: React.FC = () => {
         </p>
       </aside>
 
-      {/* Center: preview + actions */}
+      {/* Center: 결과 스택 (Kling 스타일 · 새 카드가 아래에 추가됨) */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
-        {/* 빈 상태: 테두리만 · 배경 없음 (사용자 피드백 반영, 검은 큰 영역 제거)
-            생성 중 · 결과 · 실패: 진한 배경으로 재생 컨텍스트 강조 */}
-        {busy ? (
-          <div className="relative w-full bg-zinc-900 rounded-3xl overflow-hidden aspect-video flex items-center justify-center">
-            <div className="text-center space-y-3">
-              <Loader2 className="w-12 h-12 text-white/60 mx-auto animate-spin" />
-              <p className="text-white/60 text-sm font-bold">동영상 생성 중...</p>
-              <p className="text-white/40 text-xs">Kling API 처리 · 최대 5분</p>
-            </div>
-          </div>
-        ) : videoUrl ? (
-          <div className="relative w-full bg-zinc-900 rounded-3xl overflow-hidden aspect-video flex items-center justify-center">
-            <video
-              src={videoUrl}
-              controls
-              autoPlay
-              loop
-              className="w-full h-full object-contain"
-            />
-          </div>
-        ) : failure ? (
-          <div className="relative w-full rounded-3xl overflow-hidden aspect-video flex items-center justify-center border-2 border-red-200 bg-red-50/50">
-            <div className="text-center space-y-2 px-6">
-              <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-              <p className="text-red-700 text-sm font-bold">
-                {failure === 'blocked' ? '콘텐츠 정책에 의해 차단되었습니다.'
-                  : failure === 'timeout' ? '생성이 시간 초과되었습니다.'
-                  : failure === 'no_api_key' ? 'API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
-                  : '생성 실패'}
-              </p>
-              {errorMessage && <p className="text-red-500/70 text-xs">{errorMessage}</p>}
-            </div>
-          </div>
-        ) : (
+        {jobs.length === 0 ? (
           <div className="relative w-full rounded-3xl aspect-video flex items-center justify-center border-2 border-dashed border-zinc-200 bg-transparent">
             <div className="text-center space-y-2">
               <Video className="w-12 h-12 text-zinc-300 mx-auto" />
               <p className="text-zinc-400 text-sm">프롬프트를 입력하고 생성 버튼을 눌러주세요</p>
+              <p className="text-zinc-300 text-xs">여러 개 생성 시 아래로 쌓입니다</p>
             </div>
           </div>
-        )}
-
-        {videoUrl && (
-          <div className="flex flex-wrap gap-2">
-            <a
-              href={videoUrl}
-              download={`sodam-video-${Date.now()}.mp4`}
-              className="px-4 py-2.5 rounded-2xl bg-white border border-zinc-200 hover:bg-zinc-50 text-sm font-bold text-zinc-700 flex items-center gap-2"
-            >
-              <Download size={16} /> 다운로드
-            </a>
-            <button
-              onClick={() => { setPrompt(videoPrompt); }}
-              className="px-4 py-2.5 rounded-2xl bg-white border border-zinc-200 hover:bg-zinc-50 text-sm font-bold text-zinc-700 flex items-center gap-2"
-            >
-              <RefreshCw size={16} /> 프롬프트 복원
-            </button>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {jobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                onRemove={() => removeJob(job.id)}
+                onRemixPrompt={() => setPrompt(job.prompt)}
+              />
+            ))}
+            <div ref={stackEndRef} />
           </div>
         )}
       </div>
