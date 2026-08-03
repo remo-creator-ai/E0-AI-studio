@@ -33,7 +33,7 @@
     .btn-code:hover { filter: brightness(1.06); }
 
     .scene-card {
-      scroll-margin-top: 155px;
+      scroll-margin-top: 205px;           /* sticky 컨트롤 바(189px) + 여백 */
       transition: box-shadow .25s, border-color .25s;
     }
     .scene-card.is-active {
@@ -198,6 +198,12 @@
     .track-opt.on[data-track="ai"] .t-radio { border-color: var(--primary); }
     .track-opt.on[data-track="ai"] .t-radio::after { content:''; width:9px; height:9px; border-radius:999px; background: var(--primary); }
     .track-opt.on[data-track="ai"] .t-cost { background: rgba(0,80,191,.14); color: var(--primary); }
+    /* 모달의 모델 선택도 같은 스타일을 쓴다 */
+    .track-opt.on[data-model]   { border-color: var(--primary); background: var(--primary-light); }
+    .track-opt.on[data-model] .t-radio { border-color: var(--primary); }
+    .track-opt.on[data-model] .t-radio::after { content:''; width:9px; height:9px; border-radius:999px; background: var(--primary); }
+    .track-opt.on[data-model] .t-cost { background: rgba(0,80,191,.14); color: var(--primary); }
+
     .track-opt.on[data-track="code"] { border-color: var(--code); background: var(--code-light); }
     .track-opt.on[data-track="code"] .t-radio { border-color: var(--code); }
     .track-opt.on[data-track="code"] .t-radio::after { content:''; width:9px; height:9px; border-radius:999px; background: var(--code); }
@@ -205,6 +211,62 @@
 
     .track-panel { display: none; }
     .track-panel.on { display: block; }
+
+    /* ── 씬 액션 선택 (START 이미지 오른쪽) ── */
+    .act {
+      width: 100%; text-align: left; display: flex; align-items: center; gap: 13px;
+      padding: 14px 16px; border-radius: 16px;
+      border: 2px solid #E2E7EE; background: #fff;
+      cursor: pointer; transition: all .18s;
+    }
+    .act:hover:not(:disabled) { border-color: #B9C4D3; transform: translateY(-1px); }
+    .act:disabled { opacity: .45; cursor: not-allowed; }
+    .act-ic {
+      width: 40px; height: 40px; border-radius: 13px; flex: none;
+      display: flex; align-items: center; justify-content: center;
+      background: #F1F4F8; color: #64748B;
+    }
+    .act-txt { min-width: 0; }
+    .act-name { display: block; font-size: 15px; font-weight: 900; color: #1F2937; line-height: 1.2; }
+    .act-sub  { display: block; font-size: 12.5px; font-weight: 700; color: #8A94A4; margin-top: 4px; line-height: 1.4; }
+    .act-cost {
+      margin-left: auto; flex: none;
+      font-size: 12px; font-weight: 900;
+      padding: 5px 11px; border-radius: 999px;
+      background: #F1F4F8; color: #64748B;
+    }
+    /* 지금 해야 할 액션 강조 */
+    .act.hot { border-color: #F5B942; background: #FFFBF2; }
+    .act.hot .act-ic   { background: #FDEBC8; color: #B45309; }
+    .act.hot .act-cost { background: #FBE3B4; color: #92400E; }
+    .act.go { border-color: var(--primary); background: var(--primary-light); }
+    .act.go .act-ic    { background: var(--primary); color: #fff; }
+    .act.go .act-name  { color: var(--primary); }
+    .act.go .act-cost  { background: rgba(0,80,191,.16); color: var(--primary); }
+    .act.run { border-color: #B9CFF5; background: #EEF4FF; }
+    .act.run .act-ic   { background: var(--primary); color: #fff; }
+    .act.done-state { border-color: #A8E4C4; background: #EEFBF4; }
+    .act.done-state .act-ic   { background: #10B981; color: #fff; }
+    .act.done-state .act-cost { background: #CDF0DE; color: #047857; }
+
+    /* ── END 프레임 소스 선택 (파일 / 보관함) ── */
+    .src-box {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px; border-radius: 14px;
+      border: 2px dashed #C7CED8; background: rgba(255,255,255,.72);
+    }
+    .src-btn {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 7px 14px; border-radius: 9px;
+      font-size: 13px; font-weight: 900; color: #475569;
+      transition: all .15s; white-space: nowrap;
+    }
+    .src-btn:hover { background: var(--primary-light); color: var(--primary); }
+
+    /* AI 영상 편집기 펼침 */
+    .ai-editor { display: none; }
+    .ai-editor.open { display: block; }
+    .act-list.hidden-when-open { display: block; }
 
     /* ── 업스케일 로딩바 ── */
     .upscale-bar { border-radius: 14px; padding: 12px 16px; display:flex; align-items:center; gap:12px; }
@@ -228,33 +290,69 @@
     .status-dot.failed  { background: #EF4444; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
-    /* ── 상단 씬 레일 (썸네일 클릭으로 이동) ── */
+    /* ── 상단 씬 레일 : 세로 구성 (씬 번호 → 썸네일 → 상태) ── */
     .rail-chip {
-      flex: none; display:flex; align-items:center; gap: 9px;
-      padding: 5px 13px 5px 5px; border-radius: 14px;
+      flex: none; display:flex; flex-direction: column; align-items: stretch; gap: 5px;
+      width: 108px; padding: 7px; border-radius: 14px;
       border: 2px solid #E2E7EE; background:#fff;
-      font-size: 13px; font-weight: 900; color:#475569;
-      cursor: pointer; transition: all .18s; white-space: nowrap;
+      cursor: pointer; transition: all .18s;
     }
     .rail-chip:hover { border-color:#B9C4D3; }
-    .rail-chip:hover .rail-thumb { transform: scale(1.04); }
-    .rail-chip.is-active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .rail-chip.is-active { border-color: var(--primary); background: var(--primary-light); }
     .rail-chip.is-active .rail-thumb { box-shadow: inset 0 0 0 2px var(--primary); }
+
+    /* 상단: 씬 번호 */
+    .rail-no {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 12px; font-weight: 900; color: #475569; line-height: 1;
+    }
+    .rail-chip.is-active .rail-no { color: var(--primary); }
+
+    /* 가운데: 썸네일 */
     .rail-thumb {
-      position: relative; flex: none;
-      width: 62px; height: 35px; border-radius: 9px; overflow: hidden;
-      transition: transform .18s;
+      position: relative;
+      width: 100%; aspect-ratio: 16/9; border-radius: 9px; overflow: hidden;
       background: repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 6px, #EFF2F6 6px, #EFF2F6 12px);
       display: flex; align-items: center; justify-content: center;
       font-size: 10px; font-weight: 900; color: #8A94A4;
     }
-    .rail-thumb.is-video { background: #1E2A3D; color: #93A4BD; }
     .rail-thumb.is-failed { box-shadow: inset 0 0 0 2px #EF4444; }
     .rail-thumb > b { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(15,23,42,.14); }
     .rail-thumb > b > i { display: block; height: 100%; }
-    .rail-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1; }
-    .rail-state { font-size: 10px; font-weight: 800; color: #94A3B8; }
+
+    /* 완료된 씬: 마우스 올리면 영상이 재생된다 */
+    .rail-thumb.has-video { background: #1E2A3D; color: #93A4BD; }
+    .rail-thumb.has-video .rt-fill {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, #22304a, #22304a 8px, #2b3b58 8px, #2b3b58 16px);
+      transform-origin: center;
+    }
+    .rail-thumb.has-video .rt-play {
+      position: relative; z-index: 2;
+      width: 26px; height: 26px; border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .18s;
+    }
+    .rail-thumb.has-video .rt-live {
+      position: absolute; z-index: 2; left: 5px; top: 5px;
+      padding: 2px 6px; border-radius: 5px;
+      background: rgba(239,68,68,.92); color:#fff;
+      font-size: 8px; font-weight: 900; letter-spacing: .06em;
+      opacity: 0; transition: opacity .18s;
+    }
+    .rail-chip:hover .rail-thumb.has-video .rt-play { opacity: 0; }
+    .rail-chip:hover .rail-thumb.has-video .rt-live { opacity: 1; }
+    .rail-chip:hover .rail-thumb.has-video .rt-fill { animation: railPlay 4s ease-in-out infinite alternate; }
+    @keyframes railPlay { from { transform: scale(1); } to { transform: scale(1.22); } }
+
+    /* 하단: 상태 */
+    .rail-state {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 10px; font-weight: 800; color: #94A3B8; line-height: 1;
+    }
     .rail-chip.is-active .rail-state { color: #3B7FD4; }
+    .rail-state .status-dot { width: 7px; height: 7px; }
 
     .nav-fab {
       width: 52px; height: 52px; border-radius: 16px;
@@ -280,6 +378,43 @@
     .seg button { padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 800; color:#64748B; }
     .seg button.on { background:#fff; color:#0F172A; font-weight:900; box-shadow: 0 2px 6px rgba(15,23,42,.10); }
     .seg.code button.on { color: var(--code); }
+
+    /* ── 생성된 영상 버전 스택 (씬마다 여러 번 생성 → 대표 1개 선택) ── */
+    .take-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+    .take {
+      position: relative; flex: none; width: 148px;
+      border-radius: 14px; border: 2px solid #E2E7EE; background: #fff;
+      padding: 6px; cursor: pointer; text-align: left; transition: all .18s;
+    }
+    .take:hover { border-color: #B9C4D3; }
+    .take.is-main { border-color: var(--primary); background: var(--primary-light); }
+    .take-thumb {
+      position: relative; width: 100%; aspect-ratio: 16/9;
+      border-radius: 9px; overflow: hidden; background: #1E2A3D;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .take-thumb .tk-fill {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, #22304a, #22304a 8px, #2b3b58 8px, #2b3b58 16px);
+    }
+    .take:hover .take-thumb .tk-fill { animation: railPlay 4s ease-in-out infinite alternate; }
+    .take-dur {
+      position: absolute; z-index: 2; right: 5px; bottom: 5px;
+      padding: 2px 6px; border-radius: 5px;
+      background: rgba(9,14,24,.78); color:#fff; font-size: 10px; font-weight: 900;
+    }
+    .take-main-tag {
+      position: absolute; z-index: 2; left: 5px; top: 5px;
+      padding: 3px 8px; border-radius: 6px;
+      background: var(--primary); color: #fff;
+      font-size: 10px; font-weight: 900; letter-spacing: .04em;
+      display: none;
+    }
+    .take.is-main .take-main-tag { display: block; }
+    .take-meta { display: flex; align-items: center; gap: 5px; padding: 7px 4px 2px; }
+    .take-name { font-size: 12px; font-weight: 900; color: #334155; }
+    .take.is-main .take-name { color: var(--primary); }
+    .take-time { font-size: 11px; font-weight: 700; color: #94A3B8; margin-left: auto; }
 
     .made-by {
       display:inline-flex; align-items:center; gap:6px;
@@ -361,35 +496,39 @@
         <div class="mt-3 flex items-center gap-2">
           <span class="text-[11px] font-black text-zinc-400 uppercase tracking-widest shrink-0 hidden md:inline">SCENES</span>
           <div class="flex-1 flex items-center gap-2 overflow-x-auto pb-1" id="rail">
-            <button class="rail-chip" data-jump="1" title="씬 1 · 영상 완료">
-              <span class="rail-thumb is-video">▶ 영상</span>
-              <span class="rail-label"><span>씬 1</span><span class="rail-state">영상 완료</span></span>
-              <span class="status-dot done"></span>
+            <button class="rail-chip" data-jump="1" title="씬 1 · 영상 완료 (마우스를 올리면 재생)">
+              <span class="rail-no">씬 1 <span class="text-[10px] font-black text-zinc-300">·3</span></span>
+              <span class="rail-thumb has-video">
+                <span class="rt-fill"></span>
+                <span class="rt-live">LIVE</span>
+                <span class="rt-play"><svg width="11" height="11" viewBox="0 0 24 24" fill="#0B1220"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg></span>
+              </span>
+              <span class="rail-state"><span class="status-dot done"></span>영상 완료</span>
             </button>
             <button class="rail-chip" data-jump="2" title="씬 2 · 업스케일 필요">
+              <span class="rail-no">씬 2</span>
               <span class="rail-thumb">SCENE 2</span>
-              <span class="rail-label"><span>씬 2</span><span class="rail-state">업스케일 필요</span></span>
-              <span class="status-dot pending"></span>
+              <span class="rail-state"><span class="status-dot pending"></span>업스케일 필요</span>
             </button>
             <button class="rail-chip" data-jump="3" title="씬 3 · 업스케일 60%">
+              <span class="rail-no">씬 3</span>
               <span class="rail-thumb">SCENE 3<b><i style="width:60%; background:#2563EB;"></i></b></span>
-              <span class="rail-label"><span>씬 3</span><span class="rail-state">업스케일 60%</span></span>
-              <span class="status-dot working"></span>
+              <span class="rail-state"><span class="status-dot working"></span>업스케일 60%</span>
             </button>
             <button class="rail-chip" data-jump="4" title="씬 4 · 코드 모션 대기">
+              <span class="rail-no">씬 4</span>
               <span class="rail-thumb">SCENE 4</span>
-              <span class="rail-label"><span>씬 4</span><span class="rail-state">코드 모션</span></span>
-              <span class="status-dot pending"></span>
+              <span class="rail-state"><span class="status-dot pending"></span>코드 모션</span>
             </button>
             <button class="rail-chip" data-jump="5" title="씬 5 · 영상 생성 45%">
+              <span class="rail-no">씬 5</span>
               <span class="rail-thumb">SCENE 5<b><i style="width:45%; background:#0050BF;"></i></b></span>
-              <span class="rail-label"><span>씬 5</span><span class="rail-state">영상 45%</span></span>
-              <span class="status-dot working"></span>
+              <span class="rail-state"><span class="status-dot working"></span>영상 45%</span>
             </button>
             <button class="rail-chip" data-jump="6" title="씬 6 · 실패">
+              <span class="rail-no">씬 6</span>
               <span class="rail-thumb is-failed">SCENE 6</span>
-              <span class="rail-label"><span>씬 6</span><span class="rail-state">실패</span></span>
-              <span class="status-dot failed"></span>
+              <span class="rail-state"><span class="status-dot failed"></span>실패</span>
             </button>
           </div>
           <span class="shrink-0 px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-black text-zinc-500">
@@ -439,7 +578,7 @@
                 <svg width="30" height="30" viewBox="0 0 24 24" fill="#0B1220"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg>
               </button>
               <div class="video-meta">
-                <span class="video-pill">완성 영상 · 5초</span>
+                <span class="video-pill" id="mainTakeLabel">대표 · 테이크 3 · 5초</span>
                 <span class="video-pill">1280 × 720</span>
               </div>
             </div>
@@ -447,13 +586,57 @@
             <div class="flex flex-col gap-3">
               <div class="field-label">이 씬 결과물</div>
               <button class="w-full px-4 py-3.5 rounded-2xl btn-primary font-black text-base">전체화면 재생</button>
-              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">영상 다운로드</button>
-              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">다시 만들기 · 10cr</button>
+              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">대표 영상 다운로드</button>
+              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">한 번 더 만들기 · 30cr</button>
               <div class="mt-auto p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200">
                 <p class="text-[13px] font-bold text-zinc-500 leading-relaxed">
-                  완성된 씬 영상은 전부 <strong class="text-zinc-700">마지막 합치기 단계</strong>에서 순서대로 이어붙여 최종 광고 영상이 됩니다.
+                  합치기에는 <strong class="text-zinc-700">대표로 지정한 영상 1개</strong>만 들어갑니다. 나머지 테이크는 보관됩니다.
                 </p>
               </div>
+            </div>
+          </div>
+
+          <!-- 생성된 영상 버전 스택 : 여러 번 만들면 여기 쌓이고, 하나를 대표로 고른다 -->
+          <div class="mt-5 p-4 rounded-2xl border border-zinc-200 bg-zinc-50/70">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-sm font-black text-zinc-700">생성된 영상 <span id="takeCount">3</span>개</span>
+              <span class="text-[13px] font-bold text-zinc-400">· 클릭하면 대표로 지정됩니다</span>
+              <span class="ml-auto text-[13px] font-bold text-zinc-400">마우스를 올리면 미리보기</span>
+            </div>
+            <div class="take-strip" data-take-group="1">
+              <button class="take is-main" data-take="3">
+                <span class="take-thumb">
+                  <span class="tk-fill"></span>
+                  <span class="take-main-tag">대표</span>
+                  <span class="take-dur">5초</span>
+                </span>
+                <span class="take-meta">
+                  <span class="take-name">테이크 3</span>
+                  <span class="take-time">방금</span>
+                </span>
+              </button>
+              <button class="take" data-take="2">
+                <span class="take-thumb">
+                  <span class="tk-fill"></span>
+                  <span class="take-main-tag">대표</span>
+                  <span class="take-dur">5초</span>
+                </span>
+                <span class="take-meta">
+                  <span class="take-name">테이크 2</span>
+                  <span class="take-time">6분 전</span>
+                </span>
+              </button>
+              <button class="take" data-take="1">
+                <span class="take-thumb">
+                  <span class="tk-fill"></span>
+                  <span class="take-main-tag">대표</span>
+                  <span class="take-dur">10초</span>
+                </span>
+                <span class="take-meta">
+                  <span class="take-name">테이크 1</span>
+                  <span class="take-time">21분 전</span>
+                </span>
+              </button>
             </div>
           </div>
 
@@ -524,129 +707,51 @@
           </div>
         </div>
 
-        <div class="px-6 py-5 card-body" data-track-group>
-          <!-- 모션 방식 선택 -->
-          <div class="track-switch">
-            <button class="track-opt" data-track="code">
-              <div class="t-head">
-                <span class="t-radio"></span>
-                <span class="t-name">코드 모션</span>
-                <span class="t-cost">무료 · 즉시</span>
-              </div>
-              <p class="t-desc">이미지 한 장에 줌인·줌아웃·팬을 코드로 입힙니다. 인물이 실제로 움직이지는 않습니다.</p>
+        <div class="px-6 py-5 card-body" data-scene-body="2">
+          <div class="act-list grid gap-5" style="grid-template-columns: minmax(0,1.15fr) minmax(0,1fr);">
+          <div>
+            <div class="frame-box is-start">
+              <span class="frame-tag start">START</span>
+              씬 2 · 시작 프레임
+              <span class="frame-res">512 × 288</span>
+            </div>
+            <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 2 이미지 · Kling 최소 해상도 미달</p>
+            <div class="mt-4">
+              <div class="field-label">이미지 프롬프트</div>
+              <div class="prompt-read">여성이 컵을 입에 대고 눈을 감으며 만족스러운 표정을 짓는 미디엄 샷</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="field-label">이 씬으로 무엇을 할까요?</div>
+            <div class="space-y-2.5">
+            <button class="act hot">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">업스케일</span>
+                <span class="act-sub">512 × 288 → 1280 × 720 · 약 15초</span>
+              </span>
+              <span class="act-cost">3cr</span>
             </button>
-            <button class="track-opt on" data-track="ai">
-              <div class="t-head">
-                <span class="t-radio"></span>
-                <span class="t-name">AI 영상 · Kling</span>
-                <span class="t-cost">10cr · 1~2분</span>
-              </div>
-              <p class="t-desc">인물과 사물이 실제로 움직이는 영상을 생성합니다. 시작 프레임이 720p 이상이어야 합니다.</p>
+            <button class="act" disabled title="영상 출력 경로 준비 중">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">가벼운 편집</span>
+                <span class="act-sub">줌 인 · 줌 아웃 · 패닝을 코드로 입힙니다</span>
+              </span>
+              <span class="act-cost">무료 · 준비중</span>
             </button>
-          </div>
-
-          <!-- ── 코드 모션 패널 ── -->
-          <div class="track-panel mt-5" data-panel="code">
-            <div class="upscale-bar skip">
-              <span class="text-sm font-black shrink-0" style="color:var(--code);">업스케일 불필요</span>
-              <div class="track"><i style="width:100%; background:var(--code);"></i></div>
-              <span class="text-xs font-bold shrink-0" style="color:var(--code);">현재 이미지로 바로 가능</span>
-            </div>
-
-            <div class="mt-5 grid gap-5" style="grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);">
-              <div>
-                <div class="field-label">미리보기 · 실시간</div>
-                <div class="kb-stage" data-fx="zoom-in">
-                  <div class="kb-inner">씬 2 이미지</div>
-                </div>
-              </div>
-              <div class="flex flex-col gap-4">
-                <div>
-                  <div class="field-label">모션 프리셋</div>
-                  <div class="grid grid-cols-2 gap-2" data-fx-group>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-in">줌 인</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-out">줌 아웃</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="pan-right">팬 좌 → 우</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="none">고정</button>
-                  </div>
-                </div>
-                <div>
-                  <div class="field-label">길이</div>
-                  <div class="seg code"><button class="on">5초</button><button>10초</button></div>
-                </div>
-                <button class="mt-auto w-full px-5 py-3.5 rounded-2xl btn-code font-black text-base">
-                  이 모션으로 적용 · 무료
-                </button>
-              </div>
+            <button class="act" data-open-ai="2" disabled>
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">AI 동영상 생성</span>
+                <span class="act-sub">Kling 2.5 · 업스케일을 먼저 해주세요</span>
+              </span>
+              <span class="act-cost">30cr</span>
+            </button>
             </div>
           </div>
-
-          <!-- ── AI 영상 패널 ── -->
-          <div class="track-panel on mt-5" data-panel="ai">
-            <div class="upscale-bar need">
-              <span class="text-sm font-black text-amber-900 shrink-0">업스케일 필요</span>
-              <div class="track"><i style="width:0%; background:#F59E0B;"></i></div>
-              <span class="text-xs font-bold text-amber-800 shrink-0 hidden sm:inline">512 × 288 → 1280 × 720 · 약 15초</span>
-              <button class="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-black"
-                      style="box-shadow:0 6px 16px rgba(245,158,11,.32);">업스케일 5cr</button>
-            </div>
-
-            <div class="mt-5 frame-row">
-              <div>
-                <div class="frame-box is-start">
-                  <span class="frame-tag start">START</span>
-                  씬 2 · 시작 프레임
-                  <span class="frame-res">업스케일 후 자동</span>
-                </div>
-                <p class="mt-2.5 text-sm font-bold text-zinc-500">업스케일이 끝나면 자동으로 채워집니다</p>
-              </div>
-              <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
-              <div>
-                <div class="frame-box is-empty">
-                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
-                  <span class="frame-tag end">END</span>
-                </div>
-                <div class="mt-2.5 flex items-center gap-2 flex-wrap">
-                  <button class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-black">씬 3 이미지로 채우기</button>
-                  <button class="px-3 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black">업로드</button>
-                </div>
-                <p class="mt-2 text-[13px] font-bold text-zinc-400">비워두면 시작 프레임만으로 생성합니다</p>
-              </div>
-            </div>
-
-            <div class="mt-6 grid gap-5 md:grid-cols-2">
-              <div>
-                <div class="field-label">이미지 프롬프트</div>
-                <div class="prompt-read">여성이 컵을 입에 대고 눈을 감으며 만족스러운 표정을 짓는 미디엄 샷</div>
-              </div>
-              <div>
-                <div class="field-label">영상 프롬프트 · 모션</div>
-                <textarea class="prompt-box" rows="3">카메라가 천천히 줌인한다. 여성이 눈을 뜨며 살짝 미소짓는다.</textarea>
-              </div>
-            </div>
-
-            <div class="mt-5 pt-5 border-t border-zinc-100 flex flex-wrap items-end gap-5">
-              <div>
-                <div class="field-label">길이</div>
-                <div class="seg"><button class="on">5초</button><button>10초</button></div>
-              </div>
-              <div>
-                <div class="field-label">해상도</div>
-                <div class="seg">
-                  <button class="on">720p</button>
-                  <button class="flex items-center gap-1.5">1080p <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">VIP</span></button>
-                </div>
-              </div>
-              <div class="ml-auto flex items-center gap-4">
-                <div class="text-right">
-                  <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
-                  <div class="text-lg font-black text-zinc-900">10cr</div>
-                </div>
-                <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base" disabled>영상 생성</button>
-              </div>
-            </div>
-            <p class="mt-3 text-sm font-bold text-amber-700">업스케일이 끝나면 [영상 생성]이 활성화됩니다.</p>
-          </div>
+        </div>
         </div>
       </article>
 
@@ -677,40 +782,53 @@
           </div>
         </div>
 
-        <div class="px-6 py-5 card-body">
-          <div class="upscale-bar running">
-            <span class="text-sm font-black text-blue-900 shrink-0">업스케일 60%</span>
-            <div class="track stripe"><i style="width:60%; background:#2563EB;"></i></div>
-            <span class="text-xs font-bold text-blue-800 shrink-0">남은 6초</span>
-          </div>
-
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start">
-                <span class="frame-tag start">START</span>
-                씬 3 · 시작 프레임
-                <span class="frame-res">처리 중…</span>
-              </div>
+        <div class="px-6 py-5 card-body" data-scene-body="3">
+          <div class="act-list grid gap-5" style="grid-template-columns: minmax(0,1.15fr) minmax(0,1fr);">
+          <div>
+            <div class="frame-box is-start">
+              <span class="frame-tag start">START</span>
+              씬 3 · 시작 프레임
+              <span class="frame-res">처리 중…</span>
             </div>
-            <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
-            <div>
-              <div class="frame-box is-empty">
-                <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
-                <span class="frame-tag end">END</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
+            <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 3 이미지 · 업스케일 결과로 교체됩니다</p>
+            <div class="mt-4">
               <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">여성이 컵을 내려놓으며 만족스럽게 웃는 미디엄 클로즈업</div>
             </div>
-            <div>
-              <div class="field-label">영상 프롬프트 · 모션</div>
-              <textarea class="prompt-box" rows="3">컵을 내려놓는 손을 따라 카메라가 살짝 아래로 이동한다.</textarea>
+          </div>
+
+          <div>
+            <div class="field-label">이 씬으로 무엇을 할까요?</div>
+            <div class="space-y-2.5">
+            <button class="act run" disabled>
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg></span>
+              <span class="act-txt" style="flex:1;">
+                <span class="act-name" style="color:var(--primary);">업스케일 진행중 60%</span>
+                <span class="act-sub" style="display:block;">
+                  <span class="track stripe" style="margin-top:6px;"><i style="width:60%; background:#2563EB;"></i></span>
+                </span>
+              </span>
+              <span class="act-cost">남은 6초</span>
+            </button>
+            <button class="act" disabled title="영상 출력 경로 준비 중">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">가벼운 편집</span>
+                <span class="act-sub">줌 인 · 줌 아웃 · 패닝을 코드로 입힙니다</span>
+              </span>
+              <span class="act-cost">무료 · 준비중</span>
+            </button>
+            <button class="act" data-open-ai="3" disabled>
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">AI 동영상 생성</span>
+                <span class="act-sub">Kling 2.5 · 업스케일이 끝나면 열립니다</span>
+              </span>
+              <span class="act-cost">30cr</span>
+            </button>
             </div>
           </div>
+        </div>
         </div>
       </article>
 
@@ -741,66 +859,57 @@
           </div>
         </div>
 
-        <div class="px-6 py-5 card-body" data-track-group>
-          <div class="track-switch">
-            <button class="track-opt on" data-track="code">
-              <div class="t-head">
-                <span class="t-radio"></span>
-                <span class="t-name">코드 모션</span>
-                <span class="t-cost">무료 · 즉시</span>
-              </div>
-              <p class="t-desc">이미지 한 장에 줌인·줌아웃·팬을 코드로 입힙니다. 인물이 실제로 움직이지는 않습니다.</p>
-            </button>
-            <button class="track-opt" data-track="ai">
-              <div class="t-head">
-                <span class="t-radio"></span>
-                <span class="t-name">AI 영상 · Kling</span>
-                <span class="t-cost">10cr · 1~2분</span>
-              </div>
-              <p class="t-desc">인물과 사물이 실제로 움직이는 영상을 생성합니다. 시작 프레임이 720p 이상이어야 합니다.</p>
-            </button>
-          </div>
-
-          <div class="track-panel on mt-5" data-panel="code">
-            <div class="upscale-bar skip">
-              <span class="text-sm font-black shrink-0" style="color:var(--code);">업스케일 불필요</span>
-              <div class="track"><i style="width:100%; background:var(--code);"></i></div>
-              <span class="text-xs font-bold shrink-0" style="color:var(--code);">현재 이미지로 바로 가능</span>
+        <div class="px-6 py-5 card-body" data-scene-body="4">
+          <div class="act-list grid gap-5" style="grid-template-columns: minmax(0,1.15fr) minmax(0,1fr);">
+          <div>
+            <div class="frame-box is-start">
+              <span class="frame-tag start">START</span>
+              씬 4 · 시작 프레임
+              <span class="frame-res">1280 × 720</span>
             </div>
-
-            <div class="mt-5 grid gap-5" style="grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);">
-              <div>
-                <div class="field-label">미리보기 · 실시간</div>
-                <div class="kb-stage" data-fx="pan-right">
-                  <div class="kb-inner">씬 4 이미지</div>
-                </div>
-              </div>
-              <div class="flex flex-col gap-4">
-                <div>
-                  <div class="field-label">모션 프리셋</div>
-                  <div class="grid grid-cols-2 gap-2" data-fx-group>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-in">줌 인</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-out">줌 아웃</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="pan-right">팬 좌 → 우</button>
-                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="none">고정</button>
-                  </div>
-                </div>
-                <div>
-                  <div class="field-label">길이</div>
-                  <div class="seg code"><button class="on">5초</button><button>10초</button></div>
-                </div>
-                <button class="mt-auto w-full px-5 py-3.5 rounded-2xl btn-code font-black text-base">이 모션으로 적용 · 무료</button>
-              </div>
-            </div>
-
-            <div class="mt-6">
+            <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 4 업스케일 이미지</p>
+            <div class="mt-4">
               <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">남성 파트너와 컵을 부딪히며 함께 웃는 투샷</div>
-              <p class="mt-2.5 text-[13px] font-bold text-zinc-400">코드 모션은 영상 프롬프트를 쓰지 않습니다.</p>
             </div>
           </div>
 
-          <div class="track-panel mt-5" data-panel="ai">
+          <div>
+            <div class="field-label">이 씬으로 무엇을 할까요?</div>
+            <div class="space-y-2.5">
+            <button class="act done-state" disabled>
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">업스케일 완료</span>
+                <span class="act-sub">1280 × 720 · 영상 생성 준비됨</span>
+              </span>
+              <span class="act-cost">완료</span>
+            </button>
+            <button class="act" disabled title="영상 출력 경로 준비 중">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">가벼운 편집</span>
+                <span class="act-sub">줌 인 · 줌 아웃 · 패닝을 코드로 입힙니다</span>
+              </span>
+              <span class="act-cost">무료 · 준비중</span>
+            </button>
+            <button class="act go" data-open-ai="4">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">AI 동영상 생성</span>
+                <span class="act-sub">Kling 2.5 · 시작 프레임 준비됨</span>
+              </span>
+              <span class="act-cost">30cr</span>
+            </button>
+            </div>
+          </div>
+        </div>
+          <div class="ai-editor open" data-ai-editor="4">
+            <button class="mb-4 text-sm font-black text-zinc-500 hover:text-zinc-800 flex items-center gap-1.5" data-close-ai="4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              방식 다시 고르기
+            </button>
+
             <div class="upscale-bar done">
               <span class="text-sm font-black text-emerald-800 shrink-0">업스케일 완료</span>
               <div class="track"><i style="width:100%; background:#10B981;"></i></div>
@@ -813,25 +922,74 @@
                   씬 4 · 시작 프레임
                   <span class="frame-res">1280 × 720</span>
                 </div>
+                <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 4 업스케일 이미지</p>
               </div>
               <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
-              <div>
-                <div class="frame-box is-empty">
-                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
+              <div data-end-slot="4">
+                <!-- END 비어있음 : 다음 씬 이미지 / 파일 / 보관함 중에서 채운다 -->
+                <div class="frame-box is-empty" data-end-empty>
                   <span class="frame-tag end">END</span>
+                  <span class="src-box">
+                    <button class="src-btn" data-end-fill="4">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>
+                      다음 씬 이미지
+                    </button>
+                    <button class="src-btn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M20 21H4"/></svg>
+                      파일
+                    </button>
+                    <button class="src-btn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L9 18"/></svg>
+                      보관함
+                    </button>
+                  </span>
+                </div>
+                <!-- END 채워짐 -->
+                <div class="frame-box is-end" data-end-filled style="display:none;">
+                  <span class="frame-tag end">END</span>
+                  씬 5 · 끝 프레임
+                  <span class="frame-res">1280 × 720</span>
+                </div>
+                <p class="mt-2.5 text-sm font-bold text-zinc-500" data-end-cap>
+                  비워두면 시작 프레임만으로 생성합니다 · 지정하면 프로 모델(비용 2배)
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-5 md:grid-cols-2">
+              <div>
+                <div class="field-label">이미지 프롬프트</div>
+                <div class="prompt-read">남성 파트너와 컵을 부딪히며 함께 웃는 투샷</div>
+              </div>
+              <div>
+                <div class="field-label">영상 프롬프트 · 모션</div>
+                <textarea class="prompt-box" rows="3">두 사람이 컵을 부딪히는 순간 카메라가 천천히 뒤로 빠진다.</textarea>
+              </div>
+            </div>
+
+            <div class="mt-5 pt-5 border-t border-zinc-100 flex flex-wrap items-end gap-5">
+              <div>
+                <div class="field-label">모델</div>
+                <div class="seg" data-model-seg><button class="on">Kling 2.5</button><button>Kling 2.6 pro</button></div>
+              </div>
+              <div>
+                <div class="field-label">길이</div>
+                <div class="seg"><button class="on">5초</button><button>10초</button></div>
+              </div>
+              <div>
+                <div class="field-label">해상도</div>
+                <div class="seg">
+                  <button class="on">720p</button>
+                  <button class="flex items-center gap-1.5">1080p <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">VIP</span></button>
                 </div>
               </div>
-            </div>
-            <div class="mt-6">
-              <div class="field-label">영상 프롬프트 · 모션</div>
-              <textarea class="prompt-box" rows="3">두 사람이 컵을 부딪히는 순간 카메라가 천천히 뒤로 빠진다.</textarea>
-            </div>
-            <div class="mt-5 flex items-center justify-end gap-4">
-              <div class="text-right">
-                <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
-                <div class="text-lg font-black text-zinc-900">10cr</div>
+              <div class="ml-auto flex items-center gap-4">
+                <div class="text-right">
+                  <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
+                  <div class="text-lg font-black text-zinc-900" data-scene-cost>30cr</div>
+                </div>
+                <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base">영상 생성</button>
               </div>
-              <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base">영상 생성</button>
             </div>
           </div>
         </div>
@@ -950,60 +1108,56 @@
           </div>
         </div>
 
-        <div class="px-6 py-5 card-body">
-          <div class="upscale-bar failed">
-            <span class="text-sm font-black text-red-800 shrink-0">해상도 미달 · 업스케일 필요</span>
+        <div class="px-6 py-5 card-body" data-scene-body="6">
+          <div class="upscale-bar failed mb-5">
+            <span class="text-sm font-black text-red-800 shrink-0">해상도 미달로 생성 실패</span>
             <div class="track"><i style="width:0%; background:#EF4444;"></i></div>
-            <span class="text-xs font-bold text-red-700 shrink-0 hidden sm:inline">512 × 288 → 1280 × 720</span>
+            <span class="text-xs font-bold text-red-700 shrink-0 hidden sm:inline">Image pixel is invalid · 512 × 288</span>
           </div>
-
-          <!-- 실패 씬은 다음 행동 두 갈래를 나란히 -->
-          <div class="mt-5 grid gap-4 md:grid-cols-2">
-            <div class="p-5 rounded-2xl border-2 border-amber-200 bg-amber-50/50">
-              <div class="text-base font-black text-amber-900 mb-1.5">업스케일 후 다시 시도</div>
-              <p class="text-[13px] font-bold text-amber-800 leading-relaxed mb-4">
-                시작 프레임을 1280 × 720 으로 키운 뒤 Kling 으로 다시 생성합니다.
-              </p>
-              <button class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm"
-                      style="box-shadow:0 6px 16px rgba(245,158,11,.32);">업스케일 5cr + 영상 10cr</button>
+          <div class="act-list grid gap-5" style="grid-template-columns: minmax(0,1.15fr) minmax(0,1fr);">
+          <div>
+            <div class="frame-box is-start" style="box-shadow: inset 0 0 0 3px #EF4444;">
+              <span class="frame-tag start" style="background:rgba(239,68,68,.92);">START</span>
+              씬 6 · 시작 프레임
+              <span class="frame-res" style="background:rgba(185,28,28,.85);">512 × 288 · 미달</span>
             </div>
-            <div class="p-5 rounded-2xl border-2" style="border-color:#DDD0FA; background:var(--code-light);">
-              <div class="text-base font-black mb-1.5" style="color:#5B21B6;">코드 모션으로 바꾸기</div>
-              <p class="text-[13px] font-bold leading-relaxed mb-4" style="color:#6D28D9;">
-                해상도 제약이 없습니다. 지금 이미지 그대로 줌·팬을 입혀 즉시 만듭니다.
-              </p>
-              <button class="w-full px-4 py-3 rounded-xl btn-code font-black text-sm">코드 모션으로 전환 · 무료</button>
-            </div>
-          </div>
-
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start" style="box-shadow: inset 0 0 0 3px #EF4444;">
-                <span class="frame-tag start" style="background:rgba(239,68,68,.92);">START</span>
-                씬 6 · 시작 프레임
-                <span class="frame-res" style="background:rgba(185,28,28,.85);">512 × 288 · 미달</span>
-              </div>
-              <p class="mt-2.5 text-sm font-bold text-red-600">Kling 최소 해상도(720p) 미달</p>
-            </div>
-            <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
-            <div>
-              <div class="frame-box is-empty">
-                <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
-                <span class="frame-tag end">END</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
+            <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 6 이미지 · Kling 최소 해상도(720p) 미달</p>
+            <div class="mt-4">
               <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">여러 컵이 놓인 넓은 테이블 오버헤드 샷</div>
             </div>
-            <div>
-              <div class="field-label">영상 프롬프트 · 모션</div>
-              <textarea class="prompt-box" rows="3">테이블 위를 천천히 가로지르며 컵들을 훑는다.</textarea>
+          </div>
+
+          <div>
+            <div class="field-label">이 씬으로 무엇을 할까요?</div>
+            <div class="space-y-2.5">
+            <button class="act hot">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">업스케일</span>
+                <span class="act-sub">512 × 288 → 1280 × 720 · 약 15초</span>
+              </span>
+              <span class="act-cost">3cr</span>
+            </button>
+            <button class="act" disabled title="영상 출력 경로 준비 중">
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">가벼운 편집</span>
+                <span class="act-sub">줌 인 · 줌 아웃 · 패닝을 코드로 입힙니다</span>
+              </span>
+              <span class="act-cost">무료 · 준비중</span>
+            </button>
+            <button class="act" data-open-ai="6" disabled>
+              <span class="act-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg></span>
+              <span class="act-txt">
+                <span class="act-name">AI 동영상 생성</span>
+                <span class="act-sub">Kling 2.5 · 업스케일 후 다시 시도할 수 있습니다</span>
+              </span>
+              <span class="act-cost">30cr</span>
+            </button>
             </div>
           </div>
+        </div>
         </div>
       </article>
 
@@ -1022,6 +1176,74 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ══════════ 전체 생성 확인 모달 ══════════ -->
+  <div id="batchModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(11,18,32,.55);">
+    <div class="w-full max-w-[720px] max-h-[88vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
+
+      <div class="px-7 pt-6 pb-4 border-b border-zinc-100">
+        <h2 class="text-xl font-black text-zinc-900">선택한 씬 생성</h2>
+        <p class="mt-1.5 text-sm font-bold text-zinc-500">모델을 고르고, 만들 씬을 확인한 뒤 시작합니다.</p>
+      </div>
+
+      <!-- 1. 모델 선택 -->
+      <div class="px-7 py-5 border-b border-zinc-100">
+        <div class="field-label">1 · 어떤 모델로 만들까요?</div>
+        <div class="space-y-2" data-model-group>
+          <button class="w-full track-opt on" data-model="std">
+            <div class="t-head">
+              <span class="t-radio"></span>
+              <span class="t-name">Kling v2.6 · 표준</span>
+              <span class="t-cost">30cr / 5초</span>
+            </div>
+            <p class="t-desc">720p. 대부분의 씬에 충분합니다. 시작 프레임만 사용합니다.</p>
+          </button>
+          <button class="w-full track-opt" data-model="pro">
+            <div class="t-head">
+              <span class="t-radio"></span>
+              <span class="t-name">Kling v2.6 · 프로</span>
+              <span class="t-cost">60cr / 5초</span>
+            </div>
+            <p class="t-desc">1080p. 끝 프레임(END)을 쓰려면 이 모델이 필요합니다. 비용은 2배입니다.</p>
+          </button>
+          <button class="w-full track-opt" data-model="code" disabled style="opacity:.5; cursor:not-allowed;">
+            <div class="t-head">
+              <span class="t-radio"></span>
+              <span class="t-name">코드 모션</span>
+              <span class="t-cost">준비 중</span>
+            </div>
+            <p class="t-desc">줌·팬만 코드로 입히는 무료 방식. 영상 출력 경로가 아직 없습니다.</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 씬 확인 -->
+      <div class="px-7 py-5">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="field-label" style="margin-bottom:0;">2 · 만들 씬을 확인하세요</div>
+          <span class="ml-auto text-[13px] font-bold text-zinc-400">완료된 씬은 기본 해제</span>
+        </div>
+        <div class="space-y-2" id="batchList"></div>
+
+        <div class="mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+          <p class="text-[13px] font-bold text-amber-900 leading-relaxed">
+            이미 완료된 씬을 다시 체크하면 <strong>새 테이크가 추가로 쌓입니다</strong>. 기존 영상은 지워지지 않고, 대표는 나중에 직접 고르면 됩니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="px-7 py-5 border-t border-zinc-100 flex items-center gap-4" style="background:#F8FAFC;">
+        <div>
+          <div class="text-[13px] font-bold text-zinc-400">합계 <span id="batchCount">0</span>개 씬</div>
+          <div class="text-xl font-black text-zinc-900"><span id="batchCost">0</span>cr <span class="text-sm font-bold text-zinc-400">/ 잔액 305cr</span></div>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <button id="batchCancel" class="px-5 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-600 font-black text-sm hover:bg-zinc-50">취소</button>
+          <button id="batchStart" class="px-6 py-3 rounded-2xl btn-primary font-black text-sm">생성 시작</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1049,7 +1271,7 @@
     const navUp  = document.getElementById('navUp');
     const navDown= document.getElementById('navDown');
 
-    const HEADER = 155;          // sticky 컨트롤 바(137px) + 여백
+    const HEADER = 205;          // sticky 컨트롤 바(189px) + 여백
     let animating = false;
 
     function smoothTo(y) {
@@ -1123,36 +1345,50 @@
       if (!ticking) { ticking = true; requestAnimationFrame(syncActive); }
     }, { passive: true });
 
-    /* ───────── 모션 방식 전환 (코드 모션 ↔ AI 영상) ───────── */
-    document.querySelectorAll('[data-track-group]').forEach(group => {
-      group.querySelectorAll('.track-opt').forEach(opt => {
-        opt.addEventListener('click', () => {
-          const pick = opt.dataset.track;
-          group.querySelectorAll('.track-opt').forEach(o => o.classList.toggle('on', o === opt));
-          group.querySelectorAll('.track-panel').forEach(p => p.classList.toggle('on', p.dataset.panel === pick));
-        });
-      });
+    /* ───────── 액션 선택 ↔ AI 영상 편집기 ───────── */
+    function showEditor(n, open) {
+      const body   = document.querySelector(`[data-scene-body="${n}"]`);
+      const list   = body.querySelector('.act-list');
+      const editor = body.querySelector(`[data-ai-editor="${n}"]`);
+      if (!editor) return;
+      list.style.display = open ? 'none' : 'grid';
+      editor.classList.toggle('open', open);
+    }
+    document.querySelectorAll('[data-open-ai]').forEach(btn => {
+      btn.addEventListener('click', () => showEditor(btn.dataset.openAi, true));
+    });
+    document.querySelectorAll('[data-close-ai]').forEach(btn => {
+      btn.addEventListener('click', () => showEditor(btn.dataset.closeAi, false));
+    });
+    // 편집기가 열린 채로 시작하는 씬은 액션 목록을 숨겨둔다
+    document.querySelectorAll('.ai-editor.open').forEach(ed => {
+      ed.closest('.card-body').querySelector('.act-list').style.display = 'none';
     });
 
-    /* ───────── 코드 모션 프리셋 (미리보기 즉시 반영) ───────── */
-    function paintFx(group) {
-      const stage = group.closest('.track-panel').querySelector('.kb-stage');
-      group.querySelectorAll('[data-fx-set]').forEach(b => {
-        const on = b.dataset.fxSet === stage.dataset.fx;
-        b.style.borderColor = on ? 'var(--code)' : '#E2E7EE';
-        b.style.background  = on ? 'var(--code-light)' : '#fff';
-        b.style.color       = on ? 'var(--code)' : '#64748B';
-      });
+    /* ───────── END 프레임 채우기 / 비우기 ───────── */
+    function setEnd(n, filled) {
+      const slot = document.querySelector(`[data-end-slot="${n}"]`);
+      slot.querySelector('[data-end-empty]').style.display  = filled ? 'none' : 'flex';
+      slot.querySelector('[data-end-filled]').style.display = filled ? 'flex' : 'none';
+      slot.querySelector('[data-end-cap]').innerHTML = filled
+        ? '씬 5 이미지 연결됨 · <button class="text-blue-700 hover:underline" data-end-clear="' + n + '">변경</button>'
+        : '비워두면 시작 프레임만으로 생성합니다 · 지정하면 프로 모델(비용 2배)';
+      if (filled) {
+        slot.querySelector(`[data-end-clear="${n}"]`)
+            .addEventListener('click', () => setEnd(n, false));
+      }
+      // END 를 쓰면 프로 모델로 승격되어 비용이 2배가 된다
+      const editor = document.querySelector(`[data-ai-editor="${n}"]`);
+      const costEl = editor.querySelector('[data-scene-cost]');
+      if (costEl) costEl.textContent = filled ? '60cr' : '30cr';
+      const segs = editor.querySelectorAll('[data-model-seg] button');
+      if (segs.length) {
+        segs[0].classList.toggle('on', !filled);
+        segs[1].classList.toggle('on', filled);
+      }
     }
-    document.querySelectorAll('[data-fx-group]').forEach(group => {
-      const stage = group.closest('.track-panel').querySelector('.kb-stage');
-      group.querySelectorAll('[data-fx-set]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          stage.dataset.fx = btn.dataset.fxSet;
-          paintFx(group);
-        });
-      });
-      paintFx(group);
+    document.querySelectorAll('[data-end-fill]').forEach(b => {
+      b.addEventListener('click', () => setEnd(b.dataset.endFill, true));
     });
 
     /* ───────── 씬 선택 (합치기 포함 여부) ───────── */
@@ -1231,6 +1467,96 @@
       picks.forEach(p => p.checked = SCENES[+p.dataset.pick].done);
       refreshPicks();
     });
+
+    /* ───────── 영상 버전(테이크) 대표 선택 ───────── */
+    document.querySelectorAll('[data-take-group]').forEach(group => {
+      const label = document.getElementById('mainTakeLabel');
+      group.querySelectorAll('.take').forEach(t => {
+        t.addEventListener('click', () => {
+          group.querySelectorAll('.take').forEach(o => o.classList.toggle('is-main', o === t));
+          const name = t.querySelector('.take-name').textContent;
+          const dur  = t.querySelector('.take-dur').textContent;
+          if (label) label.textContent = `대표 · ${name} · ${dur}`;
+        });
+      });
+    });
+
+    /* ───────── 전체 생성 모달 ───────── */
+    const modal      = document.getElementById('batchModal');
+    const batchList  = document.getElementById('batchList');
+    const batchCount = document.getElementById('batchCount');
+    const batchCost  = document.getElementById('batchCost');
+    let batchModel = 'std';
+    // 모델별 5초 단가
+    const MODEL_UNIT = { std: 30, pro: 60 };
+
+    function buildBatchList() {
+      const on = picks.filter(p => p.checked).map(p => +p.dataset.pick);
+      batchList.innerHTML = on.map(n => {
+        const s = SCENES[n];
+        return `
+        <label class="flex items-center gap-3 p-3 rounded-2xl border-2 border-zinc-200 bg-white cursor-pointer hover:border-zinc-300" data-brow="${n}">
+          <span class="pick">
+            <input type="checkbox" data-bpick="${n}" ${s.done ? '' : 'checked'} />
+            <span class="pick-box"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          </span>
+          <span class="w-16 h-9 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-black"
+                style="background:${s.done ? '#1E2A3D' : 'repeating-linear-gradient(45deg,#E3E7ED,#E3E7ED 6px,#EFF2F6 6px,#EFF2F6 12px)'}; color:${s.done ? '#93A4BD' : '#8A94A4'};">
+            ${s.done ? '▶ 영상' : 'SCENE ' + n}
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-black text-zinc-800">씬 ${n}</span>
+            <span class="block text-[13px] font-bold ${s.done ? 'text-emerald-600' : 'text-zinc-400'}">
+              ${s.done ? '이미 완료 · 체크하면 새 테이크 추가' : s.label}
+            </span>
+          </span>
+          <span class="ml-auto text-sm font-black text-zinc-700 shrink-0" data-bcost="${n}"></span>
+        </label>`;
+      }).join('');
+
+      batchList.querySelectorAll('[data-bpick]').forEach(cb => cb.addEventListener('change', refreshBatch));
+      refreshBatch();
+    }
+
+    function refreshBatch() {
+      const unit = MODEL_UNIT[batchModel];
+      let total = 0, count = 0;
+      batchList.querySelectorAll('[data-bpick]').forEach(cb => {
+        const n = +cb.dataset.bpick;
+        const row  = batchList.querySelector(`[data-brow="${n}"]`);
+        const cost = batchList.querySelector(`[data-bcost="${n}"]`);
+        // 업스케일이 필요한 씬은 업스케일 3cr 을 더한다
+        const needUp = (n === 2 || n === 6);
+        const c = unit + (needUp ? 3 : 0);
+        if (cb.checked) { total += c; count += 1; }
+        cost.textContent = cb.checked ? `${c}cr` : '—';
+        cost.style.color = cb.checked ? '#334155' : '#CBD5E1';
+        row.style.opacity = cb.checked ? '1' : '.5';
+      });
+      batchCount.textContent = count;
+      batchCost.textContent  = total;
+      document.getElementById('batchStart').disabled = count === 0;
+      document.getElementById('batchStart').style.opacity = count === 0 ? '.4' : '1';
+    }
+
+    document.querySelectorAll('[data-model-group] .track-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        if (opt.disabled) return;
+        batchModel = opt.dataset.model;
+        document.querySelectorAll('[data-model-group] .track-opt').forEach(o => o.classList.toggle('on', o === opt));
+        refreshBatch();
+      });
+    });
+
+    genBtn.addEventListener('click', () => {
+      buildBatchList();
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+    function closeBatch() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    document.getElementById('batchCancel').addEventListener('click', closeBatch);
+    modal.addEventListener('click', e => { if (e.target === modal) closeBatch(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBatch(); });
 
     refreshPicks();
     setActive(2, false);

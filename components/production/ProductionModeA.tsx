@@ -89,12 +89,14 @@ function truncateSmart(text: string, max: number): string {
 
 /** 시퀀스 프롬프트 조립. Kling 2500 자 상한(안전 2400) 을 강제로 지킨다.
  *
- *  전략:
- *  1. 헤더는 짧게 (샘플 스타일 참고). "Visual style" · 후행 anchor 제거 —
- *     스토리보드 이미지 자체가 스타일·정체성 앵커 역할.
- *  2. 씬 설명은 video_motion_en 우선 사용 (짧고 액션 중심). 없으면 image_prompt_en.
- *  3. 남은 예산을 씬 개수로 균등 분배 → 씬당 상한 계산 → 초과분은 truncateSmart.
- *  4. 씬 수가 많을수록(9-18) 씬당 예산이 자동으로 작아짐.
+ *  전략 (v2 · 씬 순서 명시 강화):
+ *  1. 헤더에 "씬 읽기 순서" 규칙을 명시 — 좌→우, 위→아래.
+ *     Panel 1(1x1, 좌측 상단) = 오프닝, Panel N(우측 하단) = 클로징.
+ *  2. 각 씬 라인에 "Panel X (Y-Zs):" 형식으로 위치+시간 이중 명시.
+ *  3. 하단 CRITICAL 블록에 "모든 N개 씬을 순서대로, 어느 것도 스킵/연장 금지"
+ *     지시문 추가 — Kling 이 초반 씬만 길게 늘어뜨리는 경향 방지.
+ *  4. 씬 설명은 video_motion_en 우선 (짧고 액션 중심), image_prompt_en 로 폴백.
+ *  5. 예산 계산은 씬 수에 반비례 — 5씬 350자/씬, 9씬 220자/씬, 18씬 100자/씬.
  */
 function buildSequencePrompt(opts: {
   scenes: Scene[];
@@ -114,28 +116,40 @@ function buildSequencePrompt(opts: {
   // 안전 마진(2400) 안에서만 조립. Kling 실측 상한은 2500 자.
   const HARD_CAP = 2400;
 
-  // ── 헤더 (샘플 스타일 참고, 간결) ──
+  // ── 헤더 (샘플 스타일 참고, 씬 순서 명시 강화) ──
   const langLine = language === 'ko'
     ? 'IMPORTANT: KOREAN — all dialogue and on-screen text must be in Korean.\n'
     : '';
   const cinematicLine = preset === 'cinematic'
     ? 'Direction: smooth match cuts, warm cinematic grading, gentle camera moves (dolly-in, pan, tilt).\n'
     : '';
+  // Panel 위치 안내는 grid 가 실제 여러 셀일 때만 의미가 있음 (1x1 은 생략)
+  const readingOrderLine = n > 1
+    ? `Panels are numbered 1 through ${n}, read left-to-right then top-to-bottom on the ${rows}x${cols} grid. ` +
+      `Panel 1 (top-left, position 1×1) is the OPENING scene. Panel ${n} is the CLOSING scene. ` +
+      `Animate every panel in order — do not skip any panel, do not linger on one panel beyond its slot.\n`
+    : '';
   const header =
     `Create one complete ${durationSec}-second animated short based on the provided ${rows}x${cols} storyboard.\n` +
     langLine +
     `The storyboard is only a visual sequence reference. Do not show the ${rows}x${cols} grid, panel borders, split screens, or collage layout in the final video.\n` +
     `Create a full-screen cinematic animation with smooth, fast transitions between the story moments.\n` +
+    readingOrderLine +
     cinematicLine;
 
-  // ── 각 씬 라벨(0-2s: 또는 "1.") 오버헤드 예상 ──
+  // ── 씬 라인 오버헤드 예상 ──
   const isTimed = !(preset === 'flow' || preset === 'cinematic');
-  const flowIntro = isTimed ? '' : `Scene flow (natural pacing across ${durationSec}s):\n`;
-  const perLineLabel = isTimed ? 8 : 4; // "10-15s: " 정도 or "10. "
+  const flowIntro = isTimed
+    ? ''
+    : `Scene flow (natural pacing across ${durationSec}s, panels in given order):\n`;
+  // "Panel 12 (10-15s): " ≈ 20자, "Panel 12. " ≈ 12자
+  const perLineLabel = isTimed ? 22 : 14;
   const separatorPad = n; // 각 라인 뒤 \n
 
-  const overhead = header.length + flowIntro.length + n * perLineLabel + separatorPad + 20;
-  // 씬당 실제 사용 가능한 문자 수 (최소 80자 보장)
+  // FINAL 블록 크기 예상 (아래 hardcoded 문구 기준 · 대략 200자)
+  const finalBlockReserve = 200;
+
+  const overhead = header.length + flowIntro.length + n * perLineLabel + separatorPad + finalBlockReserve + 30;
   const perSceneBudget = Math.max(80, Math.floor((HARD_CAP - overhead) / Math.max(n, 1)));
 
   const buildSegment = (s: Scene): string => {
@@ -144,30 +158,35 @@ function buildSequencePrompt(opts: {
     const scene = (s.image_prompt_en ?? '').trim();
 
     if (motion && motion.length <= perSceneBudget) {
-      // 예산에 여유가 있으면 짧은 씬 컨텍스트 앞에 붙이기
       const roomLeft = perSceneBudget - motion.length - 2;
       if (scene && roomLeft > 40) {
         return `${truncateSmart(scene, roomLeft)} ${motion}`.trim();
       }
       return motion;
     }
-    // motion 이 너무 길거나 없으면: 짧게 요약
     if (motion) return truncateSmart(motion, perSceneBudget);
     return truncateSmart(scene, perSceneBudget);
   };
 
   const lines = used.map((s, i) => {
     const seg = buildSegment(s);
+    const panelNum = i + 1;
     if (isTimed) {
       const segLen = durationSec / n;
       const start = (i * segLen).toFixed(1).replace(/\.0$/, '');
       const end = ((i + 1) * segLen).toFixed(1).replace(/\.0$/, '');
-      return `${start}-${end}s: ${seg}`;
+      return `Panel ${panelNum} (${start}-${end}s): ${seg}`;
     }
-    return `${i + 1}. ${seg}`;
+    return `Panel ${panelNum}. ${seg}`;
   }).join('\n');
 
-  const combined = `${header}\n${flowIntro}${lines}`;
+  // ── 마지막 강제 지시문 (Kling 이 초반 씬만 붙잡고 늘어지는 경향 방지) ──
+  const finalBlock =
+    `\n\nCRITICAL: Animate ALL ${n} panels in the order given, using the full ${durationSec} seconds. ` +
+    `Give each panel roughly equal screen time. Do not omit any panel. Do not dwell on the opening beyond its slot. ` +
+    `Transitions between panels must be quick and smooth (match cut, quick dissolve, or hard cut).`;
+
+  const combined = `${header}\n${flowIntro}${lines}${finalBlock}`;
   // 예상치 못한 초과 시(예: 헤더가 길어졌을 때) 최종 안전 절단
   if (combined.length > HARD_CAP) return truncateSmart(combined, HARD_CAP);
   return combined;
