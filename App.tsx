@@ -13,7 +13,7 @@ import { ProjectStep } from './types';
 const PlanningStep = React.lazy(() => import('./components/PlanningStep').then(m => ({ default: m.PlanningStep })));
 const VisualizingStep = React.lazy(() => import('./components/VisualizingStep').then(m => ({ default: m.VisualizingStep })));
 const AssemblyStep = React.lazy(() => import('./components/AssemblyStep').then(m => ({ default: m.AssemblyStep })));
-const ProductionStep = React.lazy(() => import('./components/ProductionStep').then(m => ({ default: m.ProductionStep })));
+const ProductionStepShell = React.lazy(() => import('./components/ProductionStepShell').then(m => ({ default: m.ProductionStepShell })));
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AdminPage = React.lazy(() => import('./components/AdminPage').then(m => ({ default: m.AdminPage })));
 const AssetLibrary = React.lazy(() => import('./components/AssetLibrary').then(m => ({ default: m.AssetLibrary })));
@@ -88,7 +88,7 @@ const App: React.FC = () => {
       case ProjectStep.ASSEMBLY:
         return <AssemblyStep />;
       case ProjectStep.PRODUCTION:
-        return <ProductionStep />;
+        return <ProductionStepShell />;
       case ProjectStep.IMAGE_STUDIO:
         return <ImageStudio />;
       case ProjectStep.VIDEO_STUDIO:
