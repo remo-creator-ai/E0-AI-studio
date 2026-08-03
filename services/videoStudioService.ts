@@ -60,13 +60,26 @@ export const VIDEO_DURATIONS = [5, 10] as const;
 export type VideoDuration = typeof VIDEO_DURATIONS[number];
 export const DEFAULT_VIDEO_DURATION: VideoDuration = 5;
 
+// ---------- 해상도 ----------
+// Kling v2-6 는 std=720p · pro=1080p 로 mode 에 따라 해상도가 결정된다.
+// UI 는 해상도를 노출하고, 서비스가 내부에서 mode 를 매핑한다.
+// 향후 별도 resolution 파라미터를 갖는 신모델 지원 시 매핑을 확장한다.
+export const VIDEO_RESOLUTIONS = ['720p', '1080p'] as const;
+export type VideoResolution = typeof VIDEO_RESOLUTIONS[number];
+export const DEFAULT_VIDEO_RESOLUTION: VideoResolution = '720p';
+
 // ---------- 크레딧 단가 ----------
-// std (5s: 10cr, 10s: 15cr) · pro (5s: 20cr, 10s: 30cr).
-// Kling v2-6 는 std 에서 image_tail(끝 프레임) 을 지원하지 않아 끝 프레임이 있으면
-// 자동으로 pro 모드로 승격되며, pro 는 std 대비 2배 청구된다.
-export function videoStudioCreditCost(input: { durationSec: number; hasEndFrame?: boolean }): number {
+// std/720p — 5s: 10cr, 10s: 15cr
+// pro/1080p — 5s: 20cr, 10s: 30cr (Kling pro 실제 청구 2배)
+// 끝 프레임(image_tail) 도 pro 강제 승격 → 항상 pro 요금.
+export function videoStudioCreditCost(input: {
+  durationSec: number;
+  resolution?: VideoResolution;
+  hasEndFrame?: boolean;
+}): number {
   const longer = input.durationSec >= 10;
-  if (input.hasEndFrame) return longer ? 30 : 20;
+  const isPro = input.resolution === '1080p' || !!input.hasEndFrame;
+  if (isPro) return longer ? 30 : 20;
   return longer ? 15 : 10;
 }
 
@@ -120,9 +133,11 @@ export interface GenerateVideoInput {
   /** 반드시 concrete 값 (16:9|9:16|1:1). UI 의 'auto' 는 호출 전에 detectAspectFromImage 로 해석. */
   aspect: ConcreteAspect;
   durationSec: VideoDuration;
+  /** 720p (std) 또는 1080p (pro). endImage 가 있으면 항상 pro 로 승격. */
+  resolution?: VideoResolution;
   /** data URL 또는 http URL. 있으면 I2V, 없으면 T2V. */
   startImage?: string;
-  /** 끝 프레임 (선택). 모델이 지원하지 않으면 무시됨. */
+  /** 끝 프레임 (선택). 있으면 mode 가 pro 로 자동 승격 (v2-6/std 미지원). */
   endImage?: string;
   signal?: AbortSignal;
 }
@@ -164,11 +179,11 @@ export async function generateStudioVideo(input: GenerateVideoInput): Promise<Ge
   const safePrompt = clampKlingPrompt(prompt);
 
   // 모드 결정:
-  //   - kling-v2-6/std 는 image_tail(끝 프레임) 을 지원하지 않으므로 endImage 가
-  //     있으면 pro 로 자동 승격 (에러 code 1201: "not supported with image_tail
-  //     in standard mode").
-  //   - 그 외는 std 유지 (저렴하고 빠름).
-  const mode = input.endImage ? 'pro' : 'std';
+  //   - kling-v2-6 는 std=720p · pro=1080p 로 해상도가 mode 에 결정됨
+  //   - 사용자가 1080p 선택 시 pro 승격
+  //   - 끝 프레임(image_tail) 은 v2-6/std 미지원이라 pro 강제
+  //     (에러 code 1201: "not supported with image_tail in standard mode")
+  const mode = input.endImage || input.resolution === '1080p' ? 'pro' : 'std';
 
   const body: Record<string, unknown> = {
     model_name: VIDEO_STUDIO_MODEL,

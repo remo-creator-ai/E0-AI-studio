@@ -26,8 +26,9 @@ import { useAuthStore } from '../store/authStore';
 import {
   generateStudioVideo, detectAspectFromImage, suggestVideoPromptFromImage, SUGGEST_PROMPT_COST,
   VIDEO_ASPECTS, DEFAULT_VIDEO_ASPECT, VIDEO_DURATIONS, DEFAULT_VIDEO_DURATION,
+  VIDEO_RESOLUTIONS, DEFAULT_VIDEO_RESOLUTION,
   VIDEO_STUDIO_MODEL, videoStudioCreditCost,
-  type VideoAspect, type ConcreteAspect, type VideoDuration, type GenerateVideoFailure,
+  type VideoAspect, type ConcreteAspect, type VideoDuration, type VideoResolution, type GenerateVideoFailure,
 } from '../services/videoStudioService';
 import {
   saveVideoHistory, listVideoHistory, deleteVideoHistoryItem, countVideoHistory,
@@ -331,6 +332,7 @@ export const VideoStudio: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [aspect, setAspect] = useState<VideoAspect>(DEFAULT_VIDEO_ASPECT);
   const [duration, setDuration] = useState<VideoDuration>(DEFAULT_VIDEO_DURATION);
+  const [resolution, setResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
   const [startFrame, setStartFrame] = useState<string | null>(null);
   const [endFrame, setEndFrame] = useState<string | null>(null);
 
@@ -381,7 +383,7 @@ export const VideoStudio: React.FC = () => {
   // 프롬프트 자동 추천 상태
   const [suggesting, setSuggesting] = useState(false);
 
-  const cost = videoStudioCreditCost({ durationSec: duration, hasEndFrame: !!endFrame });
+  const cost = videoStudioCreditCost({ durationSec: duration, resolution, hasEndFrame: !!endFrame });
 
   const loadHistory = useCallback(async () => {
     if (!user?.id) { setHistory([]); setHistoryTotal(0); return; }
@@ -480,6 +482,7 @@ export const VideoStudio: React.FC = () => {
           prompt: promptSnapshot,
           aspect: resolvedAspect,
           durationSec: duration,
+          resolution,
           startImage: startImageSnapshot,
           endImage: endImageSnapshot,
         });
@@ -723,6 +726,37 @@ export const VideoStudio: React.FC = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Resolution — 720p(std) / 1080p(pro) */}
+        <div>
+          <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">해상도</label>
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            {VIDEO_RESOLUTIONS.map((r) => (
+              <button
+                key={r}
+                onClick={() => setResolution(r)}
+                disabled={hasActiveJob}
+                className={`px-3 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                  resolution === r
+                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                    : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
+                }`}
+              >
+                {r}
+                {r === '1080p' && (
+                  <span className={`text-[9px] px-1 rounded font-black ${
+                    resolution === r ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'
+                  }`}>PRO</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+            {resolution === '1080p'
+              ? 'Pro 모드 · 크레딧 2배 · 소요 시간 조금 더 김'
+              : '기본 화질 · 저렴하고 빠름'}
+          </p>
         </div>
 
         {/* Generate — 진행 중이어도 새 잡을 추가할 수 있게 항상 활성 (Kling 스타일 큐) */}

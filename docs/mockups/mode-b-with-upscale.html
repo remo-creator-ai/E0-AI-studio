@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mode B · 개별 영상 정밀 제작 (카드뷰 · START/END 중심)</title>
+  <title>Mode B · 개별 영상 정밀 제작 (결과물 중심 · 모션 방식 선택)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.469.0/font/lucide.css" />
   <style>
@@ -11,6 +11,8 @@
       --primary: #0050BF;
       --primary-hover: #003E99;
       --primary-light: #E5EDFA;
+      --code: #7C3AED;            /* 코드 모션 트랙 색 */
+      --code-light: #F1EBFE;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', Roboto, sans-serif;
@@ -23,40 +25,102 @@
     }
     .btn-primary:hover { filter: brightness(1.06); }
     .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+    .btn-code {
+      background: linear-gradient(90deg, var(--code), #9F67F0);
+      color: white;
+      box-shadow: 0 8px 24px rgba(124,58,237,0.28);
+    }
+    .btn-code:hover { filter: brightness(1.06); }
 
-    /* ── 씬 카드 ── */
     .scene-card {
-      scroll-margin-top: 155px;           /* sticky 컨트롤 바(137px) + 여백 */
-      transition: box-shadow .25s, border-color .25s, transform .25s;
+      scroll-margin-top: 155px;
+      transition: box-shadow .25s, border-color .25s;
     }
     .scene-card.is-active {
       border-color: var(--primary);
       box-shadow: 0 12px 40px rgba(0,80,191,0.14), 0 0 0 3px rgba(0,80,191,0.10);
     }
 
-    /* ── 프레임 (START / END) : 카드의 주인공 ── */
-    .frame-box {
+    /* ── 씬 선택 (합치기에 포함할지) ── */
+    .pick { position: relative; display:inline-flex; align-items:center; cursor:pointer; flex:none; }
+    .pick input { position:absolute; opacity:0; width:0; height:0; }
+    .pick-box {
+      width: 26px; height: 26px; border-radius: 9px;
+      border: 2px solid #C7CED8; background:#fff;
+      display:flex; align-items:center; justify-content:center;
+      transition: all .16s; color:#fff;
+    }
+    .pick-box svg { opacity:0; transform: scale(.6); transition: all .16s; }
+    .pick input:checked + .pick-box { background: var(--primary); border-color: var(--primary); }
+    .pick input:checked + .pick-box svg { opacity:1; transform: scale(1); }
+    .pick:hover .pick-box { border-color: var(--primary); }
+
+    .card-body { transition: opacity .2s; }
+    .scene-card.is-off .card-body { opacity: .38; pointer-events: none; }
+    .scene-card.is-off { border-color: #E2E7EE !important; box-shadow: none !important; }
+    .off-badge { display: none; }
+    .scene-card.is-off .off-badge {
+      display: inline-flex; align-items:center; gap:6px;
+      padding: 5px 12px; border-radius: 999px;
+      background: #EEF1F6; color:#64748B; font-size:12px; font-weight:900;
+    }
+    .scene-card.is-off .on-only { display: none; }
+    .rail-chip.is-off { opacity: .5; }
+    .rail-chip.is-off .rail-thumb { filter: grayscale(1); }
+
+    /* ── 결과 영상 (완료 씬의 주인공) ── */
+    .result-video {
       aspect-ratio: 16 / 9;
-      border-radius: 16px;
+      border-radius: 18px;
       overflow: hidden;
       position: relative;
-      background:
-        repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 10px, #EFF2F6 10px, #EFF2F6 20px);
+      background: #0B1220;
       display: flex; align-items: center; justify-content: center;
-      color: #8A94A4; font-size: 15px; font-weight: 800; letter-spacing: .02em;
+      box-shadow: 0 16px 44px rgba(11,18,32,.28);
+    }
+    .result-video .poster {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, #1E2A3D, #1E2A3D 12px, #243349 12px, #243349 24px);
+    }
+    .play-btn {
+      position: relative; z-index: 1;
+      width: 84px; height: 84px; border-radius: 999px;
+      background: rgba(255,255,255,.94);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      transition: transform .18s;
+    }
+    .play-btn:hover { transform: scale(1.07); }
+    .video-meta {
+      position: absolute; z-index: 1; left: 14px; bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .video-pill {
+      padding: 6px 12px; border-radius: 999px;
+      background: rgba(9,14,24,.72); color: #fff;
+      font-size: 12px; font-weight: 800; letter-spacing: .02em;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── 프레임 (START / END) ── */
+    .frame-row { display: grid; gap: 12px; align-items: center; grid-template-columns: 1fr; }
+    @media (min-width: 900px) {
+      .frame-row { grid-template-columns: minmax(0,1fr) 150px minmax(0,1fr); }
+    }
+    .frame-box {
+      aspect-ratio: 16 / 9;
+      border-radius: 16px; overflow: hidden; position: relative;
+      background: repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 10px, #EFF2F6 10px, #EFF2F6 20px);
+      display: flex; align-items: center; justify-content: center;
+      color: #8A94A4; font-size: 15px; font-weight: 800;
     }
     .frame-box.is-start { box-shadow: inset 0 0 0 3px var(--primary); }
     .frame-box.is-end   { box-shadow: inset 0 0 0 3px #C7CED8; }
-    .frame-box.is-empty {
-      background: #F7F9FC;
-      box-shadow: inset 0 0 0 3px #DDE3EB;
-      border: 2px dashed transparent;
-    }
+    .frame-box.is-empty { background: #F7F9FC; box-shadow: inset 0 0 0 3px #DDE3EB; }
     .frame-tag {
       position: absolute; top: 10px; left: 10px;
       padding: 5px 12px; border-radius: 999px;
       font-size: 12px; font-weight: 900; letter-spacing: .08em;
-      backdrop-filter: blur(6px);
     }
     .frame-tag.start { background: rgba(0,80,191,.92); color:#fff; }
     .frame-tag.end   { background: rgba(39,48,64,.82); color:#fff; }
@@ -64,21 +128,9 @@
       position: absolute; bottom: 10px; right: 10px;
       padding: 4px 10px; border-radius: 8px;
       background: rgba(17,24,39,.78); color:#fff;
-      font-size: 11px; font-weight: 800; letter-spacing: .03em;
+      font-size: 11px; font-weight: 800;
     }
 
-    /* START ─▶ END 3분할 행 (좁은 화면에서는 세로로 접힘) */
-    .frame-row {
-      display: grid;
-      gap: 12px;
-      align-items: center;
-      grid-template-columns: 1fr;
-    }
-    @media (min-width: 900px) {
-      .frame-row { grid-template-columns: minmax(0,1fr) 160px minmax(0,1fr); }
-    }
-
-    /* 모션 연결선 (START ─▶ END) */
     .motion-link {
       position: relative;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -100,23 +152,72 @@
       position: relative; z-index: 1;
       background: #fff; border: 2px solid #DDE3EB; border-radius: 999px;
       padding: 8px 14px; font-size: 13px; font-weight: 900; color: #4B5563;
-      display: inline-flex; align-items: center; gap: 6px;
-      box-shadow: 0 4px 12px rgba(15,23,42,.06);
-      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(15,23,42,.06); white-space: nowrap;
     }
 
-    /* ── 업스케일: 얇은 로딩바 한 줄 ── */
+    /* ── 코드 모션 미리보기 (Ken Burns) ── */
+    .kb-stage {
+      aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; position: relative;
+      box-shadow: inset 0 0 0 3px var(--code); background: #EFF2F6;
+    }
+    .kb-inner {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 10px, #EFF2F6 10px, #EFF2F6 20px);
+      display: flex; align-items: center; justify-content: center;
+      color: #8A94A4; font-size: 15px; font-weight: 800;
+      transform-origin: center center;
+    }
+    .kb-stage[data-fx="zoom-in"]  .kb-inner { animation: kbZoomIn 5s ease-in-out infinite alternate; }
+    .kb-stage[data-fx="zoom-out"] .kb-inner { animation: kbZoomOut 5s ease-in-out infinite alternate; }
+    .kb-stage[data-fx="pan-right"] .kb-inner { animation: kbPanRight 5s ease-in-out infinite alternate; transform-origin: left center; }
+    .kb-stage[data-fx="none"] .kb-inner { animation: none; }
+    @keyframes kbZoomIn  { from { transform: scale(1); }    to { transform: scale(1.26); } }
+    @keyframes kbZoomOut { from { transform: scale(1.26); } to { transform: scale(1); } }
+    @keyframes kbPanRight{ from { transform: scale(1.18) translateX(0); } to { transform: scale(1.18) translateX(-11%); } }
+
+    /* ── 모션 방식 선택 (트랙 스위치) ── */
+    .track-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .track-opt {
+      text-align: left; padding: 14px 16px; border-radius: 16px;
+      border: 2px solid #E2E7EE; background: #fff; cursor: pointer;
+      transition: all .18s;
+    }
+    .track-opt:hover { border-color: #B9C4D3; }
+    .track-opt .t-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .track-opt .t-name { font-size: 15px; font-weight: 900; color: #1F2937; }
+    .track-opt .t-cost {
+      margin-left: auto; font-size: 12px; font-weight: 900;
+      padding: 4px 10px; border-radius: 999px; background: #F1F4F8; color: #64748B;
+    }
+    .track-opt .t-desc { font-size: 13px; font-weight: 600; color: #6B7280; line-height: 1.55; }
+    .track-opt .t-radio {
+      width: 18px; height: 18px; border-radius: 999px; border: 2px solid #C7CED8;
+      display: inline-flex; align-items: center; justify-content: center; flex: none;
+    }
+    .track-opt.on[data-track="ai"]   { border-color: var(--primary); background: var(--primary-light); }
+    .track-opt.on[data-track="ai"] .t-radio { border-color: var(--primary); }
+    .track-opt.on[data-track="ai"] .t-radio::after { content:''; width:9px; height:9px; border-radius:999px; background: var(--primary); }
+    .track-opt.on[data-track="ai"] .t-cost { background: rgba(0,80,191,.14); color: var(--primary); }
+    .track-opt.on[data-track="code"] { border-color: var(--code); background: var(--code-light); }
+    .track-opt.on[data-track="code"] .t-radio { border-color: var(--code); }
+    .track-opt.on[data-track="code"] .t-radio::after { content:''; width:9px; height:9px; border-radius:999px; background: var(--code); }
+    .track-opt.on[data-track="code"] .t-cost { background: rgba(124,58,237,.14); color: var(--code); }
+
+    .track-panel { display: none; }
+    .track-panel.on { display: block; }
+
+    /* ── 업스케일 로딩바 ── */
     .upscale-bar { border-radius: 14px; padding: 12px 16px; display:flex; align-items:center; gap:12px; }
     .upscale-bar.need    { background:#FFF8EB; border:1px solid #F5D68A; }
     .upscale-bar.running { background:#EEF4FF; border:1px solid #B9CFF5; }
     .upscale-bar.done    { background:#EEFBF4; border:1px solid #A8E4C4; }
     .upscale-bar.failed  { background:#FEF2F2; border:1px solid #F6BABA; }
+    .upscale-bar.skip    { background:#F6F3FE; border:1px solid #DDD0FA; }
     .track { height: 8px; border-radius: 999px; background: rgba(15,23,42,.08); overflow: hidden; flex: 1; min-width: 80px; }
     .track > i { display:block; height:100%; border-radius:999px; transition: width .4s ease; }
     .track.stripe > i {
       background-image: linear-gradient(45deg, rgba(255,255,255,.35) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.35) 50%, rgba(255,255,255,.35) 75%, transparent 75%);
-      background-size: 16px 16px;
-      animation: stripe 0.8s linear infinite;
+      background-size: 16px 16px; animation: stripe .8s linear infinite;
     }
     @keyframes stripe { from { background-position: 0 0; } to { background-position: 16px 0; } }
 
@@ -137,32 +238,24 @@
     }
     .rail-chip:hover { border-color:#B9C4D3; }
     .rail-chip:hover .rail-thumb { transform: scale(1.04); }
-    .rail-chip.is-active {
-      border-color: var(--primary); background: var(--primary-light); color: var(--primary);
-    }
+    .rail-chip.is-active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
     .rail-chip.is-active .rail-thumb { box-shadow: inset 0 0 0 2px var(--primary); }
-
     .rail-thumb {
       position: relative; flex: none;
       width: 62px; height: 35px; border-radius: 9px; overflow: hidden;
       transition: transform .18s;
       background: repeating-linear-gradient(45deg, #E3E7ED, #E3E7ED 6px, #EFF2F6 6px, #EFF2F6 12px);
       display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 900; color: #8A94A4; letter-spacing: .02em;
+      font-size: 10px; font-weight: 900; color: #8A94A4;
     }
-    /* 썸네일 위 진행률 (업스케일 / 영상 생성 중) */
-    .rail-thumb > b {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-      background: rgba(15,23,42,.14);
-    }
-    .rail-thumb > b > i { display: block; height: 100%; }
-    /* 실패 표시 */
+    .rail-thumb.is-video { background: #1E2A3D; color: #93A4BD; }
     .rail-thumb.is-failed { box-shadow: inset 0 0 0 2px #EF4444; }
+    .rail-thumb > b { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(15,23,42,.14); }
+    .rail-thumb > b > i { display: block; height: 100%; }
     .rail-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1; }
     .rail-state { font-size: 10px; font-weight: 800; color: #94A3B8; }
     .rail-chip.is-active .rail-state { color: #3B7FD4; }
 
-    /* ── 플로팅 위/아래 네비 ── */
     .nav-fab {
       width: 52px; height: 52px; border-radius: 16px;
       background:#fff; border:1px solid #DDE3EB;
@@ -170,64 +263,70 @@
       display:flex; align-items:center; justify-content:center;
       color:#334155; transition: all .16s;
     }
-    .nav-fab:hover { background: var(--primary); color:#fff; border-color: var(--primary); transform: translateY(-1px); }
-    .nav-fab:disabled { opacity:.35; cursor:not-allowed; transform:none; background:#fff; color:#334155; }
+    .nav-fab:hover { background: var(--primary); color:#fff; border-color: var(--primary); }
+    .nav-fab:disabled { opacity:.35; cursor:not-allowed; background:#fff; color:#334155; }
 
     .prompt-box {
       width: 100%; border-radius: 14px; border: 1px solid #DDE3EB; background:#fff;
-      padding: 14px 16px; font-size: 15px; line-height: 1.7; color:#1F2937;
-      resize: vertical;
+      padding: 14px 16px; font-size: 15px; line-height: 1.7; color:#1F2937; resize: vertical;
     }
     .prompt-box:focus { outline:none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0,80,191,.12); }
     .prompt-read {
       border-radius: 14px; background:#F7F9FC; border:1px solid #E6EBF2;
       padding: 14px 16px; font-size: 15px; line-height: 1.7; color:#374151;
     }
-    .field-label {
-      font-size: 13px; font-weight: 900; color:#64748B;
-      display:flex; align-items:center; gap:6px; margin-bottom: 8px;
-    }
+    .field-label { font-size: 13px; font-weight: 900; color:#64748B; display:flex; align-items:center; gap:6px; margin-bottom: 8px; }
     .seg { display:flex; gap:4px; padding:4px; background:#EEF1F6; border-radius: 14px; }
     .seg button { padding: 9px 16px; border-radius: 10px; font-size: 14px; font-weight: 800; color:#64748B; }
     .seg button.on { background:#fff; color:#0F172A; font-weight:900; box-shadow: 0 2px 6px rgba(15,23,42,.10); }
+    .seg.code button.on { color: var(--code); }
+
+    .made-by {
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 900;
+    }
+    .made-by.ai   { background: var(--primary-light); color: var(--primary); }
+    .made-by.code { background: var(--code-light); color: var(--code); }
+
+    .disclose > summary { cursor: pointer; list-style: none; }
+    .disclose > summary::-webkit-details-marker { display: none; }
+    .disclose > summary .caret { transition: transform .2s; display:inline-block; }
+    .disclose[open] > summary .caret { transform: rotate(90deg); }
   </style>
 </head>
 <body>
   <div class="min-h-screen pb-40">
 
-    <!-- ══════════ 상단 헤더 (Layout 시뮬레이션) ══════════ -->
+    <!-- ══════════ 상단 헤더 ══════════ -->
     <header class="bg-white border-b border-zinc-200 px-6 md:px-8 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
         <span class="text-zinc-400 text-xs font-bold uppercase tracking-widest hidden sm:inline">PROJECTS</span>
         <i class="lucide-chevron-right text-zinc-300 text-xs hidden sm:inline"></i>
         <span class="text-zinc-900 font-black text-base truncate">유리 컵 광고, 멋진 여성이 행복함을 표현</span>
-        <button class="p-1 text-zinc-300 hover:text-blue-700 rounded-md shrink-0">
-          <i class="lucide-pencil text-xs"></i>
-        </button>
       </div>
       <div class="flex items-center gap-3 shrink-0">
         <span class="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-[10px] font-black uppercase tracking-widest hidden md:inline">PRODUCTION</span>
         <button class="px-5 py-2.5 rounded-2xl text-white font-black text-sm flex items-center gap-2"
                 style="background: linear-gradient(90deg, #FF7A45, #F5316B); box-shadow: 0 8px 24px rgba(245,49,107,0.35);">
-          <i class="lucide-send text-xs"></i>
           전문가에게 의뢰하기
         </button>
       </div>
     </header>
 
-    <!-- ══════════ Sticky 컨트롤 바 (진행률 + 씬 레일) ══════════ -->
+    <!-- ══════════ Sticky 컨트롤 바 ══════════ -->
     <div class="sticky top-0 z-30 border-b border-zinc-200" style="background:#F1F4F8;">
       <div class="max-w-[1240px] mx-auto px-4 md:px-8 pt-4 pb-3">
 
         <div class="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <button class="p-2 rounded-xl hover:bg-white text-zinc-500 shrink-0">
-            <i class="lucide-arrow-left text-base"></i>
+          <button class="p-2 rounded-xl hover:bg-white text-zinc-500 shrink-0" title="뒤로">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <h1 class="text-xl md:text-2xl font-black text-zinc-900 shrink-0">개별 영상 정밀 제작</h1>
 
           <div class="flex items-center gap-3 shrink-0">
             <span class="text-lg font-black text-zinc-900">1<span class="text-zinc-400">/6</span></span>
-            <div class="h-2.5 w-32 md:w-48 rounded-full bg-zinc-200 overflow-hidden">
+            <div class="h-2.5 w-32 md:w-44 rounded-full bg-zinc-200 overflow-hidden">
               <div class="h-full" style="width:16%; background: linear-gradient(90deg, var(--primary), #1E6FD9);"></div>
             </div>
             <span class="text-sm font-bold text-zinc-500">합계 5초</span>
@@ -238,24 +337,21 @@
               <div class="text-[11px] text-zinc-400 font-bold">잔액</div>
               <div class="text-sm font-black text-zinc-700">305cr</div>
             </div>
-            <button class="px-4 py-2.5 rounded-2xl bg-white border-2 border-amber-300 text-amber-800 font-black text-sm flex items-center gap-2 hover:bg-amber-50">
-              <i class="lucide-image-up text-xs"></i>
-              <span class="hidden md:inline">모든 씬 업스케일</span><span class="md:hidden">전체 업스케일</span>
-              <span class="text-amber-600">25cr</span>
+            <button class="px-4 py-2.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-600 font-black text-sm hover:bg-zinc-50">
+              기획에서 씬 편집
             </button>
-            <button class="px-5 py-2.5 rounded-2xl btn-primary font-black text-sm flex items-center gap-2">
-              <i class="lucide-rocket text-xs"></i>
-              전체 씬 생성 <span class="opacity-80">50cr</span>
+            <button class="px-5 py-2.5 rounded-2xl btn-primary font-black text-sm">
+              남은 씬 전체 생성 <span class="opacity-80">50cr</span>
             </button>
           </div>
         </div>
 
-        <!-- 씬 레일 : 클릭하면 해당 카드로 스크롤 -->
+        <!-- 썸네일 씬 레일 -->
         <div class="mt-3 flex items-center gap-2">
           <span class="text-[11px] font-black text-zinc-400 uppercase tracking-widest shrink-0 hidden md:inline">SCENES</span>
           <div class="flex-1 flex items-center gap-2 overflow-x-auto pb-1" id="rail">
             <button class="rail-chip" data-jump="1" title="씬 1 · 영상 완료">
-              <span class="rail-thumb">SCENE 1</span>
+              <span class="rail-thumb is-video">▶ 영상</span>
               <span class="rail-label"><span>씬 1</span><span class="rail-state">영상 완료</span></span>
               <span class="status-dot done"></span>
             </button>
@@ -269,9 +365,9 @@
               <span class="rail-label"><span>씬 3</span><span class="rail-state">업스케일 60%</span></span>
               <span class="status-dot working"></span>
             </button>
-            <button class="rail-chip" data-jump="4" title="씬 4 · 영상 대기">
+            <button class="rail-chip" data-jump="4" title="씬 4 · 코드 모션 대기">
               <span class="rail-thumb">SCENE 4</span>
-              <span class="rail-label"><span>씬 4</span><span class="rail-state">영상 대기</span></span>
+              <span class="rail-label"><span>씬 4</span><span class="rail-state">코드 모션</span></span>
               <span class="status-dot pending"></span>
             </button>
             <button class="rail-chip" data-jump="5" title="씬 5 · 영상 생성 45%">
@@ -285,8 +381,8 @@
               <span class="status-dot failed"></span>
             </button>
           </div>
-          <span class="shrink-0 px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-black text-zinc-500 flex items-center gap-1.5">
-            <i class="lucide-languages text-[11px]"></i> 프롬프트 · 한국어
+          <span class="shrink-0 px-3 py-1.5 rounded-full bg-white border border-zinc-200 text-xs font-black text-zinc-500">
+            프롬프트 · 한국어
           </span>
         </div>
       </div>
@@ -295,223 +391,273 @@
     <!-- ══════════ 카드 리스트 ══════════ -->
     <div class="max-w-[1240px] mx-auto px-4 md:px-8 pt-6 space-y-6">
 
-      <!-- ───────── 씬 1 : 영상 완료 ───────── -->
+      <!-- ══════ 씬 1 : 완료 — 결과 영상이 주인공 ══════ -->
       <article class="scene-card bg-white rounded-3xl border border-zinc-200 overflow-hidden" id="scene-1" data-scene="1">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-zinc-100">
+          <label class="pick" title="최종 영상에 포함">
+            <input type="checkbox" data-pick="1" checked />
+            <span class="pick-box"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          </label>
           <div class="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-black">1</div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="status-dot done"></span>
-              <span class="text-base font-black text-emerald-700">영상 완료</span>
-              <span class="text-sm font-bold text-zinc-400">· 5초 · 720p</span>
-            </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="status-dot done"></span>
+            <span class="text-base font-black text-emerald-700">영상 완료</span>
+            <span class="made-by ai on-only">AI 영상 · Kling</span>
+            <span class="text-sm font-bold text-zinc-400 on-only">5초 · 720p · 12.4MB</span>
+            <span class="off-badge">최종 영상에서 제외</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
-            <button class="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-black flex items-center gap-1.5">
-              <i class="lucide-play text-xs"></i> 재생
-            </button>
-            <button class="px-4 py-2.5 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black flex items-center gap-1.5">
-              <i class="lucide-refresh-cw text-xs"></i> 재생성 10cr
-            </button>
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
-          <div class="upscale-bar done">
-            <i class="lucide-check-circle-2 text-emerald-600 text-base"></i>
-            <span class="text-sm font-black text-emerald-800 shrink-0">업스케일 완료</span>
-            <div class="track"><i style="width:100%; background:#10B981;"></i></div>
-            <span class="text-xs font-black text-emerald-700 shrink-0">1280 × 720</span>
-          </div>
-
-          <!-- START ─▶ END : 이 카드의 주인공 -->
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start">
-                <span class="frame-tag start">START</span>
-                씬 1 · 시작 프레임
-                <span class="frame-res">1280 × 720</span>
+        <div class="px-6 py-5 card-body">
+          <!-- 결과 영상 : 카드에서 가장 큰 요소 -->
+          <div class="grid gap-5" style="grid-template-columns: minmax(0,1.6fr) minmax(0,1fr);">
+            <div class="result-video">
+              <div class="poster"></div>
+              <button class="play-btn">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="#0B1220"><path d="M8 5.14v13.72a1 1 0 0 0 1.54.84l10.3-6.86a1 1 0 0 0 0-1.68L9.54 4.3A1 1 0 0 0 8 5.14z"/></svg>
+              </button>
+              <div class="video-meta">
+                <span class="video-pill">완성 영상 · 5초</span>
+                <span class="video-pill">1280 × 720</span>
               </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 1 업스케일 이미지</p>
             </div>
 
-            <div class="motion-link">
-              <span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span>
-            </div>
-
-            <div>
-              <div class="frame-box is-end">
-                <span class="frame-tag end">END</span>
-                씬 2 · 끝 프레임
-                <span class="frame-res">1280 × 720</span>
+            <div class="flex flex-col gap-3">
+              <div class="field-label">이 씬 결과물</div>
+              <button class="w-full px-4 py-3.5 rounded-2xl btn-primary font-black text-base">전체화면 재생</button>
+              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">영상 다운로드</button>
+              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">다시 만들기 · 10cr</button>
+              <div class="mt-auto p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200">
+                <p class="text-[13px] font-bold text-zinc-500 leading-relaxed">
+                  완성된 씬 영상은 전부 <strong class="text-zinc-700">마지막 합치기 단계</strong>에서 순서대로 이어붙여 최종 광고 영상이 됩니다.
+                </p>
               </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 2 이미지에서 자동 연결</p>
             </div>
           </div>
 
-          <!-- 프롬프트 (한국어만) -->
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
-              <div class="prompt-read">젊은 여성이 유리컵을 들고 창가에서 미소짓는 클로즈업, 부드러운 자연광</div>
+          <!-- 만든 방식은 접어둔다 (결과물이 주인공이므로) -->
+          <details class="disclose mt-5 rounded-2xl border border-zinc-200 bg-zinc-50/60">
+            <summary class="px-5 py-3.5 flex items-center gap-2 text-sm font-black text-zinc-600">
+              <span class="caret">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+              이 영상을 만든 설정 보기
+            </summary>
+            <div class="px-5 pb-5">
+              <div class="frame-row">
+                <div>
+                  <div class="frame-box is-start">
+                    <span class="frame-tag start">START</span>
+                    씬 1 · 시작 프레임
+                    <span class="frame-res">1280 × 720</span>
+                  </div>
+                </div>
+                <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
+                <div>
+                  <div class="frame-box is-empty">
+                    <span class="text-sm font-black text-zinc-400">END 프레임 미사용</span>
+                    <span class="frame-tag end">END</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-5 grid gap-5 md:grid-cols-2">
+                <div>
+                  <div class="field-label">이미지 프롬프트</div>
+                  <div class="prompt-read">젊은 여성이 유리컵을 들고 창가에서 미소짓는 클로즈업, 부드러운 자연광</div>
+                </div>
+                <div>
+                  <div class="field-label">영상 프롬프트 · 모션</div>
+                  <div class="prompt-read">카메라가 천천히 다가가며 여성의 미소를 클로즈업한다.</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
-              <div class="prompt-read">카메라가 천천히 다가가며 여성의 미소를 클로즈업한다. 창밖 빛이 부드럽게 번진다.</div>
-            </div>
-          </div>
+          </details>
         </div>
       </article>
 
-      <!-- ───────── 씬 2 : 업스케일 필요 (핵심 시나리오) ───────── -->
+      <!-- ══════ 씬 2 : AI 영상 트랙 선택 · 업스케일 필요 ══════ -->
       <article class="scene-card is-active bg-white rounded-3xl border-2 border-zinc-200 overflow-hidden" id="scene-2" data-scene="2">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-zinc-100">
           <div class="w-11 h-11 rounded-2xl text-white flex items-center justify-center text-lg font-black" style="background:var(--primary);">2</div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="status-dot pending"></span>
-              <span class="text-base font-black text-zinc-800">영상 대기</span>
-              <span class="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-black">업스케일 먼저 필요</span>
-            </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="status-dot pending"></span>
+            <span class="text-base font-black text-zinc-800">영상 없음</span>
+            <span class="text-sm font-bold text-zinc-400">아래에서 만드는 방식을 고르세요</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
-          <!-- 업스케일 = 로딩바 한 줄 -->
-          <div class="upscale-bar need">
-            <i class="lucide-image-up text-amber-700 text-base"></i>
-            <span class="text-sm font-black text-amber-900 shrink-0">업스케일 필요</span>
-            <div class="track"><i style="width:0%; background:#F59E0B;"></i></div>
-            <span class="text-xs font-bold text-amber-800 shrink-0 hidden sm:inline">512 × 288 → 1280 × 720 · 약 15초</span>
-            <button class="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-black flex items-center gap-1.5"
-                    style="box-shadow:0 6px 16px rgba(245,158,11,.32);">
-              업스케일 5cr
+        <div class="px-6 py-5 card-body" data-track-group>
+          <!-- 모션 방식 선택 -->
+          <div class="track-switch">
+            <button class="track-opt" data-track="code">
+              <div class="t-head">
+                <span class="t-radio"></span>
+                <span class="t-name">코드 모션</span>
+                <span class="t-cost">무료 · 즉시</span>
+              </div>
+              <p class="t-desc">이미지 한 장에 줌인·줌아웃·팬을 코드로 입힙니다. 인물이 실제로 움직이지는 않습니다.</p>
+            </button>
+            <button class="track-opt on" data-track="ai">
+              <div class="t-head">
+                <span class="t-radio"></span>
+                <span class="t-name">AI 영상 · Kling</span>
+                <span class="t-cost">10cr · 1~2분</span>
+              </div>
+              <p class="t-desc">인물과 사물이 실제로 움직이는 영상을 생성합니다. 시작 프레임이 720p 이상이어야 합니다.</p>
             </button>
           </div>
 
-          <!-- START ─▶ END : 이 카드의 주인공 -->
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start">
-                <span class="frame-tag start">START</span>
-                씬 2 · 시작 프레임
-                <span class="frame-res">업스케일 후 자동</span>
-              </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">업스케일이 끝나면 여기에 자동으로 채워집니다</p>
+          <!-- ── 코드 모션 패널 ── -->
+          <div class="track-panel mt-5" data-panel="code">
+            <div class="upscale-bar skip">
+              <span class="text-sm font-black shrink-0" style="color:var(--code);">업스케일 불필요</span>
+              <div class="track"><i style="width:100%; background:var(--code);"></i></div>
+              <span class="text-xs font-bold shrink-0" style="color:var(--code);">현재 이미지로 바로 가능</span>
             </div>
 
-            <div class="motion-link">
-              <span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span>
-            </div>
-
-            <div>
-              <div class="frame-box is-empty">
-                <div class="flex flex-col items-center gap-2">
-                  <i class="lucide-image-plus text-3xl text-zinc-300"></i>
-                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
+            <div class="mt-5 grid gap-5" style="grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);">
+              <div>
+                <div class="field-label">미리보기 · 실시간</div>
+                <div class="kb-stage" data-fx="zoom-in">
+                  <div class="kb-inner">씬 2 이미지</div>
                 </div>
-                <span class="frame-tag end">END</span>
               </div>
-              <div class="mt-2.5 flex items-center gap-2">
-                <button class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-black">씬 3 이미지로 채우기</button>
-                <button class="px-3 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black flex items-center gap-1.5">
-                  <i class="lucide-upload text-xs"></i> 업로드
+              <div class="flex flex-col gap-4">
+                <div>
+                  <div class="field-label">모션 프리셋</div>
+                  <div class="grid grid-cols-2 gap-2" data-fx-group>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-in">줌 인</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-out">줌 아웃</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="pan-right">팬 좌 → 우</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="none">고정</button>
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">길이</div>
+                  <div class="seg code"><button class="on">5초</button><button>10초</button></div>
+                </div>
+                <button class="mt-auto w-full px-5 py-3.5 rounded-2xl btn-code font-black text-base">
+                  이 모션으로 적용 · 무료
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 프롬프트 (한국어만) -->
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
-              <div class="prompt-read">여성이 컵을 입에 대고 눈을 감으며 만족스러운 표정을 짓는 미디엄 샷</div>
+          <!-- ── AI 영상 패널 ── -->
+          <div class="track-panel on mt-5" data-panel="ai">
+            <div class="upscale-bar need">
+              <span class="text-sm font-black text-amber-900 shrink-0">업스케일 필요</span>
+              <div class="track"><i style="width:0%; background:#F59E0B;"></i></div>
+              <span class="text-xs font-bold text-amber-800 shrink-0 hidden sm:inline">512 × 288 → 1280 × 720 · 약 15초</span>
+              <button class="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-black"
+                      style="box-shadow:0 6px 16px rgba(245,158,11,.32);">업스케일 5cr</button>
             </div>
-            <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
-              <textarea class="prompt-box" rows="3">카메라가 천천히 줌인한다. 여성이 눈을 뜨며 살짝 미소짓는다.</textarea>
-            </div>
-          </div>
 
-          <!-- 옵션 + 생성 -->
-          <div class="mt-5 pt-5 border-t border-zinc-100 flex flex-wrap items-end gap-5">
-            <div>
-              <div class="field-label"><i class="lucide-timer text-[13px]"></i> 길이</div>
-              <div class="seg"><button class="on">5초</button><button>10초</button></div>
-            </div>
-            <div>
-              <div class="field-label"><i class="lucide-monitor text-[13px]"></i> 해상도</div>
-              <div class="seg">
-                <button class="on">720p</button>
-                <button class="flex items-center gap-1.5">1080p <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">VIP</span></button>
+            <div class="mt-5 frame-row">
+              <div>
+                <div class="frame-box is-start">
+                  <span class="frame-tag start">START</span>
+                  씬 2 · 시작 프레임
+                  <span class="frame-res">업스케일 후 자동</span>
+                </div>
+                <p class="mt-2.5 text-sm font-bold text-zinc-500">업스케일이 끝나면 자동으로 채워집니다</p>
+              </div>
+              <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
+              <div>
+                <div class="frame-box is-empty">
+                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
+                  <span class="frame-tag end">END</span>
+                </div>
+                <div class="mt-2.5 flex items-center gap-2 flex-wrap">
+                  <button class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-black">씬 3 이미지로 채우기</button>
+                  <button class="px-3 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black">업로드</button>
+                </div>
+                <p class="mt-2 text-[13px] font-bold text-zinc-400">비워두면 시작 프레임만으로 생성합니다</p>
               </div>
             </div>
-            <div class="ml-auto flex items-center gap-4">
-              <div class="text-right">
-                <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
-                <div class="text-lg font-black text-zinc-900">10cr</div>
+
+            <div class="mt-6 grid gap-5 md:grid-cols-2">
+              <div>
+                <div class="field-label">이미지 프롬프트</div>
+                <div class="prompt-read">여성이 컵을 입에 대고 눈을 감으며 만족스러운 표정을 짓는 미디엄 샷</div>
               </div>
-              <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base flex items-center gap-2" disabled>
-                <i class="lucide-video text-sm"></i> 영상 생성
-              </button>
+              <div>
+                <div class="field-label">영상 프롬프트 · 모션</div>
+                <textarea class="prompt-box" rows="3">카메라가 천천히 줌인한다. 여성이 눈을 뜨며 살짝 미소짓는다.</textarea>
+              </div>
             </div>
+
+            <div class="mt-5 pt-5 border-t border-zinc-100 flex flex-wrap items-end gap-5">
+              <div>
+                <div class="field-label">길이</div>
+                <div class="seg"><button class="on">5초</button><button>10초</button></div>
+              </div>
+              <div>
+                <div class="field-label">해상도</div>
+                <div class="seg">
+                  <button class="on">720p</button>
+                  <button class="flex items-center gap-1.5">1080p <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">VIP</span></button>
+                </div>
+              </div>
+              <div class="ml-auto flex items-center gap-4">
+                <div class="text-right">
+                  <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
+                  <div class="text-lg font-black text-zinc-900">10cr</div>
+                </div>
+                <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base" disabled>영상 생성</button>
+              </div>
+            </div>
+            <p class="mt-3 text-sm font-bold text-amber-700">업스케일이 끝나면 [영상 생성]이 활성화됩니다.</p>
           </div>
-          <p class="mt-3 text-sm font-bold text-amber-700 flex items-center gap-1.5">
-            <i class="lucide-info text-xs"></i> 업스케일이 끝나면 [영상 생성]이 활성화됩니다.
-          </p>
         </div>
       </article>
 
-      <!-- ───────── 씬 3 : 업스케일 진행중 ───────── -->
+      <!-- ══════ 씬 3 : AI 영상 · 업스케일 진행중 ══════ -->
       <article class="scene-card bg-white rounded-3xl border border-zinc-200 overflow-hidden" id="scene-3" data-scene="3">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-zinc-100">
           <div class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-black">3</div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <span class="status-dot working"></span>
             <span class="text-base font-black text-blue-700">업스케일 진행중</span>
+            <span class="made-by ai">AI 영상 · Kling</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
+        <div class="px-6 py-5 card-body">
           <div class="upscale-bar running">
-            <i class="lucide-loader-2 text-blue-700 text-base"></i>
             <span class="text-sm font-black text-blue-900 shrink-0">업스케일 60%</span>
             <div class="track stripe"><i style="width:60%; background:#2563EB;"></i></div>
             <span class="text-xs font-bold text-blue-800 shrink-0">남은 6초</span>
@@ -524,203 +670,229 @@
                 씬 3 · 시작 프레임
                 <span class="frame-res">처리 중…</span>
               </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">업스케일 결과로 교체됩니다</p>
             </div>
-            <div class="motion-link"><span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span></div>
+            <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
             <div>
               <div class="frame-box is-empty">
-                <div class="flex flex-col items-center gap-2">
-                  <i class="lucide-image-plus text-3xl text-zinc-300"></i>
-                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
-                </div>
+                <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
                 <span class="frame-tag end">END</span>
-              </div>
-              <div class="mt-2.5 flex items-center gap-2">
-                <button class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-sm font-black">씬 4 이미지로 채우기</button>
-                <button class="px-3 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black flex items-center gap-1.5">
-                  <i class="lucide-upload text-xs"></i> 업로드
-                </button>
               </div>
             </div>
           </div>
 
           <div class="mt-6 grid gap-5 md:grid-cols-2">
             <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
+              <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">여성이 컵을 내려놓으며 만족스럽게 웃는 미디엄 클로즈업</div>
             </div>
             <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
+              <div class="field-label">영상 프롬프트 · 모션</div>
               <textarea class="prompt-box" rows="3">컵을 내려놓는 손을 따라 카메라가 살짝 아래로 이동한다.</textarea>
             </div>
           </div>
         </div>
       </article>
 
-      <!-- ───────── 씬 4 : 업스케일 완료 · 영상 대기 ───────── -->
+      <!-- ══════ 씬 4 : 코드 모션 트랙 선택 상태 ══════ -->
       <article class="scene-card bg-white rounded-3xl border border-zinc-200 overflow-hidden" id="scene-4" data-scene="4">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-zinc-100">
           <div class="w-11 h-11 rounded-2xl bg-zinc-100 text-zinc-700 flex items-center justify-center text-lg font-black">4</div>
           <div class="flex items-center gap-2 flex-wrap">
             <span class="status-dot pending"></span>
-            <span class="text-base font-black text-zinc-800">영상 대기</span>
-            <span class="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">업스케일 완료</span>
+            <span class="text-base font-black text-zinc-800">영상 없음</span>
+            <span class="made-by code">코드 모션 선택됨</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
-          <div class="upscale-bar done">
-            <i class="lucide-check-circle-2 text-emerald-600 text-base"></i>
-            <span class="text-sm font-black text-emerald-800 shrink-0">업스케일 완료</span>
-            <div class="track"><i style="width:100%; background:#10B981;"></i></div>
-            <span class="text-xs font-black text-emerald-700 shrink-0">1280 × 720</span>
+        <div class="px-6 py-5 card-body" data-track-group>
+          <div class="track-switch">
+            <button class="track-opt on" data-track="code">
+              <div class="t-head">
+                <span class="t-radio"></span>
+                <span class="t-name">코드 모션</span>
+                <span class="t-cost">무료 · 즉시</span>
+              </div>
+              <p class="t-desc">이미지 한 장에 줌인·줌아웃·팬을 코드로 입힙니다. 인물이 실제로 움직이지는 않습니다.</p>
+            </button>
+            <button class="track-opt" data-track="ai">
+              <div class="t-head">
+                <span class="t-radio"></span>
+                <span class="t-name">AI 영상 · Kling</span>
+                <span class="t-cost">10cr · 1~2분</span>
+              </div>
+              <p class="t-desc">인물과 사물이 실제로 움직이는 영상을 생성합니다. 시작 프레임이 720p 이상이어야 합니다.</p>
+            </button>
           </div>
 
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start">
-                <span class="frame-tag start">START</span>
-                씬 4 · 시작 프레임
-                <span class="frame-res">1280 × 720</span>
-              </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 4 업스케일 이미지</p>
+          <div class="track-panel on mt-5" data-panel="code">
+            <div class="upscale-bar skip">
+              <span class="text-sm font-black shrink-0" style="color:var(--code);">업스케일 불필요</span>
+              <div class="track"><i style="width:100%; background:var(--code);"></i></div>
+              <span class="text-xs font-bold shrink-0" style="color:var(--code);">현재 이미지로 바로 가능</span>
             </div>
-            <div class="motion-link"><span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span></div>
-            <div>
-              <div class="frame-box is-end">
-                <span class="frame-tag end">END</span>
-                씬 5 · 끝 프레임
-                <span class="frame-res">1280 × 720</span>
-              </div>
-              <div class="mt-2.5 flex items-center gap-2">
-                <span class="text-sm font-bold text-zinc-500">씬 5 이미지 연결됨</span>
-                <button class="text-sm font-black text-blue-700 hover:underline">변경</button>
-              </div>
-            </div>
-          </div>
 
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
+            <div class="mt-5 grid gap-5" style="grid-template-columns: minmax(0,1.35fr) minmax(0,1fr);">
+              <div>
+                <div class="field-label">미리보기 · 실시간</div>
+                <div class="kb-stage" data-fx="pan-right">
+                  <div class="kb-inner">씬 4 이미지</div>
+                </div>
+              </div>
+              <div class="flex flex-col gap-4">
+                <div>
+                  <div class="field-label">모션 프리셋</div>
+                  <div class="grid grid-cols-2 gap-2" data-fx-group>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-in">줌 인</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="zoom-out">줌 아웃</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="pan-right">팬 좌 → 우</button>
+                    <button class="px-3 py-3 rounded-xl border-2 text-sm font-black transition" data-fx-set="none">고정</button>
+                  </div>
+                </div>
+                <div>
+                  <div class="field-label">길이</div>
+                  <div class="seg code"><button class="on">5초</button><button>10초</button></div>
+                </div>
+                <button class="mt-auto w-full px-5 py-3.5 rounded-2xl btn-code font-black text-base">이 모션으로 적용 · 무료</button>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">남성 파트너와 컵을 부딪히며 함께 웃는 투샷</div>
+              <p class="mt-2.5 text-[13px] font-bold text-zinc-400">코드 모션은 영상 프롬프트를 쓰지 않습니다.</p>
             </div>
-            <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
+          </div>
+
+          <div class="track-panel mt-5" data-panel="ai">
+            <div class="upscale-bar done">
+              <span class="text-sm font-black text-emerald-800 shrink-0">업스케일 완료</span>
+              <div class="track"><i style="width:100%; background:#10B981;"></i></div>
+              <span class="text-xs font-black text-emerald-700 shrink-0">1280 × 720</span>
+            </div>
+            <div class="mt-5 frame-row">
+              <div>
+                <div class="frame-box is-start">
+                  <span class="frame-tag start">START</span>
+                  씬 4 · 시작 프레임
+                  <span class="frame-res">1280 × 720</span>
+                </div>
+              </div>
+              <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
+              <div>
+                <div class="frame-box is-empty">
+                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
+                  <span class="frame-tag end">END</span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-6">
+              <div class="field-label">영상 프롬프트 · 모션</div>
               <textarea class="prompt-box" rows="3">두 사람이 컵을 부딪히는 순간 카메라가 천천히 뒤로 빠진다.</textarea>
             </div>
-          </div>
-
-          <div class="mt-5 pt-5 border-t border-zinc-100 flex flex-wrap items-end gap-5">
-            <div>
-              <div class="field-label"><i class="lucide-timer text-[13px]"></i> 길이</div>
-              <div class="seg"><button class="on">5초</button><button>10초</button></div>
-            </div>
-            <div>
-              <div class="field-label"><i class="lucide-monitor text-[13px]"></i> 해상도</div>
-              <div class="seg">
-                <button class="on">720p</button>
-                <button class="flex items-center gap-1.5">1080p <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">VIP</span></button>
-              </div>
-            </div>
-            <div class="ml-auto flex items-center gap-4">
+            <div class="mt-5 flex items-center justify-end gap-4">
               <div class="text-right">
                 <div class="text-xs font-bold text-zinc-400">이 씬 비용</div>
                 <div class="text-lg font-black text-zinc-900">10cr</div>
               </div>
-              <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base flex items-center gap-2">
-                <i class="lucide-video text-sm"></i> 영상 생성
-              </button>
+              <button class="px-7 py-3.5 rounded-2xl btn-primary font-black text-base">영상 생성</button>
             </div>
           </div>
         </div>
       </article>
 
-      <!-- ───────── 씬 5 : 영상 생성중 ───────── -->
+      <!-- ══════ 씬 5 : AI 영상 생성중 ══════ -->
       <article class="scene-card bg-white rounded-3xl border border-zinc-200 overflow-hidden" id="scene-5" data-scene="5">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-zinc-100">
           <div class="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg font-black">5</div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <span class="status-dot working"></span>
             <span class="text-base font-black text-blue-700">영상 생성중</span>
-            <span class="text-sm font-bold text-zinc-400">· 남은 약 1분</span>
+            <span class="made-by ai">AI 영상 · Kling</span>
+            <span class="text-sm font-bold text-zinc-400">남은 약 1분</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
-          <div class="upscale-bar done">
-            <i class="lucide-check-circle-2 text-emerald-600 text-base"></i>
-            <span class="text-sm font-black text-emerald-800 shrink-0">업스케일 완료</span>
-            <div class="track"><i style="width:100%; background:#10B981;"></i></div>
-            <span class="text-xs font-black text-emerald-700 shrink-0">1280 × 720</span>
-          </div>
-
-          <div class="mt-5 frame-row">
-            <div>
-              <div class="frame-box is-start">
-                <span class="frame-tag start">START</span>
-                씬 5 · 시작 프레임
-                <span class="frame-res">1280 × 720</span>
+        <div class="px-6 py-5 card-body">
+          <!-- 생성 중에도 결과물이 놓일 자리를 미리 잡아둔다 -->
+          <div class="grid gap-5" style="grid-template-columns: minmax(0,1.6fr) minmax(0,1fr);">
+            <div class="result-video">
+              <div class="poster"></div>
+              <div class="relative z-10 flex flex-col items-center gap-3 px-8 w-full">
+                <span class="text-white font-black text-base">영상 만드는 중 45%</span>
+                <div class="track stripe w-full" style="background:rgba(255,255,255,.18);">
+                  <i style="width:45%; background:linear-gradient(90deg,#4D8BE8,#8FB8F2);"></i>
+                </div>
+                <span class="text-[13px] font-bold" style="color:#93A4BD;">완성되면 여기에 바로 재생됩니다</span>
               </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 5 업스케일 이미지</p>
             </div>
-            <div class="motion-link"><span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span></div>
-            <div>
-              <div class="frame-box is-end">
-                <span class="frame-tag end">END</span>
-                씬 6 · 끝 프레임
-                <span class="frame-res">1280 × 720</span>
+            <div class="flex flex-col gap-3">
+              <div class="field-label">이 씬 결과물</div>
+              <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200">
+                <p class="text-[13px] font-bold text-blue-900 leading-relaxed">
+                  생성은 백그라운드에서 진행됩니다. 다른 씬으로 이동하거나 화면을 나가도 계속됩니다.
+                </p>
               </div>
-              <p class="mt-2.5 text-sm font-bold text-zinc-500">씬 6 이미지 연결됨</p>
+              <button class="w-full px-4 py-3.5 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-base hover:bg-zinc-50">생성 취소</button>
             </div>
           </div>
 
-          <div class="mt-5 p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-center gap-3">
-            <i class="lucide-loader-2 text-blue-700"></i>
-            <span class="text-sm font-black text-blue-900 shrink-0">영상 생성 45%</span>
-            <div class="track stripe"><i style="width:45%; background:linear-gradient(90deg,var(--primary),#1E6FD9);"></i></div>
-            <button class="shrink-0 px-3 py-2 rounded-xl bg-white border border-blue-200 text-blue-700 text-sm font-black">취소</button>
-          </div>
-
-          <div class="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
-              <div class="prompt-read">젊은 남녀가 카페 창가에 앉아 컵을 들며 여유롭게 담소하는 와이드 샷</div>
+          <details class="disclose mt-5 rounded-2xl border border-zinc-200 bg-zinc-50/60">
+            <summary class="px-5 py-3.5 flex items-center gap-2 text-sm font-black text-zinc-600">
+              <span class="caret">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+              생성에 쓰인 설정 보기
+            </summary>
+            <div class="px-5 pb-5">
+              <div class="frame-row">
+                <div>
+                  <div class="frame-box is-start">
+                    <span class="frame-tag start">START</span>
+                    씬 5 · 시작 프레임
+                    <span class="frame-res">1280 × 720</span>
+                  </div>
+                </div>
+                <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
+                <div>
+                  <div class="frame-box is-end">
+                    <span class="frame-tag end">END</span>
+                    씬 6 · 끝 프레임
+                    <span class="frame-res">1280 × 720</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-5">
+                <div class="field-label">영상 프롬프트 · 모션</div>
+                <div class="prompt-read">창밖에서 안쪽으로 카메라가 부드럽게 밀려 들어간다.</div>
+              </div>
             </div>
-            <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
-              <div class="prompt-read">창밖에서 안쪽으로 카메라가 부드럽게 밀려 들어간다.</div>
-            </div>
-          </div>
+          </details>
         </div>
       </article>
 
-      <!-- ───────── 씬 6 : 실패 ───────── -->
+      <!-- ══════ 씬 6 : 실패 ══════ -->
       <article class="scene-card bg-white rounded-3xl border border-red-200 overflow-hidden" id="scene-6" data-scene="6">
         <div class="px-6 py-4 flex items-center gap-4 border-b border-red-100 bg-red-50/40">
           <div class="w-11 h-11 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-lg font-black">6</div>
@@ -732,28 +904,40 @@
           <div class="ml-auto flex items-center gap-2">
             <div class="flex items-center rounded-xl border border-zinc-200 overflow-hidden">
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="up" title="이전 씬 (↑ / K)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                이전
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>이전
               </button>
               <span class="w-px h-6 bg-zinc-200"></span>
               <button class="px-3 py-2.5 text-zinc-500 hover:bg-zinc-100 flex items-center gap-1 text-sm font-black" data-move="down" title="다음 씬 (↓ / J)">
-                다음
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                다음<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="px-6 py-5">
+        <div class="px-6 py-5 card-body">
           <div class="upscale-bar failed">
-            <i class="lucide-alert-triangle text-red-600 text-base"></i>
             <span class="text-sm font-black text-red-800 shrink-0">해상도 미달 · 업스케일 필요</span>
             <div class="track"><i style="width:0%; background:#EF4444;"></i></div>
             <span class="text-xs font-bold text-red-700 shrink-0 hidden sm:inline">512 × 288 → 1280 × 720</span>
-            <button class="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-black flex items-center gap-1.5"
-                    style="box-shadow:0 6px 16px rgba(245,158,11,.32);">
-              업스케일 후 재시도 5cr
-            </button>
+          </div>
+
+          <!-- 실패 씬은 다음 행동 두 갈래를 나란히 -->
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <div class="p-5 rounded-2xl border-2 border-amber-200 bg-amber-50/50">
+              <div class="text-base font-black text-amber-900 mb-1.5">업스케일 후 다시 시도</div>
+              <p class="text-[13px] font-bold text-amber-800 leading-relaxed mb-4">
+                시작 프레임을 1280 × 720 으로 키운 뒤 Kling 으로 다시 생성합니다.
+              </p>
+              <button class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm"
+                      style="box-shadow:0 6px 16px rgba(245,158,11,.32);">업스케일 5cr + 영상 10cr</button>
+            </div>
+            <div class="p-5 rounded-2xl border-2" style="border-color:#DDD0FA; background:var(--code-light);">
+              <div class="text-base font-black mb-1.5" style="color:#5B21B6;">코드 모션으로 바꾸기</div>
+              <p class="text-[13px] font-bold leading-relaxed mb-4" style="color:#6D28D9;">
+                해상도 제약이 없습니다. 지금 이미지 그대로 줌·팬을 입혀 즉시 만듭니다.
+              </p>
+              <button class="w-full px-4 py-3 rounded-xl btn-code font-black text-sm">코드 모션으로 전환 · 무료</button>
+            </div>
           </div>
 
           <div class="mt-5 frame-row">
@@ -765,35 +949,40 @@
               </div>
               <p class="mt-2.5 text-sm font-bold text-red-600">Kling 최소 해상도(720p) 미달</p>
             </div>
-            <div class="motion-link"><span class="motion-chip"><i class="lucide-clapperboard text-[13px]"></i> 5초 모션</span></div>
+            <div class="motion-link"><span class="motion-chip">5초 모션</span></div>
             <div>
               <div class="frame-box is-empty">
-                <div class="flex flex-col items-center gap-2">
-                  <i class="lucide-image-plus text-3xl text-zinc-300"></i>
-                  <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
-                </div>
+                <span class="text-sm font-black text-zinc-400">END 프레임 · 선택</span>
                 <span class="frame-tag end">END</span>
-              </div>
-              <div class="mt-2.5 flex items-center gap-2">
-                <button class="px-3 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-600 text-sm font-black flex items-center gap-1.5">
-                  <i class="lucide-upload text-xs"></i> 업로드
-                </button>
               </div>
             </div>
           </div>
 
           <div class="mt-6 grid gap-5 md:grid-cols-2">
             <div>
-              <div class="field-label"><i class="lucide-image text-[13px]"></i> 이미지 프롬프트</div>
+              <div class="field-label">이미지 프롬프트</div>
               <div class="prompt-read">여러 컵이 놓인 넓은 테이블 오버헤드 샷</div>
             </div>
             <div>
-              <div class="field-label"><i class="lucide-move-right text-[13px]"></i> 영상 프롬프트 · 모션</div>
+              <div class="field-label">영상 프롬프트 · 모션</div>
               <textarea class="prompt-box" rows="3">테이블 위를 천천히 가로지르며 컵들을 훑는다.</textarea>
             </div>
           </div>
         </div>
       </article>
+
+      <!-- ══════ 마지막: 합치기 안내 ══════ -->
+      <div class="p-6 rounded-3xl bg-white border border-zinc-200 flex flex-wrap items-center gap-5">
+        <div class="min-w-0">
+          <div class="text-lg font-black text-zinc-900">완성된 씬 영상은 여기서 하나로 합쳐집니다</div>
+          <p class="mt-1.5 text-sm font-bold text-zinc-500 leading-relaxed">
+            지금 1 / 6 씬 완료 · 합계 5초. 씬을 만드는 방식(코드 모션 / AI 영상)이 달라도 합치기 단계에서는 똑같이 이어붙습니다.
+          </p>
+        </div>
+        <button class="ml-auto px-6 py-3.5 rounded-2xl bg-zinc-100 text-zinc-400 font-black text-base cursor-not-allowed" disabled>
+          전체 합치기 · 남은 5개 씬
+        </button>
+      </div>
 
     </div>
   </div>
@@ -812,36 +1001,35 @@
   </div>
 
   <script>
+    /* ───────── 씬 이동 ───────── */
     const TOTAL = 6;
     let current = 2;
 
-    const cards = Array.from(document.querySelectorAll('.scene-card'));
-    const chips = Array.from(document.querySelectorAll('.rail-chip'));
+    const cards  = Array.from(document.querySelectorAll('.scene-card'));
+    const chips  = Array.from(document.querySelectorAll('.rail-chip'));
     const navPos = document.getElementById('navPos');
-    const navUp = document.getElementById('navUp');
-    const navDown = document.getElementById('navDown');
+    const navUp  = document.getElementById('navUp');
+    const navDown= document.getElementById('navDown');
 
     const HEADER = 155;          // sticky 컨트롤 바(137px) + 여백
     let animating = false;
 
-    // 브라우저 설정과 무관하게 항상 부드럽게 이동 (scroll-behavior:smooth 미지원 대비)
     function smoothTo(y) {
       const from = window.scrollY;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const to = Math.max(0, Math.min(max, y));
+      const max  = document.documentElement.scrollHeight - window.innerHeight;
+      const to   = Math.max(0, Math.min(max, y));
       const dist = to - from;
       if (Math.abs(dist) < 2) return;
       const dur = Math.min(650, 220 + Math.abs(dist) * 0.28);
-      const t0 = performance.now();
+      const t0  = performance.now();
       animating = true;
       requestAnimationFrame(function step(now) {
         const p = Math.min(1, (now - t0) / dur);
-        const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;  // easeInOutCubic
+        const e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
         window.scrollTo(0, from + dist * e);
-        if (p < 1) requestAnimationFrame(step);
-        else animating = false;
+        if (p < 1) requestAnimationFrame(step); else animating = false;
       });
-      // rAF 가 멈춘 환경(백그라운드 탭 · 모션 감소)에서도 목적지에는 반드시 도달
+      // rAF 가 멈춘 환경(백그라운드 탭 · 모션 감소)에서도 목적지에는 도달
       setTimeout(() => {
         if (Math.abs(window.scrollY - to) > 4) window.scrollTo(0, to);
         animating = false;
@@ -853,7 +1041,7 @@
       cards.forEach(c => c.classList.toggle('is-active', +c.dataset.scene === current));
       chips.forEach(c => c.classList.toggle('is-active', +c.dataset.jump === current));
       navPos.textContent = current;
-      navUp.disabled = current === 1;
+      navUp.disabled   = current === 1;
       navDown.disabled = current === TOTAL;
       if (scroll) {
         const card = document.getElementById('scene-' + current);
@@ -862,10 +1050,9 @@
     }
 
     chips.forEach(c => c.addEventListener('click', () => setActive(+c.dataset.jump, true)));
-    navUp.addEventListener('click', () => setActive(current - 1, true));
+    navUp.addEventListener('click',   () => setActive(current - 1, true));
     navDown.addEventListener('click', () => setActive(current + 1, true));
 
-    // 카드 헤더의 ↑ ↓ 버튼
     document.querySelectorAll('[data-move]').forEach(btn => {
       btn.addEventListener('click', e => {
         const n = +e.currentTarget.closest('.scene-card').dataset.scene;
@@ -873,7 +1060,6 @@
       });
     });
 
-    // 키보드: ↑ ↓ / J K
     document.addEventListener('keydown', e => {
       const t = e.target.tagName;
       if (t === 'TEXTAREA' || t === 'INPUT') return;
@@ -881,13 +1067,11 @@
       if (e.key === 'ArrowUp'   || e.key === 'k') { e.preventDefault(); setActive(current - 1, true); }
     });
 
-    // 스크롤 위치에 따라 활성 카드 자동 추적
-    // (sticky 컨트롤 바 바로 아래 지점을 기준선으로 삼아 그 선을 품은 카드를 활성화)
     const LINE = HEADER + 10;
     let ticking = false;
     function syncActive() {
       ticking = false;
-      if (animating) return;          // 이동 애니메이션 중에는 추적 정지
+      if (animating) return;
       let best = cards[0], bestDist = Infinity;
       cards.forEach(c => {
         const r = c.getBoundingClientRect();
@@ -900,6 +1084,38 @@
     window.addEventListener('scroll', () => {
       if (!ticking) { ticking = true; requestAnimationFrame(syncActive); }
     }, { passive: true });
+
+    /* ───────── 모션 방식 전환 (코드 모션 ↔ AI 영상) ───────── */
+    document.querySelectorAll('[data-track-group]').forEach(group => {
+      group.querySelectorAll('.track-opt').forEach(opt => {
+        opt.addEventListener('click', () => {
+          const pick = opt.dataset.track;
+          group.querySelectorAll('.track-opt').forEach(o => o.classList.toggle('on', o === opt));
+          group.querySelectorAll('.track-panel').forEach(p => p.classList.toggle('on', p.dataset.panel === pick));
+        });
+      });
+    });
+
+    /* ───────── 코드 모션 프리셋 (미리보기 즉시 반영) ───────── */
+    function paintFx(group) {
+      const stage = group.closest('.track-panel').querySelector('.kb-stage');
+      group.querySelectorAll('[data-fx-set]').forEach(b => {
+        const on = b.dataset.fxSet === stage.dataset.fx;
+        b.style.borderColor = on ? 'var(--code)' : '#E2E7EE';
+        b.style.background  = on ? 'var(--code-light)' : '#fff';
+        b.style.color       = on ? 'var(--code)' : '#64748B';
+      });
+    }
+    document.querySelectorAll('[data-fx-group]').forEach(group => {
+      const stage = group.closest('.track-panel').querySelector('.kb-stage');
+      group.querySelectorAll('[data-fx-set]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          stage.dataset.fx = btn.dataset.fxSet;
+          paintFx(group);
+        });
+      });
+      paintFx(group);
+    });
 
     setActive(2, false);
   </script>
