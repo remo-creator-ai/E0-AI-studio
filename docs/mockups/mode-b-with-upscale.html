@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mode B · 개별 영상 정밀 제작 (업스케일 → 영상 생성 흐름 목업)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/lucide-static@latest/font/lucide.css" />
+  <style>
+    :root {
+      --primary: #0050BF;
+      --primary-hover: #003E99;
+      --primary-light: #E5EDFA;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', Roboto, sans-serif;
+      background: #F5F7FA;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, var(--primary), #1E6FD9);
+      color: white;
+      box-shadow: 0 8px 24px rgba(0,80,191,0.3);
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .step-badge.step1 { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .step-badge.step2 { background: #DBEAFE; color: #1E40AF; border: 1px solid #93C5FD; }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 999px; display: inline-block;
+    }
+    .status-dot.pending { background: #94A3B8; }
+    .status-dot.working { background: var(--primary); animation: pulse 1.5s infinite; }
+    .status-dot.done { background: #10B981; }
+    .status-dot.failed { background: #EF4444; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .placeholder-img {
+      background:
+        repeating-linear-gradient(45deg, #E5E7EB, #E5E7EB 8px, #F3F4F6 8px, #F3F4F6 16px);
+      display: flex; align-items: center; justify-content: center;
+      color: #9CA3AF; font-size: 11px; font-weight: 700;
+    }
+
+    /* 아코디언 슬라이드 */
+    .accordion-content {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease-in-out;
+    }
+    .accordion-content.open { max-height: 1400px; }
+
+    .card-hoverable:hover { background: #FAFAFA; }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen">
+    <!-- 상단 헤더 (Layout 시뮬레이션) -->
+    <header class="bg-white border-b border-zinc-200 px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-zinc-400 text-xs font-bold uppercase tracking-widest">PROJECTS</span>
+        <i class="lucide-chevron-right text-zinc-300 text-xs"></i>
+        <span class="text-zinc-900 font-black text-base">유리 컵 광고, 멋진 여성이 행복함을 표현</span>
+        <button class="p-1 text-zinc-300 hover:text-primary rounded-md">
+          <i class="lucide-pencil text-xs"></i>
+        </button>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-[10px] font-black uppercase tracking-widest">PRODUCTION</span>
+        <button class="px-5 py-2.5 rounded-2xl text-white font-black text-sm flex items-center gap-2"
+                style="background: linear-gradient(90deg, #FF7A45, #F5316B); box-shadow: 0 8px 24px rgba(245,49,107,0.35);">
+          <i class="lucide-send text-xs"></i>
+          전문가에게 의뢰하기
+        </button>
+      </div>
+    </header>
+
+    <!-- 서브 헤더 (Shell 시뮬레이션) -->
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8 pt-8 pb-4 flex items-center gap-3">
+      <button class="p-2 rounded-xl hover:bg-zinc-100 text-zinc-500">
+        <i class="lucide-arrow-left text-sm"></i>
+      </button>
+      <h1 class="text-2xl md:text-3xl font-black text-zinc-900">개별 영상 정밀 제작</h1>
+    </div>
+
+    <!-- Body -->
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8 pb-16 space-y-5">
+      <!-- 진행률 + 전체 생성 -->
+      <div class="p-5 rounded-2xl bg-white border border-zinc-200 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="min-w-0">
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-black text-zinc-900">1/6</span>
+              <span class="text-sm font-bold text-zinc-500">완료</span>
+              <span class="text-xs text-zinc-400">· 합계 5초</span>
+            </div>
+            <div class="mt-2 h-2 w-full md:w-80 rounded-full bg-zinc-100 overflow-hidden">
+              <div class="h-full transition-all duration-500" style="width: 16%; background: linear-gradient(90deg, var(--primary), #1E6FD9);"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="text-right">
+              <div class="text-[11px] text-zinc-400">잔액</div>
+              <div class="text-sm font-black text-zinc-700">305cr</div>
+            </div>
+            <!-- NEW: 전체 업스케일 버튼 -->
+            <button class="px-4 py-3 rounded-2xl bg-white border-2 border-amber-300 text-amber-800 font-black text-sm flex items-center gap-2 hover:bg-amber-50">
+              <i class="lucide-image-up text-xs"></i>
+              모든 씬 업스케일 (5개 · 25cr)
+            </button>
+            <button class="px-5 py-3 rounded-2xl btn-primary font-black text-sm flex items-center gap-2">
+              <i class="lucide-rocket text-xs"></i>
+              전체 씬 생성 (남은 5개 · 50cr)
+            </button>
+          </div>
+        </div>
+        <!-- NEW: 안내 배너 (업스케일 필요성 안내) -->
+        <div class="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2">
+          <i class="lucide-info text-amber-700 mt-0.5 shrink-0"></i>
+          <p class="text-[11px] text-amber-900 leading-relaxed">
+            <strong>Kling 은 저해상도 이미지를 거부합니다 (Image pixel is invalid)</strong>.
+            먼저 각 씬을 업스케일한 뒤 영상을 만들어 주세요. "모든 씬 업스케일" 로 한 번에 처리하거나
+            아래 씬 카드에서 개별로 처리할 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <!-- 세로 타임라인 -->
+      <div class="rounded-2xl border border-zinc-200 bg-white overflow-hidden divide-y divide-zinc-100">
+
+        <!-- 씬 1: 완료 상태 -->
+        <div class="card-hoverable">
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(1)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-black text-zinc-700">1</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-zinc-200 placeholder-img">Scene 1</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot done"></span>
+                <span class="text-xs font-black text-emerald-700">영상 완료</span>
+                <span class="text-[11px] text-zinc-400">· 5s · 720p</span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                젊은 여성이 유리컵을 들고 창가에서 미소짓는 클로즈업, 부드러운 자연광
+              </div>
+            </div>
+            <button class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center gap-1">
+              <i class="lucide-play text-xs"></i> 재생
+            </button>
+            <i class="lucide-chevron-down text-zinc-400"></i>
+          </button>
+          <div class="accordion-content" id="acc-1">
+            <div class="px-4 pb-4">
+              <video class="w-full max-h-96 rounded-xl bg-black" controls></video>
+              <div class="mt-3 flex gap-2">
+                <button class="px-3 py-2 rounded-lg bg-white border border-zinc-200 text-xs font-bold text-zinc-700 flex items-center gap-1">
+                  <i class="lucide-download text-xs"></i> 다운로드
+                </button>
+                <button class="px-3 py-2 rounded-lg bg-white border border-zinc-200 text-xs font-bold text-zinc-700 flex items-center gap-1">
+                  <i class="lucide-refresh-cw text-xs"></i> 재생성 (10cr)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 씬 2: 업스케일 대기 (핵심 시나리오) — 확장 상태로 시작 -->
+        <div>
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(2)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black">2</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-zinc-200 placeholder-img">Scene 2</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot pending"></span>
+                <span class="text-xs font-black text-zinc-700">대기</span>
+                <span class="step-badge step1">
+                  <i class="lucide-image-up text-[9px]"></i> 업스케일 필요
+                </span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                여성이 컵을 입에 대고 눈을 감으며 만족스러운 표정을 짓는 미디엄 샷
+              </div>
+            </div>
+            <span class="text-[11px] text-zinc-400 shrink-0">편집 열림</span>
+            <i class="lucide-chevron-up text-zinc-400"></i>
+          </button>
+          <div class="accordion-content open" id="acc-2">
+            <div class="px-4 pb-6 space-y-5 bg-zinc-50">
+
+              <!-- ==================== 1단계: 이미지 업스케일 ==================== -->
+              <section class="p-5 rounded-2xl bg-white border-2 border-amber-200">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="step-badge step1">STEP 1</span>
+                  <h3 class="text-sm font-black text-zinc-900">이미지 업스케일</h3>
+                  <span class="ml-auto text-[11px] text-zinc-500">스토리보드 씬 이미지 → 고해상도 (Kling 최적)</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                  <!-- 원본 -->
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">원본 (스토리보드)</div>
+                    <div class="rounded-xl overflow-hidden border border-zinc-200 aspect-video placeholder-img">
+                      512 × 288 (원본)
+                    </div>
+                    <div class="mt-1 text-[10px] text-zinc-400">▶ Kling 최소 해상도 미달</div>
+                  </div>
+
+                  <!-- 화살표 + 버튼 -->
+                  <div class="flex flex-col items-center justify-center gap-2">
+                    <i class="lucide-arrow-right text-zinc-400 md:block hidden"></i>
+                    <i class="lucide-arrow-down text-zinc-400 md:hidden block"></i>
+                    <button class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs flex items-center gap-1.5 whitespace-nowrap"
+                            style="box-shadow: 0 6px 16px rgba(245,158,11,0.35);">
+                      <i class="lucide-image-up text-xs"></i>
+                      업스케일 시작 (5cr)
+                    </button>
+                    <span class="text-[10px] text-zinc-400">~15초</span>
+                  </div>
+
+                  <!-- 결과 (아직 없음) -->
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">업스케일 결과</div>
+                    <div class="rounded-xl border-2 border-dashed border-zinc-200 aspect-video flex items-center justify-center text-xs text-zinc-400 flex-col gap-1">
+                      <i class="lucide-image text-lg text-zinc-300"></i>
+                      대기 중
+                    </div>
+                  </div>
+                </div>
+                <p class="mt-3 text-[11px] text-zinc-500 leading-relaxed">
+                  업스케일하면 원본을 유지한 채 <strong>1280×720 이상</strong>으로 확대합니다.
+                  결과 이미지는 자동으로 아래 [영상 생성] 의 시작 프레임에 채워집니다.
+                </p>
+              </section>
+
+              <!-- ==================== 2단계: 영상 생성 ==================== -->
+              <section class="p-5 rounded-2xl bg-white border border-zinc-200 opacity-60">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="step-badge step2">STEP 2</span>
+                  <h3 class="text-sm font-black text-zinc-900">영상 생성</h3>
+                  <span class="ml-auto text-[11px] text-orange-600 font-bold">
+                    ⚠ Step 1 업스케일 완료 후 활성화
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-[220px_20px_220px_1fr] gap-3 items-start">
+                  <!-- 시작 프레임 -->
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">시작 프레임</div>
+                    <div class="aspect-video rounded-xl border-2 border-dashed border-zinc-200 placeholder-img">
+                      업스케일 후 자동
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-center pt-6">
+                    <i class="lucide-arrow-right text-zinc-300"></i>
+                  </div>
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">끝 프레임 (선택)</div>
+                    <div class="aspect-video rounded-xl border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center gap-1 text-xs text-zinc-400">
+                      <button class="text-primary font-bold text-[11px] hover:underline">+ 씬 3 이미지 자동</button>
+                      <span>또는 업로드</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1.5">프롬프트 (모션)</div>
+                    <textarea class="w-full h-24 px-3 py-2 rounded-xl border border-zinc-200 text-xs font-mono resize-none focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                              placeholder="카메라가 천천히 줌인. 여성이 눈을 뜨며 살짝 미소짓는다.">Camera slowly zooms in. Woman opens eyes and smiles gently.</textarea>
+                  </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-end gap-4">
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">길이</div>
+                    <div class="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+                      <button class="px-3 py-1.5 rounded-lg bg-white text-zinc-900 text-xs font-black shadow-sm">5초</button>
+                      <button class="px-3 py-1.5 rounded-lg text-zinc-500 text-xs font-bold">10초</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">해상도</div>
+                    <div class="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+                      <button class="px-3 py-1.5 rounded-lg bg-white text-zinc-900 text-xs font-black shadow-sm">720p</button>
+                      <button class="px-3 py-1.5 rounded-lg text-zinc-400 text-xs font-bold flex items-center gap-1">
+                        1080p <span class="text-[9px] bg-amber-100 text-amber-800 px-1 rounded">VIP</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="ml-auto flex flex-col items-end gap-1">
+                    <div class="text-[11px] text-zinc-500">이 씬 비용</div>
+                    <div class="text-sm font-black text-zinc-900">🔥 10cr</div>
+                  </div>
+                  <button class="px-5 py-3 rounded-xl btn-primary font-black text-sm flex items-center gap-2" disabled>
+                    <i class="lucide-video text-xs"></i>
+                    영상 생성
+                  </button>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 씬 3: 업스케일 진행 중 -->
+        <div>
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(3)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-black text-zinc-700">3</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-zinc-200 placeholder-img">Scene 3</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot working"></span>
+                <span class="text-xs font-black text-primary">업스케일 진행중 60%</span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                여성이 컵을 내려놓으며 만족스럽게 웃는 미디엄 클로즈업
+              </div>
+            </div>
+            <div class="shrink-0 w-24 h-1.5 rounded-full bg-zinc-100 overflow-hidden">
+              <div class="h-full bg-amber-500 transition-all" style="width: 60%;"></div>
+            </div>
+            <i class="lucide-chevron-down text-zinc-400"></i>
+          </button>
+        </div>
+
+        <!-- 씬 4: 업스케일 완료, 영상 대기 -->
+        <div>
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(4)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-black text-zinc-700">4</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-zinc-200 placeholder-img">Scene 4</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot pending"></span>
+                <span class="text-xs font-black text-zinc-700">대기</span>
+                <span class="step-badge step2">
+                  <i class="lucide-check text-[9px]"></i> 업스케일 완료 · 영상 대기
+                </span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                남성 파트너와 컵을 부딪히며 함께 웃는 투샷
+              </div>
+            </div>
+            <button class="shrink-0 px-3 py-1.5 rounded-lg btn-primary text-xs font-black flex items-center gap-1">
+              <i class="lucide-video text-xs"></i> 영상 생성 (10cr)
+            </button>
+            <i class="lucide-chevron-down text-zinc-400"></i>
+          </button>
+        </div>
+
+        <!-- 씬 5: 영상 생성 중 -->
+        <div>
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(5)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-black text-zinc-700">5</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-zinc-200 placeholder-img">Scene 5</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot working"></span>
+                <span class="text-xs font-black text-primary">영상 생성중 45%</span>
+                <span class="text-[11px] text-zinc-400">· 남은 ~1분</span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                젊은 남녀가 카페 창가에 앉아 컵을 들며 여유롭게 담소하는 와이드 샷
+              </div>
+            </div>
+            <div class="shrink-0 w-24 h-1.5 rounded-full bg-zinc-100 overflow-hidden">
+              <div class="h-full transition-all" style="width: 45%; background: linear-gradient(90deg, var(--primary), #1E6FD9);"></div>
+            </div>
+            <i class="lucide-chevron-down text-zinc-400"></i>
+          </button>
+        </div>
+
+        <!-- 씬 6: 실패 (업스케일 후 재시도 필요) -->
+        <div>
+          <button class="w-full p-4 flex items-center gap-4 text-left" onclick="toggleAccordion(6)">
+            <div class="shrink-0 w-8 h-8 rounded-full bg-red-50 border border-red-200 text-red-600 flex items-center justify-center text-xs font-black">6</div>
+            <div class="shrink-0 w-24 h-14 rounded-lg overflow-hidden border border-red-200 placeholder-img">Scene 6</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="status-dot failed"></span>
+                <span class="text-xs font-black text-red-600">실패</span>
+                <span class="text-[11px] text-red-500">Image pixel is invalid</span>
+              </div>
+              <div class="text-xs text-zinc-500 truncate">
+                여러 컵이 놓인 넓은 테이블 오버헤드 샷
+              </div>
+            </div>
+            <button class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-black flex items-center gap-1">
+              <i class="lucide-image-up text-xs"></i> 먼저 업스케일 (5cr)
+            </button>
+            <i class="lucide-chevron-down text-zinc-400"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 하단 안내 -->
+      <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+        <i class="lucide-info text-blue-600 mt-0.5 shrink-0"></i>
+        <div class="text-xs text-blue-900 leading-relaxed">
+          <strong>업스케일 필요성</strong>:
+          스토리보드 씬 이미지가 Kling 의 최소 해상도(대략 720p) 미달일 경우
+          "Image pixel is invalid" 로 거부됩니다. 이 단계를 자동화하면 사용자가
+          에러 원인을 헤매지 않아도 됩니다.
+          <br />
+          <br />
+          <strong>제안 크레딧</strong>: 업스케일 5cr / 씬, 배치 25cr / 5씬. (임의값 · 조정 가능)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleAccordion(id) {
+      const el = document.getElementById('acc-' + id);
+      if (!el) return;
+      el.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

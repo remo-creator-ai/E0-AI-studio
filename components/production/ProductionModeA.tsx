@@ -557,9 +557,30 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
               </div>
             </div>
             {prompt.length > KLING_PROMPT_MAX && (
-              <div className="mt-2 p-2 rounded-lg bg-red-50 border border-red-200 text-[11px] text-red-800 leading-relaxed">
-                ⚠️ Kling API 상한 {KLING_PROMPT_MAX}자 초과. 생성 시 자동으로 문장 경계에서 잘려 전송됩니다.
-                핵심 씬만 남기거나 "핵심 씬만 축약" 프리셋을 사용해 주세요.
+              <div className="mt-2 p-3 rounded-lg bg-red-50 border border-red-200 space-y-2">
+                <p className="text-[11px] text-red-800 leading-relaxed">
+                  ⚠️ Kling API 상한 <strong>{KLING_PROMPT_MAX}자</strong> 초과 ({prompt.length.toLocaleString()}자).
+                  그대로 생성하면 문장 경계에서 자동으로 잘려 전송돼 씬 후반부가 반영되지 않을 수 있습니다.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => applyPreset('compressed')}
+                    disabled={preset === 'compressed'}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-black flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Scissors size={11} />
+                    {preset === 'compressed' ? '이미 축약 모드' : '핵심 씬만 자동 축약'}
+                  </button>
+                  <button
+                    onClick={() => applyPreset('flow')}
+                    disabled={preset === 'flow'}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-red-200 hover:bg-red-100 text-red-700 text-[11px] font-black flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Waves size={11} />
+                    시간 없이 흐름만
+                  </button>
+                  <span className="text-[10px] text-red-500">← 클릭하면 즉시 프롬프트 재구성</span>
+                </div>
               </div>
             )}
           </div>
