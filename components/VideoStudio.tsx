@@ -742,7 +742,7 @@ export const VideoStudio: React.FC = () => {
           ) : (
             <>
               모델: {VIDEO_STUDIO_MODEL} · 시작 프레임 유무에 따라 T2V/I2V 자동 선택.
-              {endFrame && ' · 끝 프레임 사용 시 +5cr'}
+              {endFrame && ' · 끝 프레임 시 Pro 모드 (2배 크레딧)'}
             </>
           )}
         </p>

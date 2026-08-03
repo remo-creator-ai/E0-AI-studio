@@ -61,12 +61,13 @@ export type VideoDuration = typeof VIDEO_DURATIONS[number];
 export const DEFAULT_VIDEO_DURATION: VideoDuration = 5;
 
 // ---------- 크레딧 단가 ----------
-// 5초: 10cr, 10초: 15cr (Kling std 기준).
-// 시작+끝 프레임 조합은 프리미엄이라 +5cr.
-// 씬 영상 배치 생성(모드 A/B)과는 별도 단가 — 여기는 스탠드얼론 생성 프리미엄.
+// std (5s: 10cr, 10s: 15cr) · pro (5s: 20cr, 10s: 30cr).
+// Kling v2-6 는 std 에서 image_tail(끝 프레임) 을 지원하지 않아 끝 프레임이 있으면
+// 자동으로 pro 모드로 승격되며, pro 는 std 대비 2배 청구된다.
 export function videoStudioCreditCost(input: { durationSec: number; hasEndFrame?: boolean }): number {
-  const base = input.durationSec >= 10 ? 15 : 10;
-  return base + (input.hasEndFrame ? 5 : 0);
+  const longer = input.durationSec >= 10;
+  if (input.hasEndFrame) return longer ? 30 : 20;
+  return longer ? 15 : 10;
 }
 
 // ---------- 모델 ----------
@@ -162,12 +163,19 @@ export async function generateStudioVideo(input: GenerateVideoInput): Promise<Ge
   // Kling 은 프롬프트 2500자 상한 (code 1201). 자동 잘라내기.
   const safePrompt = clampKlingPrompt(prompt);
 
+  // 모드 결정:
+  //   - kling-v2-6/std 는 image_tail(끝 프레임) 을 지원하지 않으므로 endImage 가
+  //     있으면 pro 로 자동 승격 (에러 code 1201: "not supported with image_tail
+  //     in standard mode").
+  //   - 그 외는 std 유지 (저렴하고 빠름).
+  const mode = input.endImage ? 'pro' : 'std';
+
   const body: Record<string, unknown> = {
     model_name: VIDEO_STUDIO_MODEL,
     prompt: safePrompt,
     negative_prompt: '',
     cfg_scale: 0.5,
-    mode: 'std',
+    mode,
     duration: String(input.durationSec),
     aspect_ratio: input.aspect,
   };
