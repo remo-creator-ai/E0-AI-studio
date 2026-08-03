@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useModal } from '../ui/ModalProvider';
 import { generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX } from '../../services/videoStudioService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
+import { composeScenesToGrid, pickGridLayout } from '../../services/storyboardCompose';
 import type { Scene } from '../../types';
 
 export type SequencePreset = 'timed' | 'flow' | 'compressed' | 'cinematic';
@@ -34,7 +35,9 @@ const PRESET_INFO: Record<SequencePreset, { label: string; hint: string; icon: R
   cinematic:  { label: '시네마틱 리터치',           hint: '트랜지션·조명·무드 지시문 강화',               icon: FilmIcon },
 };
 
-function getGridLayout(sceneCount: number, aspectRatio?: string) {
+// 참고용: 원래 프로젝트 기본 그리드 (project.grid_images 은 이 배치로 미리 생성됨).
+// 실제 모드 A 에서는 선택된 씬 수에 맞춰 pickGridLayout 으로 재산정한다.
+function _getOriginalGridLayout(sceneCount: number, aspectRatio?: string) {
   const isPortrait = aspectRatio === '9:16';
   switch (sceneCount) {
     case 4: return { rows: 2, cols: 2 };
@@ -143,14 +146,70 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
     () => (project?.scenes ?? []).map((_, i) => i),
   );
 
-  const gridLayout = useMemo(
-    () => getGridLayout(project?.scene_count || 9, project?.aspect_ratio),
-    [project?.scene_count, project?.aspect_ratio],
-  );
-
-  const gridImage = project?.grid_images?.[0] ?? null;
   const aspect = (project?.aspect_ratio ?? '16:9') as '16:9' | '9:16' | '1:1';
   const language = (project?.generation_language ?? 'ko') as 'ko' | 'en';
+
+  // 선택된 씬 수에 맞춰 그리드 레이아웃 산정 (프로젝트 원본과 무관)
+  const gridLayout = useMemo(
+    () => pickGridLayout(activeIdxs.length || 1, aspect),
+    [activeIdxs.length, aspect],
+  );
+
+  // 스토리보드 다듬기(3단계) 에서 편집된 씬 이미지들을 합성해 새로운 그리드를 만든다.
+  // - source: project.scenes[i].image_url (Assembly 에서 수정됐다면 최신 값)
+  // - fallback: 이미지가 없는 씬은 스킵되지 않고 에러 (사용자에게 어느 씬이 빠졌는지 알림)
+  const [composedImage, setComposedImage] = useState<string | null>(null);
+  const [composing, setComposing] = useState(false);
+  const [composeError, setComposeError] = useState<string | null>(null);
+  // 이 상태를 만든 시점의 activeIdxs 를 기록 → 활성 씬이 바뀌면 재합성 유도
+  const [composedFor, setComposedFor] = useState<string>('');
+
+  const currentSelectionKey = useMemo(
+    () => `${aspect}|${activeIdxs.join(',')}`,
+    [aspect, activeIdxs],
+  );
+  const composeStale = composedImage != null && composedFor !== currentSelectionKey;
+
+  const compose = async () => {
+    if (!project) return;
+    const urls = activeIdxs
+      .map((i) => project.scenes[i]?.image_url)
+      .filter((u): u is string => !!u);
+    if (urls.length === 0) {
+      setComposeError('선택된 씬 중 이미지가 없어 합성할 수 없습니다. 먼저 스토리보드를 만들어 주세요.');
+      setComposedImage(null);
+      return;
+    }
+    if (urls.length !== activeIdxs.length) {
+      setComposeError(
+        `이미지가 없는 씬이 있습니다. ${urls.length}/${activeIdxs.length}개만 사용됩니다. 스토리보드 다듬기에서 누락 씬을 채워 주세요.`,
+      );
+    } else {
+      setComposeError(null);
+    }
+    setComposing(true);
+    try {
+      const result = await composeScenesToGrid({
+        imageUrls: urls,
+        aspect,
+      });
+      setComposedImage(result.dataUrl);
+      setComposedFor(currentSelectionKey);
+    } catch (e) {
+      setComposeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setComposing(false);
+    }
+  };
+
+  // 진입 시 · 활성 씬이 바뀔 때 한 번 자동 합성 (사용자가 별도 버튼 안 눌러도 대체로 최신)
+  useEffect(() => {
+    if (!project) return;
+    compose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSelectionKey]);
+
+  const gridImage = composedImage;
 
   const autoPrompt = useMemo(() => {
     if (!project) return '';
@@ -201,7 +260,9 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   const projectDuration = project?.duration ?? 0;
   const overCap = projectDuration > 10;
 
-  if (!project || !gridImage) {
+  // 씬 자체가 하나도 없거나 이미지 하나도 없으면 진행 불가.
+  const hasAnySceneImage = (project?.scenes ?? []).some((s) => !!s.image_url);
+  if (!project || !hasAnySceneImage) {
     return (
       <div className="max-w-2xl mx-auto py-16 text-center space-y-4">
         <div className="w-16 h-16 rounded-2xl bg-zinc-100 mx-auto flex items-center justify-center">
@@ -209,7 +270,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
         </div>
         <h3 className="text-lg font-black text-zinc-900">스토리보드가 아직 없어요</h3>
         <p className="text-sm text-zinc-500">
-          먼저 2·3단계에서 스토리보드를 완성해 주세요.
+          먼저 2·3단계에서 씬 이미지를 완성해 주세요.
         </p>
         <button
           onClick={onBack}
@@ -222,6 +283,14 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   }
 
   const generate = async () => {
+    if (!gridImage) {
+      await alert('먼저 스토리보드 합치기를 완료해 주세요. "다시 합치기" 버튼을 눌러 재시도할 수 있습니다.', { type: 'warning' });
+      return;
+    }
+    if (composeStale) {
+      const ok = await confirm('활성 씬이 바뀐 뒤 아직 합치기를 갱신하지 않았습니다. 그대로 진행할까요?');
+      if (!ok) return;
+    }
     if (!hasEnough(cost)) {
       await alert(`크레딧이 부족합니다. (필요 ${cost}cr / 잔액 ${balance}cr)`, { type: 'warning' });
       return;
@@ -271,19 +340,54 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        {/* Left: storyboard preview */}
+        {/* Left: 재조합된 스토리보드 (스토리보드 다듬기의 최신 씬 이미지 기반) */}
         <div className="space-y-3">
-          <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
-            원본 스토리보드
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">
+              스토리보드 (선택 씬 {activeIdxs.length}개 · {gridLayout.rows}×{gridLayout.cols})
+            </div>
+            <button
+              onClick={compose}
+              disabled={composing || !project}
+              className="text-[11px] font-bold text-primary hover:underline disabled:opacity-40 flex items-center gap-1"
+            >
+              {composing ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+              다시 합치기
+            </button>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-zinc-200 bg-zinc-50 aspect-video">
-            <img src={gridImage} alt="storyboard" className="w-full h-full object-contain" />
+          <div className="rounded-2xl overflow-hidden border border-zinc-200 bg-zinc-100 aspect-video flex items-center justify-center">
+            {composing ? (
+              <div className="text-center space-y-2">
+                <Loader2 className="w-8 h-8 text-zinc-400 mx-auto animate-spin" />
+                <p className="text-xs text-zinc-500">씬 이미지 합치는 중...</p>
+              </div>
+            ) : gridImage ? (
+              <img src={gridImage} alt="composed storyboard" className="w-full h-full object-contain" />
+            ) : (
+              <div className="text-center space-y-2 px-6">
+                <AlertCircle className="w-8 h-8 text-zinc-400 mx-auto" />
+                <p className="text-xs text-zinc-500">합치기 대기 중</p>
+              </div>
+            )}
           </div>
+          {composeStale && (
+            <p className="text-[11px] text-amber-700 font-bold">
+              ⚠️ 활성 씬이 변경되었습니다. "다시 합치기" 를 눌러 갱신하세요.
+            </p>
+          )}
+          {composeError && (
+            <p className="text-[11px] text-orange-700 leading-relaxed">{composeError}</p>
+          )}
           <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2">
             <Info size={14} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="text-[11px] text-amber-900 leading-relaxed">
               <strong>첫 씬(좌측 상단)이 영상의 시작 프레임</strong>이 됩니다.
               씬 1은 정적 오프닝으로 구성돼 있는 것이 이상적입니다.
+              <br />
+              <span className="opacity-80">
+                이 미리보기는 <strong>3. 스토리보드 다듬기</strong>의 최신 씬 이미지들을
+                합쳐 만든 것입니다.
+              </span>
             </div>
           </div>
         </div>
