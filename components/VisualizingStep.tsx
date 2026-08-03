@@ -223,14 +223,34 @@ export const VisualizingStep: React.FC = () => {
     );
     const backgroundRefs = indexed.filter((r) => r.category === 'background');
 
-    // (B) 각 패널 프롬프트 뒤에 붙는 짧은 리마인더 — 씬 설명이 캐릭터/제품을 언급하지 않아도
-    // 모델이 참조를 스킵하지 않도록 매 패널마다 명시적으로 요구한다.
-    const perPanelParts = identityRefs.map((r) => {
-      if (r.category === 'character') return `the same character as REFERENCE IMAGE ${r.index}`;
-      if (r.category === 'product') return `the same product as REFERENCE IMAGE ${r.index}`;
-      return `the same outfit/accessories as REFERENCE IMAGE ${r.index}`;
+    // IDENTITY ANCHORS — 씬 설명 전에 배치. 각 레퍼런스 시트에 적힌 이름/라벨을 읽어
+    // canonical identity 로 삼도록 지시해 캐릭터 정체성이 씬마다 흔들리지 않게 한다.
+    // 캐릭터 시트에는 보통 인물명이 함께 표기되므로 이걸 앵커로 활용하는 것이 핵심.
+    const identityAnchors = identityRefs.map((r) => {
+      if (r.category === 'character') {
+        return `- CHARACTER (REFERENCE IMAGE ${r.index}): Study this reference sheet carefully. If a name, label, or caption is visible on the sheet, treat that as the canonical name/identity of this character and keep the same person appearing throughout. Preserve exactly: face shape and features, eye shape and color, hairstyle and hair color, skin tone, age, body proportions, default outfit, and every distinctive trait visible on the sheet (glasses, tattoos, freckles, jewelry, unique clothing, signature accessories). This same specific person — not a lookalike — must appear in every panel where the scene involves them.`;
+      }
+      if (r.category === 'product') {
+        return `- PRODUCT (REFERENCE IMAGE ${r.index}): Study this reference. If a product name, brand, or model label is visible, use it as the canonical identity of this product. Preserve exactly: silhouette, proportions, colorway, materials, textures, logos, typography, and design details. This exact product — not a similar variant — must appear in every panel that features it.`;
+      }
+      return `- OUTFIT/ACCESSORIES (REFERENCE IMAGE ${r.index}): Preserve exactly the garment style, cut, colors, patterns, and accessory choices. Whenever a panel shows the character clothed, they wear this outfit unless the scene explicitly demands a costume change.`;
     });
-    const panelSuffix = perPanelParts.length > 0 ? ` — include ${perPanelParts.join(', ')}.` : '';
+    const backgroundAnchors = backgroundRefs.map((r) =>
+      `- ENVIRONMENT MOOD (REFERENCE IMAGE ${r.index}): Match the spatial layout, lighting mood, color grading, and atmosphere across all panels.`,
+    );
+    const anchorBlockContent = [...identityAnchors, ...backgroundAnchors];
+    const anchorBlock = anchorBlockContent.length > 0
+      ? `\n\nIDENTITY ANCHORS (top priority — read the reference sheets carefully before drawing):\n${anchorBlockContent.join('\n')}`
+      : '';
+
+    // (B) 각 패널 프롬프트 뒤에 붙는 짧은 리마인더 — 씬 설명이 캐릭터/제품을 언급하지 않아도
+    // 모델이 앵커를 스킵하지 않도록 매 패널마다 명시적으로 요구한다.
+    const perPanelParts = identityRefs.map((r) => {
+      if (r.category === 'character') return `the same character defined in REFERENCE IMAGE ${r.index}`;
+      if (r.category === 'product') return `the same product defined in REFERENCE IMAGE ${r.index}`;
+      return `the same outfit/accessories defined in REFERENCE IMAGE ${r.index}`;
+    });
+    const panelSuffix = perPanelParts.length > 0 ? ` — must feature ${perPanelParts.join(', ')} exactly as anchored above.` : '';
     const sceneDescriptions = unitScenes
       .map((s, i) => `Panel ${i + 1}: ${s.image_prompt_en}${panelSuffix}`)
       .join('\n');
@@ -239,11 +259,11 @@ export const VisualizingStep: React.FC = () => {
     const reminders: string[] = [];
     identityRefs.forEach((r) => {
       if (r.category === 'character') {
-        reminders.push(`The character in EVERY panel must be identical to REFERENCE IMAGE ${r.index} (same face, hair, body, and outfit).`);
+        reminders.push(`The character in EVERY panel must be the exact same person as REFERENCE IMAGE ${r.index} — same face, eyes, hair, skin, body, and outfit; if the sheet shows a name, that person is fixed. Do NOT invent a lookalike, do NOT age them up/down, do NOT swap hair color or hairstyle.`);
       } else if (r.category === 'product') {
-        reminders.push(`The product in EVERY panel must be identical to REFERENCE IMAGE ${r.index} (same shape, color, branding, and design details).`);
+        reminders.push(`The product in EVERY panel must be identical to REFERENCE IMAGE ${r.index} (same silhouette, color, branding, and design details). Do NOT substitute a similar product.`);
       } else {
-        reminders.push(`The outfit/accessories in EVERY panel must match REFERENCE IMAGE ${r.index} (same styling and props).`);
+        reminders.push(`The outfit/accessories in EVERY panel must match REFERENCE IMAGE ${r.index} (same styling, colors, and props).`);
       }
     });
     if (backgroundRefs.length > 0) {
@@ -251,7 +271,7 @@ export const VisualizingStep: React.FC = () => {
       reminders.push(`The environment, lighting mood, and color atmosphere across all panels must match ${list}.`);
     }
     const finalReminder = reminders.length > 0
-      ? `\n\nFINAL REMINDER (highest priority): ${reminders.join(' ')} Panels that omit or contradict the reference subject are invalid.`
+      ? `\n\nFINAL REMINDER (highest priority): ${reminders.join(' ')} Panels that omit, contradict, or approximate the reference subject are invalid and must be redrawn to match the anchors.`
       : '';
 
     const orientation = isPortrait ? '9:16 VERTICAL portrait' : '16:9 HORIZONTAL widescreen';
@@ -264,7 +284,7 @@ Layout: ${rows} rows, ${cols} columns. ${orientation} orientation.
 Each panel must be a separate, clearly distinct scene with visible grid dividers between them.
 
 Project Theme: ${project.idea}
-Visual Style: ${project.style}. ${customStylePrompt}
+Visual Style: ${project.style}. ${customStylePrompt}${anchorBlock}
 
 Panel descriptions:
 ${sceneDescriptions}
