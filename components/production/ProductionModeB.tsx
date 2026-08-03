@@ -332,6 +332,27 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     return sum + videoStudioCreditCost({ durationSec: ss.duration, resolution: ss.resolution, hasEndFrame: !!ss.endImage });
   }, 0);
 
+  // ── 선택된 씬 중 아직 업스케일 안 된 것들 (배치 업스케일 대상) ──
+  const scenesNeedingUpscale = selectedScenes.filter((s) => !isUpscaled(s) && !!s.image_url);
+  const upscaleBatchCost = scenesNeedingUpscale.length * IMAGE_UPSCALE_COST;
+
+  const runUpscaleSelected = useCallback(async () => {
+    if (scenesNeedingUpscale.length === 0) return;
+    if (!hasEnough(upscaleBatchCost)) {
+      await alert(`크레딧이 부족합니다. (필요 ${upscaleBatchCost}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return;
+    }
+    const ok = await confirm(
+      `선택된 씬 중 아직 업스케일 안 된 ${scenesNeedingUpscale.length}개 씬을 업스케일합니다.\n\n크레딧 ${upscaleBatchCost}cr 차감 · 순차 실행.`,
+    );
+    if (!ok) return;
+    for (const s of scenesNeedingUpscale) {
+      // runUpscale 내부에서 hasEnough 재검사, upscale_level 갱신
+      // (이 루프 도중 잔액이 부족해지면 각 호출에서 alert 후 중단)
+      await runUpscale(s);
+    }
+  }, [scenesNeedingUpscale, upscaleBatchCost, hasEnough, balance, alert, confirm, runUpscale]);
+
   // ── AssetLibraryPicker (END 소스) ──
   const [pickerFor, setPickerFor] = useState<string | null>(null);
 
@@ -379,11 +400,22 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
             <div className="text-right mr-1">
               <div className="text-[11px] text-zinc-400">잔액</div>
               <div className="text-sm font-black text-zinc-700">{balance}cr</div>
             </div>
+            {/* 선택된 씬 중 아직 업스케일 안 된 것들만 배치 처리 */}
+            {scenesNeedingUpscale.length > 0 && (
+              <button
+                onClick={runUpscaleSelected}
+                className="px-4 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm shadow-[0_6px_16px_rgba(245,158,11,0.28)] flex items-center gap-2"
+                title="이미 업스케일된 씬은 자동 제외"
+              >
+                <ImageUp size={16} />
+                선택 업스케일 ({scenesNeedingUpscale.length}개 · {upscaleBatchCost}cr)
+              </button>
+            )}
             <button
               onClick={() => setShowBatchModal(true)}
               disabled={selectedScenes.length === 0}

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>모드 B 배선 리뷰 — 소담 AI Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0050BF;
+      --primary-dark: #003E99;
+      --primary-light: #E5EDFA;
+      --success: #10B981;
+      --warn: #F59E0B;
+      --danger: #EF4444;
+      --zinc-50: #FAFAFA;
+      --zinc-100: #F4F4F5;
+      --zinc-200: #E4E4E7;
+      --zinc-400: #A1A1AA;
+      --zinc-500: #71717A;
+      --zinc-700: #3F3F46;
+      --zinc-900: #18181B;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--zinc-50);
+      color: var(--zinc-900);
+      line-height: 1.6;
+      padding: 24px 16px 96px;
+    }
+    .doc { max-width: 960px; margin: 0 auto; }
+
+    /* ── 커버 ── */
+    .cover {
+      background: linear-gradient(135deg, var(--primary) 0%, #1E6FD9 100%);
+      color: white;
+      border-radius: 24px;
+      padding: 56px 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0,80,191,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -20%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    }
+    .cover .brand {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 11px; font-weight: 900; letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .cover h1 {
+      margin-top: 20px; font-size: 40px; font-weight: 900;
+      letter-spacing: -0.02em; line-height: 1.15;
+    }
+    .cover .subtitle {
+      margin-top: 12px; font-size: 16px; opacity: 0.85;
+    }
+    .cover .meta {
+      display: flex; gap: 24px; flex-wrap: wrap;
+      margin-top: 32px; padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      font-size: 12px; opacity: 0.8;
+    }
+    .cover .meta strong { color: white; font-weight: 700; }
+
+    /* ── 섹션 ── */
+    .section {
+      background: white;
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .section-hdr {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 24px;
+      background: var(--primary);
+      color: white;
+      border-radius: 16px;
+      margin: 40px 0 20px;
+      font-weight: 900; font-size: 16px;
+      letter-spacing: 0.02em;
+    }
+    .section-hdr .tag {
+      background: rgba(255,255,255,0.25);
+      padding: 3px 10px; border-radius: 6px;
+      font-size: 11px; letter-spacing: 0.1em;
+    }
+    .section h2 {
+      font-size: 20px; font-weight: 900; letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .section h2 .num {
+      display: inline-block; width: 30px; height: 30px;
+      background: var(--primary); color: white;
+      border-radius: 8px; text-align: center; line-height: 30px;
+      font-size: 14px; margin-right: 10px;
+      vertical-align: middle;
+    }
+    .section h3 {
+      font-size: 14px; font-weight: 900;
+      color: var(--primary); margin: 20px 0 8px;
+      padding-left: 10px; border-left: 3px solid var(--primary);
+    }
+    .section p { color: var(--zinc-700); margin: 6px 0; font-size: 14px; }
+
+    /* ── 스크린샷 ── */
+    .shot-wrap {
+      margin: 16px 0;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--zinc-200);
+      background: var(--zinc-100);
+    }
+    .shot-wrap img {
+      display: block; width: 100%; height: auto;
+    }
+    .shot-caption {
+      padding: 10px 14px; font-size: 12px;
+      color: var(--zinc-500); background: white;
+      border-top: 1px solid var(--zinc-200);
+    }
+    .shot-wrap.multi {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+      border: none; background: transparent; padding: 0;
+    }
+    .shot-wrap.multi > .shot-item {
+      border: 1px solid var(--zinc-200);
+      border-radius: 12px; overflow: hidden;
+      background: white;
+    }
+    .shot-wrap.multi > .shot-item img { width: 100%; display: block; }
+    .shot-wrap.multi > .shot-item .cap {
+      padding: 8px 12px; font-size: 11px; color: var(--zinc-500);
+      background: var(--zinc-50);
+    }
+
+    /* ── 체크리스트 ── */
+    .checklist {
+      list-style: none; padding: 0; margin: 12px 0;
+    }
+    .checklist li {
+      padding: 12px 16px; margin-bottom: 8px;
+      background: var(--zinc-50);
+      border-radius: 10px;
+      border-left: 3px solid var(--success);
+      display: flex; align-items: flex-start; gap: 12px;
+      font-size: 13px;
+    }
+    .checklist li::before {
+      content: '✓'; color: var(--success);
+      font-weight: 900; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .checklist li.pending {
+      border-left-color: var(--warn);
+    }
+    .checklist li.pending::before { content: '⋯'; color: var(--warn); }
+    .checklist li strong { color: var(--zinc-900); }
+    .checklist li code {
+      background: white; padding: 2px 6px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--primary); border: 1px solid var(--zinc-200);
+    }
+
+    /* ── 코드 매핑 표 ── */
+    table.mapping {
+      width: 100%; border-collapse: separate; border-spacing: 0;
+      margin: 12px 0;
+      background: white;
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--zinc-200);
+      font-size: 13px;
+    }
+    table.mapping thead {
+      background: var(--zinc-100);
+    }
+    table.mapping th {
+      text-align: left; padding: 10px 14px;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--zinc-500); font-weight: 900;
+    }
+    table.mapping td {
+      padding: 10px 14px;
+      border-top: 1px solid var(--zinc-100);
+      vertical-align: top;
+    }
+    table.mapping code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--primary);
+      background: var(--primary-light);
+      padding: 2px 6px; border-radius: 4px;
+    }
+    table.mapping td.status {
+      text-align: center;
+      font-weight: 900; color: var(--success);
+    }
+
+    /* ── 뱃지 ── */
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      background: var(--primary-light); color: var(--primary);
+      border-radius: 999px; font-size: 10px;
+      font-weight: 900; letter-spacing: 0.05em;
+    }
+    .badge.warn { background: #FEF3C7; color: #92400E; }
+    .badge.danger { background: #FEE2E2; color: #991B1B; }
+    .badge.success { background: #D1FAE5; color: #065F46; }
+
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; margin: 16px 0;
+    }
+    .kpi {
+      padding: 14px 16px;
+      background: var(--zinc-50);
+      border-radius: 12px;
+      border: 1px solid var(--zinc-200);
+    }
+    .kpi-label {
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--zinc-500); font-weight: 900;
+    }
+    .kpi-value {
+      font-size: 22px; font-weight: 900; color: var(--zinc-900);
+      margin-top: 4px;
+    }
+    .kpi-sub { font-size: 11px; color: var(--zinc-500); margin-top: 2px; }
+
+    /* ── 커밋 로그 ── */
+    .commits {
+      background: #0F172A; color: #E2E8F0;
+      border-radius: 12px; padding: 16px 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; line-height: 1.7;
+      overflow-x: auto;
+    }
+    .commits .hash { color: #FCD34D; }
+    .commits .type { color: #93C5FD; }
+
+    .callout {
+      padding: 14px 18px;
+      background: #FEF3C7;
+      border-left: 4px solid var(--warn);
+      border-radius: 8px;
+      font-size: 13px;
+      margin: 12px 0;
+      color: #78350F;
+    }
+    .callout.info {
+      background: #DBEAFE; border-color: #3B82F6; color: #1E40AF;
+    }
+
+    footer {
+      text-align: center; padding: 40px 20px;
+      color: var(--zinc-500); font-size: 12px;
+    }
+    footer strong { color: var(--zinc-900); }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <!-- ══════════ 커버 ══════════ -->
+    <div class="cover">
+      <span class="brand">🎬 SODAM AI STUDIO · REVIEW</span>
+      <h1>모드 B 배선 리뷰<br />(Phase 1 · 개별 영상 정밀 제작)</h1>
+      <p class="subtitle">
+        <code style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">docs/mockups/mode-b-implementation-prompt.md</code>
+        지시서 8개 항목이 <code style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px;">components/production/ProductionModeB.tsx</code>
+        에 어떻게 반영되었는지 매핑
+      </p>
+      <div class="meta">
+        <span>버전 · <strong>Phase 1</strong></span>
+        <span>작성일 · <strong>2026-08-04</strong></span>
+        <span>커밋 · <strong>a2b8934</strong></span>
+        <span>총 라인 · <strong>~880</strong></span>
+        <span>빌드 · <strong>✓ 12.5s · 35.77kB</strong></span>
+      </div>
+    </div>
+
+    <!-- ══════════ 진행 상황 KPI ══════════ -->
+    <div class="section">
+      <h2>세션 진행 KPI</h2>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">완료 Phase</div>
+          <div class="kpi-value">7 / 7</div>
+          <div class="kpi-sub">Phase 1~7 (동영상 스튜디오 · Mode A · Mode B · 의뢰하기)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">진행 중</div>
+          <div class="kpi-value">TTS</div>
+          <div class="kpi-sub">기획 · 4가지 확인 대기</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">대기</div>
+          <div class="kpi-value">동영상편집실</div>
+          <div class="kpi-sub">OpenCut 통합 (별도 기획)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">스펙 대응률 (Mode B)</div>
+          <div class="kpi-value">8 / 8</div>
+          <div class="kpi-sub">지시서 8항목 전부 반영</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 섹션 A. 목업 vs 구현 ══════════ -->
+    <div class="section-hdr">
+      A. 디자인 목업 (사용자 편집본)
+      <span class="tag">reference</span>
+    </div>
+    <div class="section">
+      <h2>목업 원본 스크린샷</h2>
+      <p>
+        <code>docs/mockups/mode-b-with-upscale.html</code> — 사용자가 카드뷰 · START/END 중심으로 편집한 최신 버전.
+        이 문서가 <strong>Mode B 배선의 유일한 시각 정답</strong>입니다.
+      </p>
+      <div class="shot-wrap">
+        <img src="review-screenshots/A1_mockup_full.png" alt="목업 전체" />
+        <div class="shot-caption">A1 · 목업 전체 (좌측 하단 START/END 프레임 · 세로 씬 레일 · 각 씬 3상태 카드 · 상단 sticky 헤더)</div>
+      </div>
+      <div class="callout info">
+        <strong>구현 원칙:</strong> 이 목업의 <em>구조·상태 전이·상호작용 흐름</em>을 그대로 옮긴다.
+        Tailwind 조합·간격·색조는 목업과 완벽 일치까지 요구하지 않지만,
+        시선 우선순위(START/END 중심 · 씬 레일 상단 · 우하단 플로팅 nav)는 유지한다.
+      </div>
+    </div>
+
+    <!-- ══════════ 섹션 B. 8항목 매핑 ══════════ -->
+    <div class="section-hdr">
+      B. 스펙 8항목 → 코드 매핑
+      <span class="tag">verification</span>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">1</span>씬 카드 3상태</h2>
+      <p>씬 하나당 큰 카드 하나. <code>idle</code>(액션 선택) · <code>editor</code>(편집기 전개) · <code>done</code>(결과 재생) 3상태.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>CardMode 타입</td><td><code>ProductionModeB.tsx:51</code> <code>type CardMode = 'idle' | 'editor'</code></td><td class="status">✓</td></tr>
+          <tr><td>done 자동 판정</td><td><code>SceneCard</code> 내부 <code>const done = !!scene.video_url</code></td><td class="status">✓</td></tr>
+          <tr><td>액션 선택 컴포넌트</td><td><code>SceneActionPicker</code> — START + 3버튼 (업스케일/가벼운 편집/AI 생성)</td><td class="status">✓</td></tr>
+          <tr><td>편집기 컴포넌트</td><td><code>SceneEditor</code> — START·END·프롬프트·모델·길이·해상도·비용</td><td class="status">✓</td></tr>
+          <tr><td>결과 재생 (done)</td><td>큰 video 재생기 + 다운로드/다시 만들기 + <code>&lt;details&gt;</code> 세팅 보기</td><td class="status">✓</td></tr>
+          <tr><td>편집기 열기</td><td><code>onSetMode('editor')</code> — AI 생성 버튼 클릭 시</td><td class="status">✓</td></tr>
+          <tr><td>‹ 방식 다시 고르기</td><td><code>SceneEditor</code> 좌상단 · <code>onBack</code> 콜백</td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">2</span>업스케일 신규 연동</h2>
+      <p><code>imageUpscaleService.upscaleSceneImage()</code>의 최초 사용처.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>업스케일 상태</td><td><code>ProductionModeB.tsx:83</code> <code>upscaleJobs: Record&lt;sceneId, UpscaleStatus&gt;</code></td><td class="status">✓</td></tr>
+          <tr><td>실행 함수</td><td><code>:155 runUpscale</code> — <code>detectAspectFromImage → upscaleSceneImage</code></td><td class="status">✓</td></tr>
+          <tr><td>완료 판정</td><td><code>:112 isUpscaled = !!scene.upscale_level</code> (지시서: 새 필드 X)</td><td class="status">✓</td></tr>
+          <tr><td>크레딧 차감</td><td><code>IMAGE_UPSCALE_COST=3</code> · <code>hasEnough</code> 사전 검사</td><td class="status">✓</td></tr>
+          <tr><td>추정 진행률</td><td>400ms interval, +4%/tick · 완료 100% (실제 API progress 없음)</td><td class="status">✓</td></tr>
+          <tr><td>결과 반영</td><td><code>updateScene(id, { image_url: result.dataUrl, upscale_level: '2K' })</code></td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">3</span>END 프레임 · 3갈래 소스</h2>
+      <p>다음 씬 이미지 · 파일 · 보관함 → 세 방법 중 하나로 END 채움.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>다음 씬 이미지 자동</td><td><code>SceneEditor</code> — <code>onPatch({ endImage: nextSceneImage })</code></td><td class="status">✓</td></tr>
+          <tr><td>파일 업로드</td><td><code>&lt;input type="file"&gt;</code> → FileReader → dataURL</td><td class="status">✓</td></tr>
+          <tr><td>보관함 픽커</td><td><code>:336 pickerFor</code> state + <code>AssetLibraryPicker</code></td><td class="status">✓</td></tr>
+          <tr><td>END 설정 시 Pro 승격</td><td>비용 계산 <code>hasEndFrame: !!settings.endImage</code> → 30 → 60cr</td><td class="status">✓</td></tr>
+          <tr><td>모델 라벨 pro 표기</td><td><code>settings.resolution === '1080p' || settings.endImage ? MODEL_LABEL_PRO : STD</code></td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">4</span>씬 선택 · 합치기 포함</h2>
+      <p>체크박스로 최종 영상에 포함할 씬 지정. 해제된 씬은 dim.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>선택 상태</td><td><code>:82 selected: Record&lt;sceneId, boolean&gt;</code> · 기본 전체 <code>true</code></td><td class="status">✓</td></tr>
+          <tr><td>토글</td><td><code>:316 toggleSelect</code> — 카드 헤더 체크박스</td><td class="status">✓</td></tr>
+          <tr><td>비활성 시각</td><td><code>opacity-40 pointer-events-none</code> + "최종 영상에서 제외" 뱃지</td><td class="status">✓</td></tr>
+          <tr><td>진행률·합계·비용</td><td>모두 <code>selectedScenes</code> 기준으로 계산</td><td class="status">✓</td></tr>
+          <tr><td>빠른 선택 3버튼</td><td>전체 <code>selectAll</code> / 해제 <code>clearAll</code> / 완성만 <code>selectCompleted</code></td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">5</span>상단 씬 레일 · hover 재생</h2>
+      <p>108px 폭 칩 가로 스크롤 · 완료 씬은 mouseenter/leave 로 재생/정지.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>레일 컴포넌트</td><td><code>SceneRailChip</code> · 폭 108px · <code>flex-none</code></td><td class="status">✓</td></tr>
+          <tr><td>가로 스크롤</td><td>부모 <code>overflow-x-auto pb-1</code></td><td class="status">✓</td></tr>
+          <tr><td>상태 표시</td><td>번호(상단) · 썸네일(중앙) · 색점+텍스트(하단)</td><td class="status">✓</td></tr>
+          <tr><td>완료 씬 hover 재생</td><td><code>onMouseEnter → play() · onMouseLeave → pause() + currentTime=0</code></td><td class="status">✓</td></tr>
+          <tr><td>스티키</td><td><code>sticky top-16 z-30</code> + backdrop-blur</td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">6</span>씬 간 이동 · 4경로</h2>
+      <p>레일 클릭 · 카드 헤더 up/down · 우하단 플로팅 · 키보드 ↑↓/J/K.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>1) 레일 클릭</td><td><code>SceneRailChip onClick={() => scrollToScene(s.id)}</code></td><td class="status">✓</td></tr>
+          <tr><td>2) 카드 헤더</td><td>SceneCard 헤더 <code>ChevronUp/Down</code> 버튼 · <code>onPrev/onNext</code></td><td class="status">✓</td></tr>
+          <tr><td>3) 우하단 플로팅</td><td><code>FloatingSceneNav</code> · 위/카운터/아래 버튼</td><td class="status">✓</td></tr>
+          <tr><td>4) 키보드</td><td><code>:307 useEffect</code> — J/K/ArrowUp/ArrowDown · INPUT/TEXTAREA 포커스 시 무시</td><td class="status">✓</td></tr>
+          <tr><td>착지 지점</td><td><code>scrollIntoView({ behavior:'smooth', block:'start' })</code> + <code>scrollMarginTop: 200</code></td><td class="status">✓</td></tr>
+          <tr><td>액티브 씬 추적</td><td><code>setActiveSceneId(sceneId)</code> — 레일 highlight 동기화</td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">7</span>전체 생성 모달</h2>
+      <p><code>confirm()</code> 텍스트 방식을 신규 <code>GenerateAllModal</code>로 대체.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>1단계 모델 선택</td><td>Kling 2.6 std (30cr) / pro (60cr) / 코드 모션 (disabled)</td><td class="status">✓</td></tr>
+          <tr><td>2단계 씬 확인 리스트</td><td>이미 완료 → unchecked, 업스케일 필요 → +3cr 표기</td><td class="status">✓</td></tr>
+          <tr><td>합계·잔액·경고</td><td>하단 sticky 바 · <code>canProceed = balance &gt;= totalCost</code></td><td class="status">✓</td></tr>
+          <tr><td>ESC · 배경 클릭 닫기</td><td><code>useEffect onEsc</code> + <code>onClick target check</code></td><td class="status">✓</td></tr>
+          <tr><td>"다시 만들면 교체됩니다" 문구</td><td>모달 하단 warn 배너로 명시 (Phase 1 한계)</td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">8</span>프롬프트 한 언어만 노출</h2>
+      <p>사용자 <code>defaultLanguage</code>에 따라 한 화면 한 언어. 영문/한글 병기 금지.</p>
+      <table class="mapping">
+        <thead><tr><th style="width: 34%">항목</th><th>구현 위치</th><th style="width: 12%">상태</th></tr></thead>
+        <tbody>
+          <tr><td>표시용 프롬프트 분기</td><td><code>:116 getDisplayPrompts</code> — <code>ko → content_kr/video_motion_kr, en → image_prompt_en/video_motion_en</code></td><td class="status">✓</td></tr>
+          <tr><td>Kling 전송용 프롬프트</td><td><code>:125 buildKlingPrompt</code> — 편집 있으면 편집값, 없으면 항상 <code>video_motion_en</code></td><td class="status">✓</td></tr>
+          <tr><td>주석 · 향후 계획</td><td>Korean-only 전환 리팩터는 별도 · 메모리 저장됨 <code>feedback_korean_only_prompt_plan.md</code></td><td class="status">✓</td></tr>
+          <tr><td>편집기 라벨</td><td><code>영상 프롬프트 (한국어)</code> 또는 <code>(English)</code></td><td class="status">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══════════ 섹션 C. 금지 사항 준수 ══════════ -->
+    <div class="section-hdr">
+      C. 금지 사항 준수
+      <span class="tag">discipline</span>
+    </div>
+    <div class="section">
+      <h2>지시서 명시 금지 사항</h2>
+      <ul class="checklist">
+        <li><strong>씬 추가/삭제/순서 이동 UI</strong> — 제작 화면에 <em>없음</em>. 기획 이동 링크만 <code>빠른 선택</code> 옆 텍스트 링크로 배치. 기획 전용 함수(<code>PlanningStep.tsx:165 moveScene / :175 removeScene / :184 addScene</code>) 미노출.</li>
+        <li><strong>서비스 시그니처 변경 금지</strong> — <code>generateStudioVideo</code>·<code>videoStudioCreditCost</code>·<code>upscaleSceneImage</code>·<code>AssetLibraryPicker</code> 모두 기존 인터페이스 그대로 사용.</li>
+        <li><strong>types.ts / DB 스키마 변경 금지</strong> — Scene 타입 손대지 않음. Phase 2 (테이크 스택)에서 다룰 영역으로 문서에 유지.</li>
+        <li><strong>모델 라벨 하드코딩 금지</strong> — <code>MODEL_LABEL_BASE</code>를 <code>VIDEO_STUDIO_MODEL</code>에서 파생 (<code>ProductionModeB.tsx:45</code>). 상수 값이 바뀌면 UI 라벨도 자동 반영.</li>
+      </ul>
+    </div>
+
+    <!-- ══════════ 섹션 D. Phase 1 한계 명시 ══════════ -->
+    <div class="section-hdr">
+      D. Phase 1 알려진 한계 (Phase 2에서 해결)
+      <span class="tag">roadmap</span>
+    </div>
+    <div class="section">
+      <h2>테이크 스택 미구현</h2>
+      <p>씬을 <strong>다시 만들면 기존 <code>video_url</code> 이 덮어써짐</strong>. 다음 리팩터에서 씬당 여러 테이크를 스택으로 유지하고 대표 선정 기능 도입.</p>
+      <div class="callout">
+        모달 문구에 <em>"다시 만들면 기존 영상이 교체됩니다"</em> 로 정확히 표기 (사용자 오인 방지). 지시서 요구 준수.
+      </div>
+      <h3>Phase 2 마이그레이션 방향</h3>
+      <ul class="checklist">
+        <li class="pending"><code>types.ts</code> — <code>video_url?: string</code> → <code>video_takes?: VideoTake[]</code> + <code>main_take_id?: string</code></li>
+        <li class="pending"><code>types/database.ts</code> + Supabase 마이그레이션 신규</li>
+        <li class="pending"><code>store.ts</code> — 테이크 추가/대표 지정 액션</li>
+        <li class="pending">합치기 단계 — <code>video_url</code> 참조를 전부 "대표 테이크" 로 교체</li>
+        <li class="pending">기존 데이터 마이그레이션: <code>video_url</code> 있으면 테이크 1개로 변환, 그게 대표</li>
+      </ul>
+    </div>
+
+    <!-- ══════════ 섹션 E. 완료 기준 자체 검증 ══════════ -->
+    <div class="section-hdr">
+      E. 완료 기준 · 자체 검증
+      <span class="tag">QA</span>
+    </div>
+    <div class="section">
+      <h2>지시서 완료 체크리스트</h2>
+      <ul class="checklist">
+        <li><strong><code>npm run build</code> 통과</strong> — tsc --noEmit + vite build 완료 (12.5초 · ModeB 35.77kB)</li>
+        <li><strong>씬 0개 / 이미지 없음 / 크레딧 부족 방어</strong> — 조기 리턴 · 안내 · 크레딧 사전 검사 모두 존재</li>
+        <li><strong>업스케일 → AI 생성 → 완료 전이 동작</strong> — MOCK 모드로 검증 가능 (upscaleSceneImage 는 1.5초 후 원본 반환)</li>
+        <li><strong>배치 생성 중 다른 씬 이동해도 잡 유지</strong> — videoGenStore 전역 큐 사용 (기존 동작 유지)</li>
+        <li><strong>씬 선택 변경 시 진행률·합계·비용 즉시 반영</strong> — <code>selectedScenes</code> 파생값 useMemo 없이 매 렌더 계산 (씬 소수라 문제 없음)</li>
+        <li><strong>END 지정/해제 시 30↔60cr 즉시 반영</strong> — <code>hasEndFrame</code> 인자 → <code>videoStudioCreditCost</code> 재계산 · 라벨 pro 전환</li>
+        <li><strong>제작 화면에 씬 추가·삭제·순서 이동 UI 없음</strong> — 기획 전용 함수 미노출 · 링크만 존재</li>
+      </ul>
+    </div>
+
+    <!-- ══════════ 섹션 F. 세션 전체 커밋 로그 ══════════ -->
+    <div class="section-hdr">
+      F. 세션 전체 커밋 로그
+      <span class="tag">history</span>
+    </div>
+    <div class="section">
+      <h2>주요 커밋 (최근 → 오래된)</h2>
+      <pre class="commits"><span class="hash">a2b8934</span> <span class="type">feat(mode-b)</span>: 목업 지시서 반영 재작성 (Phase 1) + admin 표 정렬
+<span class="hash">2d19d0f</span> <span class="type">fix(video-studio)</span>: 프로젝트 통합영상은 사이드바 히스토리에서 제외
+<span class="hash">667507b</span> <span class="type">fix(mode-a)</span>: 시퀀스 프롬프트 강화 - 씬 순서·전 씬 애니메이션 명시
+<span class="hash">0e8376d</span> <span class="type">feat(mode-a)</span>: 큐 유지 · 결과 목록 · 보관함 저장 통합
+<span class="hash">0f5003d</span> <span class="type">fix(pricing)</span>: 영상 크레딧을 "30 × 유닛수" 로 통일
+<span class="hash">35e88fd</span> <span class="type">feat(mode-a)</span>: 스토리보드 통합 영상에도 해상도 UI 추가
+<span class="hash">69e892c</span> <span class="type">feat(video-studio)</span>: 1080p 해상도 옵션 추가 · Pro 모드 자동 매핑
+<span class="hash">00167ca</span> <span class="type">fix(kling)</span>: 끝 프레임 사용 시 mode=std → pro 자동 승격
+<span class="hash">5424296</span> <span class="type">feat</span>: 동영상 명시 저장 · VideoStudio 포커스 뷰 · 히스토리 페이지네이션
+<span class="hash">0b90e27</span> <span class="type">feat</span>: 대시보드 의뢰현황 표 · 히스토리 클릭 재생 · 동영상 필터 · 9씬 3x3
+<span class="hash">508e4f9</span> <span class="type">feat</span>: 프롬프트 초과 원클릭 압축 · Mode B HTML 목업 · 업스케일 서비스
+<span class="hash">236b482</span> <span class="type">feat(kling)</span>: 기본 모델을 kling-v1 → kling-v2-6 로 업그레이드
+<span class="hash">404b6ff</span> <span class="type">fix(mode-a)</span>: 시퀀스 프롬프트 재설계 - 항상 2400자 이내 강제
+<span class="hash">9e9940d</span> <span class="type">fix+feat</span>: 스토리보드 합성 비율 오류 · 프로젝트 제목 인라인 편집
+<span class="hash">705349e</span> <span class="type">feat(production)</span>: 의뢰하기 모달 + DB + 이메일 (Phase 7)
+<span class="hash">4904891</span> <span class="type">feat(production)</span>: 모드 A - 스토리보드 다듬기의 씬 이미지 재합성
+<span class="hash">4aa9a98</span> <span class="type">feat(production)</span>: 모드 B 세로 타임라인 (Phase 5)
+<span class="hash">bf883b8</span> <span class="type">chore(nav)</span>: 기획 → 초안기획하기 · 프로젝트 제목 truncation 완화
+<span class="hash">6842ca3</span> <span class="type">refactor(video-studio)</span>: Kling 스타일 큐 · 이탈해도 지속 · 레이아웃 정합
+<span class="hash">fd0ef13</span> <span class="type">feat</span>: 종횡비 · 크레딧 · Kling 프롬프트 상한 · 관리자 사용량 · 그 외 UX 개선</pre>
+    </div>
+
+    <!-- ══════════ 섹션 G. 라이브 앱 참고 ══════════ -->
+    <div class="section-hdr">
+      G. 라이브 앱 (참고)
+      <span class="tag">landing</span>
+    </div>
+    <div class="section">
+      <h2>라이브 · 랜딩 페이지</h2>
+      <p>실 Supabase 인증 환경이라 Playwright 로 로그인 후 Mode B 진입은 이번 리뷰에서 생략. 로그인 후 화면은 직접 확인.</p>
+      <div class="shot-wrap">
+        <img src="review-screenshots/B1_landing_top.png" alt="랜딩 상단" />
+        <div class="shot-caption">B1 · 소담 AI Studio 랜딩 페이지 (미로그인)</div>
+      </div>
+    </div>
+
+    <!-- ══════════ 섹션 H. 다음 단계 ══════════ -->
+    <div class="section-hdr">
+      H. 사용자 배포 검증 순서
+      <span class="tag">next</span>
+    </div>
+    <div class="section">
+      <h2>브라우저 확인 절차</h2>
+      <ol style="padding-left: 20px; margin-top: 10px; font-size: 14px; color: var(--zinc-700); line-height: 1.9;">
+        <li>Vercel 자동 배포 완료 확인 (커밋 <code>a2b8934</code> 반영 · 1~2분)</li>
+        <li><strong>사이드바 · 워크플로우 → 4. 전체영상제작하기 → "개별 영상 정밀 제작"</strong> 진입</li>
+        <li><strong>상단 씬 레일</strong> — 완료 씬 hover 재생 확인, 클릭 시 카드로 스무스 스크롤</li>
+        <li><strong>씬 카드 · idle 상태</strong> — 좌 START + 우 [업스케일 3cr] / [가벼운 편집 (준비중)] / [AI 생성 · 업스케일 먼저]</li>
+        <li><strong>업스케일 실행</strong> — 진행바 → 완료 → "완료 · 2K · 3cr 사용됨" 뱃지</li>
+        <li><strong>AI 동영상 생성</strong> — 편집기 전개 · START·END 프레임 · 프롬프트 · 모델/길이/해상도/비용 확인</li>
+        <li><strong>END 프레임 3소스</strong> — [+다음 씬 이미지] / [파일] / [보관함]. 지정 시 비용 30 → 60cr 즉시 변경 확인</li>
+        <li><strong>키보드</strong> — J/K 또는 ↑↓로 씬 이동 (INPUT/TEXTAREA 포커스 중이면 이동 안 되는지 확인)</li>
+        <li><strong>씬 선택 체크박스</strong> — 해제 시 카드 dim, 진행률·합계 즉시 재계산</li>
+        <li><strong>선택한 씬 생성 버튼</strong> — 모달 → 모델 선택 → 씬 확인 (이미 완료된 씬 unchecked · 업스케일 필요 +3cr) → 생성 시작</li>
+        <li><strong>완료 카드</strong> — 큰 video 재생기 · 다운로드 · 다시 만들기 · "이 영상을 만든 설정 보기" details</li>
+      </ol>
+    </div>
+
+    <footer>
+      <strong>Sodam AI Studio</strong> · 크리에이터/마케터를 위한 AI 제작 스튜디오<br />
+      2026-08-04 · Playwright + node · Vite + React 19 · Supabase + Kling v2.6
+    </footer>
+  </div>
+</body>
+</html>
