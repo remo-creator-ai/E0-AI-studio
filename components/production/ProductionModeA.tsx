@@ -21,7 +21,11 @@ import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
 import { useAuthStore } from '../../store/authStore';
 import { useModal } from '../ui/ModalProvider';
-import { generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX, VIDEO_STUDIO_MODEL } from '../../services/videoStudioService';
+import {
+  generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX, VIDEO_STUDIO_MODEL,
+  VIDEO_RESOLUTIONS, DEFAULT_VIDEO_RESOLUTION,
+  type VideoResolution,
+} from '../../services/videoStudioService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
 import { composeScenesToGrid, pickGridLayout } from '../../services/storyboardCompose';
 import type { Scene } from '../../types';
@@ -176,6 +180,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   const { alert, confirm } = useModal();
 
   const [duration, setDuration] = useState<5 | 10>(10);
+  const [resolution, setResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
   const [busy, setBusy] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -297,7 +302,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   };
 
   const prompt = manualPrompt ?? autoPrompt;
-  const cost = videoStudioCreditCost({ durationSec: duration });
+  const cost = videoStudioCreditCost({ durationSec: duration, resolution });
   const projectDuration = project?.duration ?? 0;
   const overCap = projectDuration > 10;
 
@@ -349,6 +354,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
         prompt,
         aspect,
         durationSec: duration,
+        resolution,
         startImage: gridImage,
       });
       if (!result.ok || !result.videoUrl) {
@@ -470,6 +476,37 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Resolution — 720p(std) / 1080p(pro) */}
+          <div>
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">해상도</label>
+            <div className="mt-1.5 grid grid-cols-2 gap-2 max-w-xs">
+              {VIDEO_RESOLUTIONS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setResolution(r)}
+                  disabled={busy}
+                  className={`px-3 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                    resolution === r
+                      ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                      : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
+                  }`}
+                >
+                  {r}
+                  {r === '1080p' && (
+                    <span className={`text-[9px] px-1 rounded font-black ${
+                      resolution === r ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'
+                    }`}>PRO</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[10px] text-zinc-400 leading-relaxed">
+              {resolution === '1080p'
+                ? 'Pro 모드 · 크레딧 2배 · 소요 시간 조금 더 김'
+                : '기본 화질 · 저렴하고 빠름'}
+            </p>
           </div>
 
           {/* Preset selector */}
