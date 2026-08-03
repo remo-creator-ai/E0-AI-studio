@@ -4,8 +4,10 @@
 //  기존 ProductionStep(대형 파일, 1300+ lines) 은 그대로 두고 상위에 Shell 을 신설.
 //  Shell 이 mode state 를 소유하고 라우팅:
 //    - landing: 2개 카드로 모드 선택
-//    - modeA (통합 영상 배치): Phase 3 착수 예정 — 지금은 placeholder
-//    - modeB (개별 씬 영상): 기존 ProductionStep 을 그대로 재활용 (Phase 5 에서 세로 타임라인으로 확장)
+//    - modeA (통합 영상 배치): production/ProductionModeA
+//    - modeB (개별 씬 영상): production/ProductionModeB — 세로 타임라인 (Phase 5)
+//
+//  기존 ProductionStep.tsx 는 라우팅에서 빠졌지만 폴백 참고용으로 파일은 남겨둔다.
 //
 //  우상단에 "전문가에게 의뢰하기" 강조 버튼 배치 (Phase 7 에서 실제 모달·DB·이메일 배선).
 //  이 커밋은 자리만 잡고 클릭 시 임시 안내.
@@ -17,11 +19,11 @@ import { Film, Layers, ArrowLeft, Wand2, Info, Send } from 'lucide-react';
 import { useStore } from '../store';
 import { useModal } from './ui/ModalProvider';
 
-const ProductionStep = React.lazy(() =>
-  import('./ProductionStep').then((m) => ({ default: m.ProductionStep })),
-);
 const ProductionModeA = React.lazy(() =>
   import('./production/ProductionModeA').then((m) => ({ default: m.ProductionModeA })),
+);
+const ProductionModeB = React.lazy(() =>
+  import('./production/ProductionModeB').then((m) => ({ default: m.ProductionModeB })),
 );
 
 type Mode = 'landing' | 'modeA' | 'modeB';
@@ -200,7 +202,7 @@ export const ProductionStepShell: React.FC = () => {
             </div>
           }
         >
-          <ProductionStep />
+          <ProductionModeB onBack={() => setMode('landing')} />
         </Suspense>
       )}
     </div>
