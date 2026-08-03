@@ -181,7 +181,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         await alert(`업스케일 실패: ${result.message ?? 'unknown'}`, { type: 'error' });
         return;
       }
-      await deduct(IMAGE_UPSCALE_COST, `업스케일 (씬 ${scene.order + 1})`);
+      await deduct(IMAGE_UPSCALE_COST, `업스케일 (씬 ${scene.order})`);
       updateScene(scene.id, { image_url: result.dataUrl, upscale_level: '2K' });
       setUpscaleJobs((prev) => ({ ...prev, [scene.id]: 'done' }));
       setUpscaleProgress((prev) => ({ ...prev, [scene.id]: 100 }));
@@ -215,7 +215,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     if (!options?.skipConfirm) {
       const label = s.resolution === '1080p' || s.endImage ? MODEL_LABEL_PRO : MODEL_LABEL_STD;
       const ok = await confirm(
-        `씬 ${scene.order + 1} 영상을 만듭니다.\n\n· ${label} · ${s.duration}초 · ${s.resolution}\n· 크레딧 ${cost}cr 차감\n· 소요 1~3분\n\n계속할까요?`,
+        `씬 ${scene.order} 영상을 만듭니다.\n\n· ${label} · ${s.duration}초 · ${s.resolution}\n· 크레딧 ${cost}cr 차감\n· 소요 1~3분\n\n계속할까요?`,
       );
       if (!ok) return;
     }
@@ -252,7 +252,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           updateJob(jobId, { status: 'failed', error: result.message ?? '생성 실패' });
           return;
         }
-        await deduct(cost, `씬 영상 (${scene.order + 1})`);
+        await deduct(cost, `씬 영상 (${scene.order})`);
 
         // Kling URL 24h 만료 방지 → history 로 재업로드
         let finalUrl = result.videoUrl;
@@ -260,7 +260,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         if (user?.id) {
           const saved = await saveVideoHistory({
             ownerId: user.id,
-            prompt: `[씬${scene.order + 1}] ${project?.title ?? ''}`,
+            prompt: `[씬${scene.order}] ${project?.title ?? ''}`,
             aspect,
             durationSec: s.duration,
             model: VIDEO_STUDIO_MODEL,
