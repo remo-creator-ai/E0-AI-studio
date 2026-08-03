@@ -201,7 +201,8 @@ export const ImageStudio: React.FC = () => {
   const [multishotPackId, setMultishotPackId] = useState<MultishotPack['id']>(DEFAULT_MULTISHOT_PACK);
   const [multishotShots, setMultishotShots] = useState<MultishotShotState[]>([]);
   // 출력 형식: 개별 6장(false) / 1개 시트(true). 시트는 API 1회 호출, 1cr.
-  const [multishotAsSheet, setMultishotAsSheet] = useState(false);
+  // 기본값을 1시트(true)로 — 저렴하고 빠름. 사용자가 개별 6장을 원할 때만 토글.
+  const [multishotAsSheet, setMultishotAsSheet] = useState(true);
   // 히스토리 상태 — 마운트 시 서버에서 로드, 이후 saveHistory 성공 시 로컬로 prepend.
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -689,7 +690,7 @@ export const ImageStudio: React.FC = () => {
                     active ? 'border-primary ring-2 ring-primary/30' : 'border-zinc-200 hover:border-primary/40'
                   }`}
                 >
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  <img src={item.url} alt="" className="w-full h-full object-contain bg-zinc-100" />
                 </button>
                 {/* 우상단 뱃지: 저장 여부 */}
                 <div
@@ -788,18 +789,9 @@ export const ImageStudio: React.FC = () => {
               {t('imageStudio.multishot.packHint')}
             </p>
 
-            {/* 출력 형식: 개별 6장 vs 1개 시트 */}
+            {/* 출력 형식: 1개 시트(기본·저렴·빠름) vs 개별 6장 — 순서 반전 */}
             <label className="text-xs font-bold text-zinc-600">{t('imageStudio.multishot.outputLabel')}</label>
             <div className="mt-1.5 mb-1.5 flex gap-1 p-1 bg-zinc-100 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setMultishotAsSheet(false)}
-                className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
-                  !multishotAsSheet ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
-                }`}
-              >
-                {t('imageStudio.multishot.outputIndividual')}
-              </button>
               <button
                 type="button"
                 onClick={() => setMultishotAsSheet(true)}
@@ -808,6 +800,15 @@ export const ImageStudio: React.FC = () => {
                 }`}
               >
                 {t('imageStudio.multishot.outputSheet')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMultishotAsSheet(false)}
+                className={`flex-1 py-2 rounded-lg text-center text-xs font-bold transition-colors ${
+                  !multishotAsSheet ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                {t('imageStudio.multishot.outputIndividual')}
               </button>
             </div>
             <p className="text-[10px] text-zinc-400 mb-5 leading-relaxed">
@@ -873,7 +874,7 @@ export const ImageStudio: React.FC = () => {
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {refs.map((r) => (
                   <div key={r.id} className="relative aspect-square rounded-xl overflow-hidden border border-zinc-200 group">
-                    <img src={r.dataUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={r.dataUrl} alt="" className="w-full h-full object-contain bg-zinc-100" />
                     <button
                       type="button"
                       onClick={() => removeRef(r.id)}

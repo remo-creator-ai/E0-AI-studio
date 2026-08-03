@@ -208,7 +208,7 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
         </button>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="가입 사용자"
           value={stats.signupCount}
@@ -219,6 +219,12 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
           badge="운영사 설정"
           value={stats.creditQuota.toLocaleString()}
           sub={<>배분 <b className="text-zinc-900">{stats.creditAllocated.toLocaleString()}</b> · 잔여 <span className="text-primary">{stats.creditRemaining.toLocaleString()}</span></>}
+        />
+        <StatCard
+          label="총 사용 크레딧"
+          badge="실사용량"
+          value={stats.creditUsedTotal.toLocaleString()}
+          sub={<span className="text-[#475569]">전체 계정 · AI 호출 등으로 실제 소진된 총합</span>}
         />
         <StatCard
           label="크레딧 신청"
@@ -302,6 +308,7 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
                 <th className="text-left font-black px-3 py-3 border-b border-zinc-100">이메일</th>
                 <th className="text-left font-black px-3 py-3 border-b border-zinc-100">표시명</th>
                 <th className="text-right font-black px-3 py-3 border-b border-zinc-100">크레딧</th>
+                <th className="text-right font-black px-3 py-3 border-b border-zinc-100" title="max - 잔여 로 근사한 실사용량">사용</th>
                 <th className="text-left font-black px-3 py-3 border-b border-zinc-100">최근접속</th>
                 <th className="text-right font-black px-3 py-3 border-b border-zinc-100">관리</th>
               </tr>
@@ -321,6 +328,7 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
                   </td>
                   <td className="px-3 py-3 text-zinc-700 font-bold">{a.display_name}</td>
                   <td className={`px-3 py-3 text-right font-mono font-black ${a.balance > 0 ? 'text-zinc-900' : 'text-zinc-400'}`}>{a.balance}</td>
+                  <td className="px-3 py-3 text-right font-mono text-zinc-500">{Math.max(0, a.max_credits - a.balance)}</td>
                   <td className="px-3 py-3 text-zinc-400">{a.last_active ?? '—'}</td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1.5 justify-end">

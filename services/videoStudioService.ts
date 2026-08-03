@@ -12,7 +12,7 @@
 // =============================================================
 
 import { MOCK_MODE } from '../lib/mockAuth';
-import { accessToken, PROXY_BASE } from '../lib/aiProxy';
+import { accessToken, PROXY_BASE, proxyClient } from '../lib/aiProxy';
 import { normalizeImageInput } from './imageUtils';
 
 // ---------- 종횡비 ----------
@@ -72,6 +72,29 @@ export function videoStudioCreditCost(input: { durationSec: number; hasEndFrame?
 // ---------- 모델 ----------
 // Kling v1 기본. 향후 kling-v1-6, kling-v2 추가시 여기 확장.
 export const VIDEO_STUDIO_MODEL = 'kling-v1';
+
+// Kling API 프롬프트 상한. 초과 시 400 (code 1201). 안전을 위해 여유(2400) 잡음.
+export const KLING_PROMPT_MAX = 2400;
+
+/** 상한 초과 시 자연스러운 지점(문장·줄바꿈)에서 자른다. 강제 자르기는 최후 수단. */
+export function clampKlingPrompt(prompt: string): string {
+  const p = prompt.trim();
+  if (p.length <= KLING_PROMPT_MAX) return p;
+  const truncated = p.slice(0, KLING_PROMPT_MAX);
+  // 마지막 온전한 문장 끝(., !, ?, 줄바꿈)에서 자르기 시도
+  const lastBoundary = Math.max(
+    truncated.lastIndexOf('. '),
+    truncated.lastIndexOf('.\n'),
+    truncated.lastIndexOf('!\n'),
+    truncated.lastIndexOf('?\n'),
+    truncated.lastIndexOf('\n\n'),
+  );
+  // 최소 절반은 남아야 문장 경계 자르기 적용 (너무 앞에서 자르면 손실이 큼)
+  if (lastBoundary > KLING_PROMPT_MAX / 2) {
+    return truncated.slice(0, lastBoundary + 1).trim();
+  }
+  return truncated.trim();
+}
 
 const KLING_API_BASE = `${PROXY_BASE}/kling`;
 
@@ -134,9 +157,12 @@ export async function generateStudioVideo(input: GenerateVideoInput): Promise<Ge
     return { ok: true, videoUrl: mockVideoDataUrl() };
   }
 
+  // Kling 은 프롬프트 2500자 상한 (code 1201). 자동 잘라내기.
+  const safePrompt = clampKlingPrompt(prompt);
+
   const body: Record<string, unknown> = {
     model_name: VIDEO_STUDIO_MODEL,
-    prompt,
+    prompt: safePrompt,
     negative_prompt: '',
     cfg_scale: 0.5,
     mode: 'std',
@@ -223,4 +249,74 @@ function mockVideoDataUrl(): string {
   // 재생 가능한 미니멀 mp4 를 만드는 대신, 목 UI 에서는 빈 문자열을 안전하게 처리하도록 안내.
   // 실제 videoHistoryService.saveVideoHistory 는 MOCK 모드에서 이 URL 을 그대로 저장한다.
   return '';
+}
+
+// ==========================================================
+//  프롬프트 자동 추천 (이미지 → 영상 프롬프트)
+//
+//  사용자가 시작 이미지를 넣었지만 프롬프트를 안 썼을 때, Gemini vision 으로
+//  이미지 내용 분석 후 영상 프롬프트(모션·카메라·무드 포함)를 제안한다.
+//  Gemini 2.5 Flash 사용 — 1회 호출 비용 낮음. 크레딧 1cr 차감(호출부에서).
+// ==========================================================
+export const SUGGEST_PROMPT_COST = 1;
+
+export interface SuggestPromptResult {
+  ok: boolean;
+  prompt?: string;
+  error?: string;
+}
+
+/**
+ * 시작 이미지 하나로부터 영상용 프롬프트를 추천한다.
+ * priorDescription: 자산 보관함 등에서 이미지 메타데이터가 이미 있으면 힌트로 활용
+ *                   → Gemini 는 참고만 하고 새로 작성 (품질이 대체로 더 낫다).
+ */
+export async function suggestVideoPromptFromImage(
+  startImage: string,
+  opts?: { language?: 'ko' | 'en'; priorDescription?: string },
+): Promise<SuggestPromptResult> {
+  const language = opts?.language ?? 'ko';
+  const prior = opts?.priorDescription?.trim() ?? '';
+
+  if (MOCK_MODE) {
+    await new Promise((r) => setTimeout(r, 800));
+    return { ok: true, prompt: language === 'ko' ? '카메라가 천천히 줌인하며 부드러운 자연광 속 피사체를 포착합니다.' : 'Slow camera zoom-in on the subject with soft natural light.' };
+  }
+
+  const ai = await proxyClient();
+  if (!ai) return { ok: false, error: 'no_session' };
+
+  const { mimeType, base64 } = await normalizeImageInput(startImage);
+  const langInstr = language === 'ko'
+    ? '한국어로 답하세요. 반환은 오직 프롬프트 텍스트만 (설명·인사·따옴표 없이).'
+    : 'Answer in English. Return ONLY the prompt text (no intros, no quotes).';
+
+  const priorPart = prior
+    ? `\nContext hint (from image metadata, use as reference only): "${prior}"`
+    : '';
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64 } },
+          {
+            text:
+              `You are a short-form video prompt writer. Given this image as a start frame, ` +
+              `write a compelling 1~3 sentence video prompt describing motion, camera work, and mood. ` +
+              `Keep it under 60 words. ${langInstr}${priorPart}`,
+          },
+        ],
+      },
+    });
+
+    const parts = response.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.map((p) => (p as { text?: string }).text ?? '').join('').trim();
+    if (!text) return { ok: false, error: 'no_response' };
+    return { ok: true, prompt: text.replace(/^["'`]|["'`]$/g, '') };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
 }

@@ -21,7 +21,7 @@ import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
 import { useAuthStore } from '../../store/authStore';
 import { useModal } from '../ui/ModalProvider';
-import { generateStudioVideo, videoStudioCreditCost } from '../../services/videoStudioService';
+import { generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX } from '../../services/videoStudioService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
 import type { Scene } from '../../types';
 
@@ -440,9 +440,24 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
               disabled={busy}
               className="w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-xs font-mono resize-none leading-relaxed"
             />
-            <div className="mt-1 text-[10px] text-zinc-400 flex items-center gap-1">
-              <Wand2 size={10} /> 프리셋을 바꾸거나 씬을 토글하면 자동 재생성 · 수동 편집도 가능
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="text-[10px] text-zinc-400 flex items-center gap-1">
+                <Wand2 size={10} /> 프리셋을 바꾸거나 씬을 토글하면 자동 재생성 · 수동 편집도 가능
+              </div>
+              <div className={`text-[10px] font-mono ${
+                prompt.length > KLING_PROMPT_MAX ? 'text-red-600 font-black'
+                : prompt.length > KLING_PROMPT_MAX * 0.9 ? 'text-amber-600 font-bold'
+                : 'text-zinc-400'
+              }`}>
+                {prompt.length.toLocaleString()} / {KLING_PROMPT_MAX.toLocaleString()}자
+              </div>
             </div>
+            {prompt.length > KLING_PROMPT_MAX && (
+              <div className="mt-2 p-2 rounded-lg bg-red-50 border border-red-200 text-[11px] text-red-800 leading-relaxed">
+                ⚠️ Kling API 상한 {KLING_PROMPT_MAX}자 초과. 생성 시 자동으로 문장 경계에서 잘려 전송됩니다.
+                핵심 씬만 남기거나 "핵심 씬만 축약" 프리셋을 사용해 주세요.
+              </div>
+            )}
           </div>
 
           {/* Cost + generate */}

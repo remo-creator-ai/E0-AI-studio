@@ -17,14 +17,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Video, Download, RefreshCw, AlertCircle, X, Upload, Package,
+  Video, Download, RefreshCw, AlertCircle, X, Upload, Package, Wand2,
   Clock, Trash2, History as HistoryIcon, Play, Loader2, ChevronRight, ArrowRightLeft,
 } from 'lucide-react';
 import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
 import { useAuthStore } from '../store/authStore';
 import {
-  generateStudioVideo, detectAspectFromImage,
+  generateStudioVideo, detectAspectFromImage, suggestVideoPromptFromImage, SUGGEST_PROMPT_COST,
   VIDEO_ASPECTS, DEFAULT_VIDEO_ASPECT, VIDEO_DURATIONS, DEFAULT_VIDEO_DURATION,
   VIDEO_STUDIO_MODEL, videoStudioCreditCost,
   type VideoAspect, type ConcreteAspect, type VideoDuration, type GenerateVideoFailure,
@@ -107,7 +107,7 @@ const FrameSlot: React.FC<FrameSlotProps> = ({ label, dataUrl, onPick, onLibrary
       >
         {dataUrl ? (
           <>
-            <img src={dataUrl} alt="" className="absolute inset-0 w-full h-full object-cover rounded-2xl" />
+            <img src={dataUrl} alt="" className="absolute inset-0 w-full h-full object-contain rounded-2xl bg-zinc-100" />
             <button
               onClick={onClear}
               disabled={disabled}
@@ -169,6 +169,13 @@ export const VideoStudio: React.FC = () => {
   // 히스토리
   const [history, setHistory] = useState<VideoHistoryItem[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // AbortController — 컴포넌트 언마운트 시 진행 중인 생성 취소 (크레딧 미차감)
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  // 프롬프트 자동 추천 상태
+  const [suggesting, setSuggesting] = useState(false);
 
   const cost = videoStudioCreditCost({ durationSec: duration, hasEndFrame: !!endFrame });
 
@@ -236,6 +243,11 @@ export const VideoStudio: React.FC = () => {
     setFailure(null);
     setErrorMessage(null);
     setVideoUrl(null);
+
+    const controller = new AbortController();
+    abortRef.current?.abort();
+    abortRef.current = controller;
+
     try {
       const result = await generateStudioVideo({
         prompt: prompt.trim(),
@@ -243,7 +255,10 @@ export const VideoStudio: React.FC = () => {
         durationSec: duration,
         startImage: startFrame ?? undefined,
         endImage: endFrame ?? undefined,
+        signal: controller.signal,
       });
+      // 이탈로 취소된 경우: deduct / history 저장 모두 하지 않는다.
+      if (controller.signal.aborted) return;
       if (!result.ok || !result.videoUrl) {
         setFailure(result.failure ?? 'error');
         setErrorMessage(result.message ?? null);
@@ -280,6 +295,28 @@ export const VideoStudio: React.FC = () => {
     }
   };
 
+  const handleSuggestPrompt = async () => {
+    if (!startFrame) return;
+    if (!hasEnough(SUGGEST_PROMPT_COST)) {
+      await alert(`추천 크레딧이 부족합니다. (필요 ${SUGGEST_PROMPT_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return;
+    }
+    setSuggesting(true);
+    try {
+      const result = await suggestVideoPromptFromImage(startFrame, { language: 'ko' });
+      if (!result.ok || !result.prompt) {
+        await alert(`추천 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+        return;
+      }
+      setPrompt(result.prompt);
+      await deduct(SUGGEST_PROMPT_COST, '이미지에서 프롬프트 추천');
+    } catch (e) {
+      await alert(`추천 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
   const remixFromHistory = (item: VideoHistoryItem) => {
     setPrompt(item.prompt);
     // 히스토리에는 concrete 비율만 저장됨 — 사용자가 명시적으로 auto 로 다시 바꾸도록 유지
@@ -301,9 +338,9 @@ export const VideoStudio: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 p-4 md:p-8 max-w-[1600px] mr-auto w-full">
-      {/* Left: controls */}
-      <div className="xl:w-[380px] flex flex-col gap-5">
+    <div className="flex flex-col lg:flex-row gap-6 p-4 md:p-8 max-w-[1600px] mr-auto w-full">
+      {/* Left: controls — ImageStudio 와 동일한 카드 스타일/폭 (w-[380px]) */}
+      <aside className="w-full lg:w-[380px] lg:shrink-0 flex flex-col gap-5 bg-white border border-zinc-200 rounded-3xl p-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Video className="text-primary" size={22} />
@@ -358,7 +395,21 @@ export const VideoStudio: React.FC = () => {
 
         {/* Prompt */}
         <div>
-          <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">프롬프트</label>
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">프롬프트</label>
+            {startFrame && (
+              <button
+                type="button"
+                onClick={handleSuggestPrompt}
+                disabled={busy || suggesting || !hasEnough(SUGGEST_PROMPT_COST)}
+                className="text-[11px] font-bold text-primary hover:underline disabled:opacity-40 disabled:no-underline flex items-center gap-1"
+                title={`이미지에서 프롬프트 추천 (${SUGGEST_PROMPT_COST}cr)`}
+              >
+                {suggesting ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                🪄 이미지에서 추천 ({SUGGEST_PROMPT_COST}cr)
+              </button>
+            )}
+          </div>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -446,7 +497,7 @@ export const VideoStudio: React.FC = () => {
             </>
           )}
         </p>
-      </div>
+      </aside>
 
       {/* Center: preview + actions */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
@@ -535,7 +586,7 @@ export const VideoStudio: React.FC = () => {
                 playsInline
                 onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
                 onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
                 <button

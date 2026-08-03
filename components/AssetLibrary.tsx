@@ -98,7 +98,7 @@ export const AssetLibrary: React.FC = () => {
           <p className="text-xs text-zinc-400 mt-1">{t('assets.emptyHint')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {assets.map((a) => (
             <button
               key={a.id} onClick={() => setDetailId(a.id)}
@@ -106,7 +106,7 @@ export const AssetLibrary: React.FC = () => {
             >
               <div className="aspect-square bg-zinc-100 flex items-center justify-center overflow-hidden">
                 {a.primary_url
-                  ? <img src={a.primary_url} alt={a.name} className="w-full h-full object-cover" />
+                  ? <img src={a.primary_url} alt={a.name} className="w-full h-full object-contain" />
                   : <ImagePlus size={28} className="text-zinc-300" />}
               </div>
               <div className="p-3">
@@ -201,7 +201,7 @@ const CreateAssetModal: React.FC<{ onClose: () => void; onDone: () => void }> = 
       <div className="mt-1.5 mb-4">
         {primary ? (
           <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-zinc-200">
-            <img src={URL.createObjectURL(primary)} alt="" className="w-full h-full object-cover" />
+            <img src={URL.createObjectURL(primary)} alt="" className="w-full h-full object-contain" />
             <button onClick={() => setPrimary(null)} className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full text-white flex items-center justify-center"><X size={12} /></button>
           </div>
         ) : (
@@ -221,7 +221,7 @@ const CreateAssetModal: React.FC<{ onClose: () => void; onDone: () => void }> = 
           <div className="mt-1.5 mb-4 flex gap-2 flex-wrap">
             {refs.map((f, i) => (
               <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-zinc-200">
-                <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-cover" />
+                <img src={URL.createObjectURL(f)} alt="" className="w-full h-full object-contain" />
                 <button onClick={() => setRefs(refs.filter((_, j) => j !== i))} className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 rounded-full text-white flex items-center justify-center"><X size={10} /></button>
               </div>
             ))}
@@ -332,7 +332,7 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
             <div className="flex gap-2 flex-wrap mb-4">
               {refs.map((f) => (
                 <div key={f.id} className="relative w-16 h-16 rounded-lg overflow-hidden border border-zinc-200">
-                  <img src={f.url} alt="" className="w-full h-full object-cover" />
+                  <img src={f.url} alt="" className="w-full h-full object-contain" />
                   <button onClick={() => delFile(f)} disabled={busy} className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 rounded-full text-white flex items-center justify-center"><X size={10} /></button>
                 </div>
               ))}

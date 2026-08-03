@@ -201,9 +201,9 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
                           : 'border-zinc-200 hover:border-primary/40 hover:shadow-lg'
                     }`}
                   >
-                    <div className="aspect-square bg-zinc-50 relative">
+                    <div className="aspect-square bg-zinc-100 relative">
                       {a.primary_url ? (
-                        <img src={a.primary_url} alt="" className="w-full h-full object-cover" />
+                        <img src={a.primary_url} alt="" className="w-full h-full object-contain" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-zinc-300">
                           <ImagePlus size={24} />

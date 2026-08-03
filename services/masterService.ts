@@ -29,6 +29,9 @@ export interface DashboardStats {
   creditQuota: number;
   creditAllocated: number; // 부여 누계
   creditRemaining: number;
+  /** 전체 계정에서 실제로 소비된 크레딧 총합 (credit_transactions 의 음수 절댓값 합).
+   *  부여-차감이 서로 독립된 지표라, 이 값은 quota 시스템과 별개로 "실사용량" 을 보여줌. */
+  creditUsedTotal: number;
   requestsTotal: number;
   requestsPending: number;
   requestsCompleted: number;
@@ -105,11 +108,27 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     creditRequestsTotal = totalRes.count ?? 0;
   }
 
+  // 실사용 크레딧 총합. quota-based 지표와 무관하게 실제로 얼마나 소진되었는지 보여준다.
+  // MOCK 은 계정별 (max - balance) 합산으로 근사.
+  let creditUsedTotal = 0;
+  if (MOCK_MODE) {
+    creditUsedTotal = accounts.reduce((sum, a) => sum + Math.max(0, a.max_credits - a.balance), 0);
+  } else {
+    const { data, error } = await supabase
+      .from('credit_transactions')
+      .select('amount')
+      .lt('amount', 0);
+    if (!error && Array.isArray(data)) {
+      creditUsedTotal = data.reduce((sum, row) => sum + Math.abs(Number((row as { amount: number }).amount) || 0), 0);
+    }
+  }
+
   return {
     signupCount: accounts.length,
     creditQuota: MASTER_CREDIT_QUOTA,
     creditAllocated: allocated,
     creditRemaining: MASTER_CREDIT_QUOTA - allocated,
+    creditUsedTotal,
     requestsTotal: requests.length,
     requestsPending: requests.filter((r) => r.status === 'pending').length,
     requestsCompleted: requests.filter((r) => r.status === 'completed').length,
