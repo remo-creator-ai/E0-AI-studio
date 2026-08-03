@@ -21,7 +21,7 @@ import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
 import { useAuthStore } from '../../store/authStore';
 import { useModal } from '../ui/ModalProvider';
-import { generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX } from '../../services/videoStudioService';
+import { generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX, VIDEO_STUDIO_MODEL } from '../../services/videoStudioService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
 import { composeScenesToGrid, pickGridLayout } from '../../services/storyboardCompose';
 import type { Scene } from '../../types';
@@ -364,7 +364,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
           prompt: `[통합영상] ${project.title}`,
           aspect,
           durationSec: duration,
-          model: 'kling-v1',
+          model: VIDEO_STUDIO_MODEL,
           hasStartFrame: true,
           hasEndFrame: false,
           videoUrl: result.videoUrl,
