@@ -69,18 +69,33 @@ export type VideoResolution = typeof VIDEO_RESOLUTIONS[number];
 export const DEFAULT_VIDEO_RESOLUTION: VideoResolution = '720p';
 
 // ---------- 크레딧 단가 ----------
-// std/720p — 5s: 10cr, 10s: 15cr
-// pro/1080p — 5s: 20cr, 10s: 30cr (Kling pro 실제 청구 2배)
-// 끝 프레임(image_tail) 도 pro 강제 승격 → 항상 pro 요금.
+// 규칙 하나: 크레딧 = CREDIT_PER_UNIT × 유닛수
+//
+// Kling 리소스팩은 "유닛" 단위로 차감되며 5초 std 영상 1건이 1유닛이다
+// (docs/KLING_API_GUIDE.md §2·§3). 길이는 비례하고, pro 는 2배 소모한다.
+//
+//   길이 \ 해상도    720p(std)    1080p · 끝프레임(pro)
+//   5초                30cr              60cr
+//   10초               60cr             120cr
+//
+// 유닛당 크레딧이 전 조합에서 균일해 어떤 옵션을 고르든 마진이 같다.
+// 또 프로젝트 씬 영상(CREDIT_COSTS.VIDEO_STANDARD = 5초 30cr)과 값이 맞아,
+// 같은 산출물이 경로에 따라 3배 차이 나던 차익거래가 사라진다.
+//
+// 이전 단가(std 10/15 · pro 20/30)는 kling-v1 시절 산정치였다. v2-6 로
+// 원가가 오른 뒤에도 남아 있었고, 10초가 유닛당 25% 싸서 길게 쓸수록
+// 마진이 깎이는 문제도 있었다.
+export const CREDIT_PER_UNIT = 30;
+
 export function videoStudioCreditCost(input: {
   durationSec: number;
   resolution?: VideoResolution;
   hasEndFrame?: boolean;
 }): number {
-  const longer = input.durationSec >= 10;
+  // 끝 프레임은 v2-6/std 가 image_tail 을 지원하지 않아 pro 로 강제 승격된다.
   const isPro = input.resolution === '1080p' || !!input.hasEndFrame;
-  if (isPro) return longer ? 30 : 20;
-  return longer ? 15 : 10;
+  const units = Math.ceil(input.durationSec / 5) * (isPro ? 2 : 1);
+  return CREDIT_PER_UNIT * units;
 }
 
 // ---------- 모델 ----------
