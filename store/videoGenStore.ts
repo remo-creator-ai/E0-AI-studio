@@ -31,6 +31,9 @@ export interface VideoJob {
   historyId?: string;
   /** 실패 시 사용자에게 보여줄 짧은 메시지. */
   error?: string;
+  /** 생성 컨텍스트 태그 — 여러 화면(VideoStudio · ProductionModeA 등) 의 잡을
+   *  섞이지 않게 필터링하는 데 사용. 예: 'production-mode-a:{projectId}' */
+  tag?: string;
 }
 
 interface VideoGenStore {

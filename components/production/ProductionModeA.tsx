@@ -12,10 +12,11 @@
 //  씬별 편집기 UI 추가 예정. 이번 커밋은 기본 프리셋(시간대 명시) 만 노출.
 // =============================================================
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft, Sparkles, Play, Download, RefreshCw, AlertCircle, Loader2, Info, Wand2,
   Clock, Waves, Scissors, Film as FilmIcon, ChevronDown, X as XIcon, Check,
+  Package, Trash2,
 } from 'lucide-react';
 import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
@@ -26,8 +27,13 @@ import {
   VIDEO_RESOLUTIONS, DEFAULT_VIDEO_RESOLUTION,
   type VideoResolution,
 } from '../../services/videoStudioService';
-import { saveVideoHistory } from '../../services/videoHistoryService';
+import {
+  saveVideoHistory, listVideoHistory, deleteVideoHistoryItem,
+  type VideoHistoryItem,
+} from '../../services/videoHistoryService';
+import { saveVideoAsAsset } from '../../services/videoLibraryService';
 import { composeScenesToGrid, pickGridLayout } from '../../services/storyboardCompose';
+import { useVideoGenStore } from '../../store/videoGenStore';
 import type { Scene } from '../../types';
 
 export type SequencePreset = 'timed' | 'flow' | 'compressed' | 'cinematic';
@@ -181,12 +187,35 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
 
   const [duration, setDuration] = useState<5 | 10>(10);
   const [resolution, setResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
-  const [busy, setBusy] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [manualPrompt, setManualPrompt] = useState<string | null>(null);
   const [preset, setPreset] = useState<SequencePreset>('timed');
   const [presetOpen, setPresetOpen] = useState(false);
+
+  // ── 전역 큐 (다른 페이지로 이동해도 백그라운드 유지) ──
+  const jobs = useVideoGenStore((s) => s.jobs);
+  const addJob = useVideoGenStore((s) => s.addJob);
+  const updateJob = useVideoGenStore((s) => s.updateJob);
+  const removeJob = useVideoGenStore((s) => s.removeJob);
+
+  const projectTag = project ? `production-mode-a:${project.id}` : '';
+  const myJobs = jobs.filter((j) => j.tag === projectTag);
+  const busy = myJobs.some((j) => j.status === 'generating');
+
+  // ── 과거 결과 히스토리 (이 프로젝트 전용) ──
+  const [history, setHistory] = useState<VideoHistoryItem[]>([]);
+  const historyTag = project ? `[통합영상] ${project.title}` : '';
+  const loadHistory = useCallback(async () => {
+    if (!user?.id || !projectTag) return;
+    // 20 편 페이지 → 이 프로젝트 태그로 필터. 다른 프로젝트/스탠드얼론 결과는 제외.
+    const items = await listVideoHistory(user.id, 100, 0);
+    setHistory(items.filter((i) => i.prompt.startsWith(historyTag)));
+  }, [user?.id, projectTag, historyTag]);
+  useEffect(() => { loadHistory(); }, [loadHistory]);
+
+  // ── 저장 다이얼로그 상태 ──
+  const [saveTarget, setSaveTarget] = useState<VideoHistoryItem | null>(null);
+  const [saveName, setSaveName] = useState('');
+  const [saving, setSaving] = useState(false);
   // 활성 씬 인덱스 (사용자가 체크박스로 조정). 최초에는 프로젝트 씬 전체.
   const [activeIdxs, setActiveIdxs] = useState<number[]>(
     () => (project?.scenes ?? []).map((_, i) => i),
@@ -346,42 +375,107 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
     );
     if (!ok) return;
 
-    setBusy(true);
-    setError(null);
-    setVideoUrl(null);
-    try {
-      const result = await generateStudioVideo({
-        prompt,
-        aspect,
-        durationSec: duration,
-        resolution,
-        startImage: gridImage,
-      });
-      if (!result.ok || !result.videoUrl) {
-        setError(result.message ?? '생성 실패');
-        return;
-      }
-      setVideoUrl(result.videoUrl);
-      await deduct(cost, `통합 영상 (${duration}s)`);
+    // fire-and-forget · 컴포넌트 unmount 되어도 백그라운드로 계속.
+    // 완료되면 store 갱신 → 나중에 화면 다시 열었을 때 결과 확인 가능.
+    const jobId = crypto.randomUUID();
+    const startImageSnapshot = gridImage;
+    const promptSnapshot = prompt;
+    const aspectSnapshot = aspect;
+    const durationSnapshot = duration;
+    const resolutionSnapshot = resolution;
+    const projectTitleSnapshot = project?.title ?? '통합영상';
 
-      if (user?.id) {
-        const saved = await saveVideoHistory({
-          ownerId: user.id,
-          prompt: `[통합영상] ${project.title}`,
-          aspect,
-          durationSec: duration,
-          model: VIDEO_STUDIO_MODEL,
-          hasStartFrame: true,
-          hasEndFrame: false,
-          videoUrl: result.videoUrl,
+    addJob({
+      id: jobId,
+      prompt: promptSnapshot,
+      aspect: aspectSnapshot,
+      durationSec: durationSnapshot,
+      hasStartFrame: true,
+      hasEndFrame: false,
+      tag: projectTag,
+    });
+
+    (async () => {
+      try {
+        const result = await generateStudioVideo({
+          prompt: promptSnapshot,
+          aspect: aspectSnapshot,
+          durationSec: durationSnapshot,
+          resolution: resolutionSnapshot,
+          startImage: startImageSnapshot,
         });
-        if (saved.ok && saved.item) setVideoUrl(saved.item.url);
+        if (!result.ok || !result.videoUrl) {
+          updateJob(jobId, { status: 'failed', error: result.message ?? '생성 실패' });
+          return;
+        }
+        await deduct(cost, `통합 영상 (${durationSnapshot}s)`);
+
+        if (user?.id) {
+          const saved = await saveVideoHistory({
+            ownerId: user.id,
+            prompt: `${historyTag}`,      // 짧은 태그로 저장 (히스토리 필터에 사용됨)
+            aspect: aspectSnapshot,
+            durationSec: durationSnapshot,
+            model: VIDEO_STUDIO_MODEL,
+            hasStartFrame: true,
+            hasEndFrame: false,
+            videoUrl: result.videoUrl,
+          });
+          if (saved.ok && saved.item) {
+            updateJob(jobId, {
+              status: 'done',
+              videoUrl: saved.item.url,
+              historyId: saved.item.id,
+            });
+            loadHistory();
+            return;
+          }
+        }
+        updateJob(jobId, { status: 'done', videoUrl: result.videoUrl });
+      } catch (e) {
+        updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    })();
+  };
+
+  const openSaveDialog = (item: VideoHistoryItem) => {
+    setSaveTarget(item);
+    const base = project?.title ?? '통합영상';
+    setSaveName(`${base} - ${new Date().toLocaleDateString('ko-KR')}`);
+  };
+
+  const performSave = async () => {
+    if (!saveTarget || !user?.id) return;
+    setSaving(true);
+    try {
+      const result = await saveVideoAsAsset({
+        ownerId: user.id,
+        history: saveTarget,
+        name: saveName,
+        description: saveTarget.prompt,
+      });
+      if (result.ok) {
+        await alert('자산 보관함에 저장되었습니다.', { type: 'info' });
+        setSaveTarget(null);
+        loadHistory();
+      } else {
+        await alert(`저장 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+      }
     } finally {
-      setBusy(false);
+      setSaving(false);
     }
+  };
+
+  const deleteHistoryItem = async (item: VideoHistoryItem) => {
+    const ok = await confirm('이 결과를 삭제할까요? (크레딧은 반환되지 않습니다)');
+    if (!ok) return;
+    const success = await deleteVideoHistoryItem(item.id, item.storage_path);
+    if (success) loadHistory();
+  };
+
+  const regenerateSameParams = () => {
+    // 현재 폼 값으로 즉시 재실행 (사용자가 방금 눌렀으니 확인 없이 진행)
+    setTimeout(() => generate(), 50);
   };
 
   return (
@@ -693,42 +787,161 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Result */}
-      {(videoUrl || error) && (
+      {/* ── 생성 진행 중 잡 · 다른 창으로 이동해도 유지 ── */}
+      {myJobs.filter((j) => j.status !== 'done').length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-black text-zinc-700 uppercase tracking-widest">결과 영상</h3>
-          {error && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
-              <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={18} />
-              <div className="text-sm text-red-900">
-                <div className="font-bold mb-1">생성 실패</div>
-                <div className="text-xs">{error}</div>
+          <h3 className="text-sm font-black text-zinc-700 uppercase tracking-widest">진행 중</h3>
+          <div className="space-y-3">
+            {myJobs.filter((j) => j.status !== 'done').map((job) => (
+              <div key={job.id} className="rounded-2xl overflow-hidden border border-zinc-200 bg-white">
+                <div className="px-4 py-2.5 flex items-center gap-3 border-b border-zinc-100">
+                  <span className={`w-2 h-2 rounded-full ${
+                    job.status === 'generating' ? 'bg-primary animate-pulse' : 'bg-red-500'
+                  }`} />
+                  <span className="text-xs font-black text-zinc-800">
+                    {job.status === 'generating' ? '생성 중' : '실패'}
+                  </span>
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    {job.aspect} · {job.durationSec}s
+                  </span>
+                  {job.status === 'failed' && (
+                    <button
+                      onClick={() => removeJob(job.id)}
+                      className="ml-auto p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400"
+                      title="닫기"
+                    >
+                      <XIcon size={14} />
+                    </button>
+                  )}
+                </div>
+                {job.status === 'generating' ? (
+                  <div className="bg-zinc-900 aspect-video flex items-center justify-center">
+                    <div className="text-center space-y-3">
+                      <Loader2 className="w-10 h-10 text-white/60 mx-auto animate-spin" />
+                      <p className="text-white/60 text-sm font-bold">통합 영상 생성 중...</p>
+                      <p className="text-white/40 text-xs">Kling API 처리 · 최대 5분 · 페이지 이동해도 유지됩니다</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-red-50 aspect-video flex items-center justify-center">
+                    <div className="text-center space-y-2 px-6">
+                      <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
+                      <p className="text-red-700 text-sm font-bold">{job.error ?? '생성 실패'}</p>
+                    </div>
+                  </div>
+                )}
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── 완성된 결과 목록 (이 프로젝트에서 만든 통합 영상) ── */}
+      {history.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-black text-zinc-700 uppercase tracking-widest">
+              통합 영상 ({history.length})
+            </h3>
+            <span className="text-[11px] text-zinc-400">최대 100편 · 30일 · 이 프로젝트 전용</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {history.map((item) => {
+              const isSaved = !!item.saved_asset_id;
+              return (
+                <div key={item.id} className="rounded-2xl overflow-hidden border border-zinc-200 bg-white">
+                  <div className="px-4 py-2.5 flex items-center gap-2 border-b border-zinc-100">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs font-black text-zinc-800">완료</span>
+                    <span className="text-[11px] text-zinc-500 font-mono">
+                      {item.aspect} · {item.duration_sec}s
+                    </span>
+                    <span className="text-[11px] text-zinc-400">
+                      {new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {isSaved && (
+                      <span className="ml-auto px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                        보관함 저장됨
+                      </span>
+                    )}
+                  </div>
+                  <div className="bg-zinc-900 aspect-video">
+                    <video src={item.url} controls loop className="w-full h-full object-contain" />
+                  </div>
+                  <div className="px-3 py-2.5 flex flex-wrap gap-1.5">
+                    <button
+                      onClick={regenerateSameParams}
+                      disabled={busy}
+                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#003E99] text-white text-[11px] font-black flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <RefreshCw size={12} /> 다시 생성
+                    </button>
+                    <a
+                      href={item.url}
+                      download={`sodam-integrated-${item.id}.mp4`}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-50 text-[11px] font-bold text-zinc-700 flex items-center gap-1"
+                    >
+                      <Download size={12} /> 다운로드
+                    </a>
+                    {!isSaved && (
+                      <button
+                        onClick={() => openSaveDialog(item)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-50 text-[11px] font-bold text-zinc-700 flex items-center gap-1"
+                      >
+                        <Package size={12} /> 보관함 저장
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteHistoryItem(item)}
+                      className="ml-auto px-3 py-1.5 rounded-lg bg-white border border-red-200 hover:bg-red-50 text-[11px] font-bold text-red-600 flex items-center gap-1"
+                    >
+                      <Trash2 size={12} /> 삭제
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── 저장 다이얼로그 (VideoStudio 와 동일 패턴) ── */}
+      {saveTarget && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget && !saving) setSaveTarget(null); }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-lg font-black text-zinc-900 mb-1">통합 영상을 자산 보관함에 저장</h3>
+            <p className="text-xs text-zinc-500 mb-5">
+              이 이름으로 자산 보관함(동영상) 에 영구 저장됩니다.
+            </p>
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">이름</label>
+            <input
+              type="text"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              disabled={saving}
+              className="mt-1.5 w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+              maxLength={100}
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setSaveTarget(null)}
+                disabled={saving}
+                className="px-4 py-2 rounded-xl bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={performSave}
+                disabled={saving || !saveName.trim()}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {saving ? <><Loader2 size={14} className="animate-spin" /> 저장 중...</> : <><Package size={14} /> 저장</>}
+              </button>
             </div>
-          )}
-          {videoUrl && (
-            <>
-              <div className="rounded-2xl overflow-hidden bg-black aspect-video">
-                <video src={videoUrl} controls autoPlay loop className="w-full h-full" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={videoUrl}
-                  download={`sodam-integrated-${Date.now()}.mp4`}
-                  className="px-4 py-2.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-sm font-bold text-zinc-700 flex items-center gap-2"
-                >
-                  <Download size={16} /> 다운로드
-                </a>
-                <button
-                  onClick={generate}
-                  disabled={busy}
-                  className="px-4 py-2.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-sm font-bold text-zinc-700 flex items-center gap-2 disabled:opacity-50"
-                >
-                  <RefreshCw size={16} /> 재생성 ({cost}cr)
-                </button>
-              </div>
-            </>
-          )}
+          </div>
         </div>
       )}
     </div>
