@@ -59,10 +59,36 @@ function pickEvenlySpaced(total: number, pick: number): number[] {
   return Array.from(new Set(idxs));
 }
 
-/** 시퀀스 프롬프트 조립. preset 과 활성 씬 인덱스 배열에 따라 분기. */
+/** 문자열을 max 이하로 잘라내되 가능하면 문장(마침표) 경계에서 자른다. */
+function truncateSmart(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  // 문장 경계(., !, ?) 우선 → 마지막에 콤마 → 공백 → 강제
+  const boundaries = [
+    cut.lastIndexOf('. '),
+    cut.lastIndexOf('! '),
+    cut.lastIndexOf('? '),
+  ];
+  const best = Math.max(...boundaries);
+  if (best > max * 0.6) return cut.slice(0, best + 1).trim();
+  const lastSpace = cut.lastIndexOf(' ');
+  if (lastSpace > max * 0.6) return cut.slice(0, lastSpace).trim() + '...';
+  return cut.trim() + '...';
+}
+
+/** 시퀀스 프롬프트 조립. Kling 2500 자 상한(안전 2400) 을 강제로 지킨다.
+ *
+ *  전략:
+ *  1. 헤더는 짧게 (샘플 스타일 참고). "Visual style" · 후행 anchor 제거 —
+ *     스토리보드 이미지 자체가 스타일·정체성 앵커 역할.
+ *  2. 씬 설명은 video_motion_en 우선 사용 (짧고 액션 중심). 없으면 image_prompt_en.
+ *  3. 남은 예산을 씬 개수로 균등 분배 → 씬당 상한 계산 → 초과분은 truncateSmart.
+ *  4. 씬 수가 많을수록(9-18) 씬당 예산이 자동으로 작아짐.
+ */
 function buildSequencePrompt(opts: {
   scenes: Scene[];
-  activeIdxs: number[];         // 사용할 씬 인덱스 (오름차순)
+  activeIdxs: number[];
   durationSec: number;
   rows: number;
   cols: number;
@@ -70,56 +96,71 @@ function buildSequencePrompt(opts: {
   style: string;
   preset: SequencePreset;
 }): string {
-  const { scenes, activeIdxs, durationSec, rows, cols, language, style, preset } = opts;
+  const { scenes, activeIdxs, durationSec, rows, cols, language, preset } = opts;
   const used = activeIdxs.map((i) => scenes[i]).filter(Boolean);
   const n = used.length;
+  if (n === 0) return '';
 
-  const langHint = language === 'ko'
-    ? 'IMPORTANT: All spoken dialogue, on-screen text (if any), and character speech must be KOREAN. Use quotation marks for dialogue.\n'
+  // 안전 마진(2400) 안에서만 조립. Kling 실측 상한은 2500 자.
+  const HARD_CAP = 2400;
+
+  // ── 헤더 (샘플 스타일 참고, 간결) ──
+  const langLine = language === 'ko'
+    ? 'IMPORTANT: KOREAN — all dialogue and on-screen text must be in Korean.\n'
     : '';
-
+  const cinematicLine = preset === 'cinematic'
+    ? 'Direction: smooth match cuts, warm cinematic grading, gentle camera moves (dolly-in, pan, tilt).\n'
+    : '';
   const header =
     `Create one complete ${durationSec}-second animated short based on the provided ${rows}x${cols} storyboard.\n` +
-    langHint +
+    langLine +
     `The storyboard is only a visual sequence reference. Do not show the ${rows}x${cols} grid, panel borders, split screens, or collage layout in the final video.\n` +
     `Create a full-screen cinematic animation with smooth, fast transitions between the story moments.\n` +
-    `Visual style: ${style}.\n`;
+    cinematicLine;
 
-  const cinematicExtra = preset === 'cinematic'
-    ? '\nCinematic direction: Use smooth match cuts, subtle motion blur, warm cinematic color grading, ' +
-      'and gentle camera movements (dolly-in, pan, tilt) to enhance emotional flow. ' +
-      'Prioritize visual continuity and atmospheric depth between transitions.\n'
-    : '';
+  // ── 각 씬 라벨(0-2s: 또는 "1.") 오버헤드 예상 ──
+  const isTimed = !(preset === 'flow' || preset === 'cinematic');
+  const flowIntro = isTimed ? '' : `Scene flow (natural pacing across ${durationSec}s):\n`;
+  const perLineLabel = isTimed ? 8 : 4; // "10-15s: " 정도 or "10. "
+  const separatorPad = n; // 각 라인 뒤 \n
 
-  const anchor =
-    `\nMaintain identical characters, outfits, and product appearance across all moments — treat the storyboard panels as canonical identity references.`;
+  const overhead = header.length + flowIntro.length + n * perLineLabel + separatorPad + 20;
+  // 씬당 실제 사용 가능한 문자 수 (최소 80자 보장)
+  const perSceneBudget = Math.max(80, Math.floor((HARD_CAP - overhead) / Math.max(n, 1)));
 
-  let body: string;
+  const buildSegment = (s: Scene): string => {
+    // 우선 video_motion_en (짧고 액션 중심) → 없으면 image_prompt_en 요약
+    const motion = (s.video_motion_en ?? '').trim();
+    const scene = (s.image_prompt_en ?? '').trim();
 
-  if (preset === 'flow' || preset === 'cinematic') {
-    // 시간 없이 씬 흐름만 나열. cinematic 은 헤더에 지시문이 추가됐다.
-    const lines = used.map((s, i) => {
-      const motion = s.video_motion_en?.trim() || '';
-      const prompt = s.image_prompt_en?.trim() || '';
-      const combined = motion ? `${prompt}. Motion: ${motion}` : prompt;
-      return `${i + 1}. ${combined}`;
-    }).join('\n');
-    body = `Scene flow (natural pacing, no strict timing — AI distributes across the ${durationSec}s):\n${lines}`;
-  } else {
-    // timed / compressed — 균등 시간 분배
-    const segLen = durationSec / Math.max(n, 1);
-    const lines = used.map((s, i) => {
+    if (motion && motion.length <= perSceneBudget) {
+      // 예산에 여유가 있으면 짧은 씬 컨텍스트 앞에 붙이기
+      const roomLeft = perSceneBudget - motion.length - 2;
+      if (scene && roomLeft > 40) {
+        return `${truncateSmart(scene, roomLeft)} ${motion}`.trim();
+      }
+      return motion;
+    }
+    // motion 이 너무 길거나 없으면: 짧게 요약
+    if (motion) return truncateSmart(motion, perSceneBudget);
+    return truncateSmart(scene, perSceneBudget);
+  };
+
+  const lines = used.map((s, i) => {
+    const seg = buildSegment(s);
+    if (isTimed) {
+      const segLen = durationSec / n;
       const start = (i * segLen).toFixed(1).replace(/\.0$/, '');
       const end = ((i + 1) * segLen).toFixed(1).replace(/\.0$/, '');
-      const motion = s.video_motion_en?.trim() || '';
-      const prompt = s.image_prompt_en?.trim() || '';
-      const combined = motion ? `${prompt}. Motion: ${motion}` : prompt;
-      return `${start}-${end}s: ${combined}`;
-    }).join('\n');
-    body = lines;
-  }
+      return `${start}-${end}s: ${seg}`;
+    }
+    return `${i + 1}. ${seg}`;
+  }).join('\n');
 
-  return `${header}${cinematicExtra}\n${body}${anchor}`;
+  const combined = `${header}\n${flowIntro}${lines}`;
+  // 예상치 못한 초과 시(예: 헤더가 길어졌을 때) 최종 안전 절단
+  if (combined.length > HARD_CAP) return truncateSmart(combined, HARD_CAP);
+  return combined;
 }
 
 interface ModeAProps {
