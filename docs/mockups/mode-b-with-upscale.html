@@ -515,10 +515,10 @@
               <span class="rail-thumb">SCENE 3<b><i style="width:60%; background:#2563EB;"></i></b></span>
               <span class="rail-state"><span class="status-dot working"></span>업스케일 60%</span>
             </button>
-            <button class="rail-chip" data-jump="4" title="씬 4 · 코드 모션 대기">
+            <button class="rail-chip" data-jump="4" title="씬 4 · 영상 대기">
               <span class="rail-no">씬 4</span>
               <span class="rail-thumb">SCENE 4</span>
-              <span class="rail-state"><span class="status-dot pending"></span>코드 모션</span>
+              <span class="rail-state"><span class="status-dot pending"></span>영상 대기</span>
             </button>
             <button class="rail-chip" data-jump="5" title="씬 5 · 영상 생성 45%">
               <span class="rail-no">씬 5</span>
@@ -843,7 +843,7 @@
           <div class="flex items-center gap-2 flex-wrap">
             <span class="status-dot pending"></span>
             <span class="text-base font-black text-zinc-800">영상 없음</span>
-            <span class="made-by code on-only">코드 모션 선택됨</span>
+            <span class="on-only px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">업스케일 완료</span>
             <span class="off-badge">최종 영상에서 제외</span>
           </div>
           <div class="ml-auto flex items-center gap-2">
@@ -1397,7 +1397,7 @@
       1: { done: true,  sec: 5, cost: 0,  label: '완료' },
       2: { done: false, sec: 5, cost: 15, label: '업스케일+영상' },   // 5cr + 10cr
       3: { done: false, sec: 5, cost: 10, label: '영상' },
-      4: { done: false, sec: 5, cost: 0,  label: '코드 모션 · 무료' },
+      4: { done: false, sec: 5, cost: 30, label: '영상' },
       5: { done: false, sec: 5, cost: 0,  label: '생성중' },
       6: { done: false, sec: 5, cost: 15, label: '재시도' },
     };

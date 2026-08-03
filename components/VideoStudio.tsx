@@ -385,15 +385,26 @@ export const VideoStudio: React.FC = () => {
 
   const cost = videoStudioCreditCost({ durationSec: duration, resolution, hasEndFrame: !!endFrame });
 
+  // 사이드바 "동영상 생성" 히스토리는 자유 생성 결과만 표시한다.
+  // 프로젝트 워크플로우(4. 전체영상제작하기 · 모드 A) 결과는 프롬프트가
+  // "[통합영상] ..." 로 시작하므로 그것들은 제외해 각 도구의 히스토리를 격리.
+  //
+  // 페이지네이션 편의를 위해 페이지 배수를 크게 잡아 소비 (예: 20건 요청 → 프리
+  // 필터 후 유효 20건 확보). 극단적 경우엔 여러 페이지 반복 필요하지만 실사용
+  // 히스토리 규모(수십편)에서는 1페이지로 대부분 소화된다.
+  const isProjectHistory = (prompt: string) => prompt.trimStart().startsWith('[통합영상]');
+
   const loadHistory = useCallback(async () => {
     if (!user?.id) { setHistory([]); setHistoryTotal(0); return; }
     setHistoryLoading(true);
     try {
       const [items, total] = await Promise.all([
-        listVideoHistory(user.id, HISTORY_PAGE_SIZE, 0),
+        // 프로젝트 태그가 섞일 것을 감안해 넉넉히 요청 (2배)
+        listVideoHistory(user.id, HISTORY_PAGE_SIZE * 2, 0),
         countVideoHistory(user.id),
       ]);
-      setHistory(items);
+      const filtered = items.filter((i) => !isProjectHistory(i.prompt)).slice(0, HISTORY_PAGE_SIZE);
+      setHistory(filtered);
       setHistoryTotal(total);
     } finally {
       setHistoryLoading(false);
@@ -404,8 +415,10 @@ export const VideoStudio: React.FC = () => {
     if (!user?.id) return;
     setHistoryLoading(true);
     try {
-      const more = await listVideoHistory(user.id, HISTORY_PAGE_SIZE, history.length);
-      setHistory((cur) => [...cur, ...more]);
+      // 현재 표시된 자유 히스토리 수 + 넉넉한 여유
+      const more = await listVideoHistory(user.id, HISTORY_PAGE_SIZE * 2, history.length);
+      const filtered = more.filter((i) => !isProjectHistory(i.prompt)).slice(0, HISTORY_PAGE_SIZE);
+      setHistory((cur) => [...cur, ...filtered]);
     } finally {
       setHistoryLoading(false);
     }
