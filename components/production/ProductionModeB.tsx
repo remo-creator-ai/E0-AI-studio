@@ -426,6 +426,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               scene={s}
               index={idx}
               active={activeSceneId === s.id}
+              selected={!!selected[s.id]}
               upscaleStatus={upscaleStatus(s.id)}
               generating={isGenerating(s.id)}
               onClick={() => scrollToScene(s.id)}
@@ -536,11 +537,13 @@ interface SceneRailChipProps {
   scene: Scene;
   index: number;
   active: boolean;
+  /** 씬 선택 상태 (합치기 포함 여부) — 카드 dim 과 일관된 시각 동기화. */
+  selected: boolean;
   upscaleStatus: UpscaleStatus;
   generating: boolean;
   onClick: () => void;
 }
-const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, upscaleStatus, generating, onClick }) => {
+const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, selected, upscaleStatus, generating, onClick }) => {
   const done = !!scene.video_url;
   const statusColor =
     generating ? 'bg-primary animate-pulse'
@@ -553,13 +556,15 @@ const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, ups
   return (
     <button
       onClick={onClick}
+      title={!selected ? '이 씬은 최종 영상에서 제외됨' : undefined}
       className={`flex-none flex flex-col items-center gap-1 px-2 pt-1.5 pb-1 rounded-xl border-2 transition-all ${
         active ? 'border-primary bg-white shadow' : 'border-zinc-200 bg-white hover:border-zinc-300'
-      }`}
+      } ${!selected ? 'opacity-40 grayscale-[0.4]' : ''}`}
       style={{ width: 108 }}
     >
       <span className={`text-[10px] font-black uppercase tracking-widest ${active ? 'text-primary' : 'text-zinc-500'}`}>
         씬 {index + 1}
+        {!selected && <span className="ml-1 text-zinc-400">·제외</span>}
       </span>
       <div className="w-full aspect-video rounded-md overflow-hidden bg-zinc-900 relative">
         {done ? (
