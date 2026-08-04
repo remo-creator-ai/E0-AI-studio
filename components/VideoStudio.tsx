@@ -17,12 +17,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Video, Download, RefreshCw, AlertCircle, X, Upload, Package, Wand2,
-  Clock, Trash2, History as HistoryIcon, Play, Loader2, ChevronRight, ArrowRightLeft,
+  Video, Download, RefreshCw, AlertCircle, X, Upload, Package, Wand2, Palette,
+  Clock, Trash2, History as HistoryIcon, Play, Loader2, ChevronRight, ArrowRightLeft, CheckCircle2,
 } from 'lucide-react';
 import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
 import { useAuthStore } from '../store/authStore';
+import { STYLE_PROMPT_GUIDES } from '../constants';
+import { VisualStyle } from '../types';
+import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import {
   generateStudioVideo, detectAspectFromImage, suggestVideoPromptFromImage, SUGGEST_PROMPT_COST,
   VIDEO_ASPECTS, DEFAULT_VIDEO_ASPECT, VIDEO_DURATIONS, DEFAULT_VIDEO_DURATION,
@@ -336,6 +339,12 @@ export const VideoStudio: React.FC = () => {
   const [startFrame, setStartFrame] = useState<string | null>(null);
   const [endFrame, setEndFrame] = useState<string | null>(null);
 
+  // 스타일 선택 — 선택되면 생성 시 프롬프트 뒤에 ". Style: <prompt_guide>" 를 붙인다.
+  // ImageStudio · VisualizingStep 과 동일한 소스(customStyleService + STYLE_PROMPT_GUIDES) 사용.
+  const [style, setStyle] = useState<{ name: string; prompt: string } | null>(null);
+  const [isStylePopupOpen, setIsStylePopupOpen] = useState(false);
+  const [customStyles, setCustomStyles] = useState<CustomStyle[]>([]);
+
   // 파일 픽커 참조 (start / end 각각)
   const startFileRef = useRef<HTMLInputElement>(null);
   const endFileRef = useRef<HTMLInputElement>(null);
@@ -426,6 +435,14 @@ export const VideoStudio: React.FC = () => {
 
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
+  // 사용자 커스텀 스타일 로드 (있으면 팝업에 노출)
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    listCustomStyles(user.id).then((rows) => { if (!cancelled) setCustomStyles(rows); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   const validateFrameFile = (file: File): string | null => {
     if (!ACCEPT_MIME.includes(file.type)) return `${file.name}: 지원하지 않는 형식 (PNG/JPEG/WebP)`;
     if (file.size > MAX_FRAME_MB * 1024 * 1024) return `${file.name}: ${MAX_FRAME_MB}MB 초과`;
@@ -476,7 +493,11 @@ export const VideoStudio: React.FC = () => {
     // 큐에 등록 후 fire-and-forget. 컴포넌트 언마운트되어도 백그라운드로 계속 진행.
     // Kling 링크가 반환되면 스토리지로 복제 + 히스토리 저장 + 잡 완료 상태.
     const jobId = crypto.randomUUID();
-    const promptSnapshot = prompt.trim();
+    // 스타일이 선택돼 있으면 프롬프트 뒤에 붙여 Kling 에 함께 전달.
+    // 히스토리 · 재생성엔 이 합성 프롬프트가 그대로 남는다 (재생성 시 UI 에 노출 가능).
+    const promptSnapshot = style
+      ? `${prompt.trim()}. Style: ${style.prompt}`
+      : prompt.trim();
     const startImageSnapshot = startFrame ?? undefined;
     const endImageSnapshot = endFrame ?? undefined;
 
@@ -666,6 +687,40 @@ export const VideoStudio: React.FC = () => {
           onChange={(e) => e.target.files?.[0] && handleFrameFile('end', e.target.files[0])}
         />
 
+        {/* Style — 프롬프트 위 · 팝업으로 선택 · 선택 시 생성 프롬프트에 합쳐짐 */}
+        <div>
+          <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">스타일</label>
+          <div className="mt-1.5 flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsStylePopupOpen(true)}
+              disabled={hasActiveJob}
+              className={`flex-1 min-w-0 flex items-center gap-2 px-3 py-2 rounded-xl border text-left transition-all disabled:opacity-40 ${
+                style
+                  ? 'bg-primary/10 border-primary/30 text-primary'
+                  : 'bg-white border-zinc-200 hover:border-primary/40 text-zinc-500'
+              }`}
+            >
+              <Palette size={14} className="shrink-0" />
+              <span className="text-xs font-bold truncate">
+                {style ? style.name : '스타일 선택 (선택 사항)'}
+              </span>
+              <ChevronRight size={12} className="ml-auto shrink-0" />
+            </button>
+            {style && (
+              <button
+                type="button"
+                onClick={() => setStyle(null)}
+                disabled={hasActiveJob}
+                className="px-2.5 rounded-xl border border-zinc-200 text-zinc-400 hover:text-zinc-700 hover:border-zinc-300 disabled:opacity-40"
+                title="스타일 해제"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Prompt */}
         <div>
           <div className="flex items-center justify-between">
@@ -790,9 +845,97 @@ export const VideoStudio: React.FC = () => {
             <>
               모델: {VIDEO_STUDIO_MODEL} · 시작 프레임 유무에 따라 T2V/I2V 자동 선택.
               {endFrame && ' · 끝 프레임 시 Pro 모드 (2배 크레딧)'}
+              {style && ` · 스타일: ${style.name}`}
             </>
           )}
         </p>
+
+        {/* Style Popup — 프리셋(고정) + 내 스타일(사용자 등록) 함께 노출 */}
+        {isStylePopupOpen && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-900/40 backdrop-blur-md"
+            onClick={() => setIsStylePopupOpen(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-5 max-w-2xl w-full mx-4 animate-in zoom-in-95 duration-200 max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="text-lg font-black tracking-tight text-zinc-900">스타일 선택</h4>
+                <button
+                  onClick={() => setIsStylePopupOpen(false)}
+                  className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {customStyles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">내 스타일</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {customStyles.map((cs) => {
+                      const isSelected = style?.name === cs.name;
+                      return (
+                        <button
+                          key={cs.id}
+                          onClick={() => { setStyle({ name: cs.name, prompt: cs.prompt_guide }); setIsStylePopupOpen(false); }}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
+                            isSelected
+                              ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                              : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                          }`}
+                        >
+                          <span className="text-3xl">{cs.icon_emoji || '🎨'}</span>
+                          <div className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-zinc-600'}`}>{cs.name}</div>
+                          {isSelected && (
+                            <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                              <CheckCircle2 size={14} className="text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pt-2">기본 스타일</div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.values(VisualStyle).map((styleVal) => {
+                  const isSelected = style?.name === styleVal;
+                  const styleIcons: Record<string, string> = {
+                    'Cinematic': '🎬', 'Realistic': '📷', '3D Render': '🧊', '2D Flat Pink': '🩷',
+                    'Motion Graphics': '⚡', 'Pixar 3D': '🎨', 'Japanese Anime': '✨',
+                    'Watercolor': '🖌️', 'Cyberpunk': '🌃', 'Simple Line Art': '✏️',
+                  };
+                  return (
+                    <button
+                      key={styleVal}
+                      onClick={() => {
+                        setStyle({ name: styleVal, prompt: STYLE_PROMPT_GUIDES[styleVal] || '' });
+                        setIsStylePopupOpen(false);
+                      }}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
+                        isSelected
+                          ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                          : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                      }`}
+                    >
+                      <span className="text-3xl">{styleIcons[styleVal] || '🎨'}</span>
+                      <div className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-zinc-600'}`}>{styleVal}</div>
+                      {isSelected && (
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <CheckCircle2 size={14} className="text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Center: 단일 포커스 뷰 (스택 X · 히스토리 클릭 또는 새 잡 → 포커스 이동) */}

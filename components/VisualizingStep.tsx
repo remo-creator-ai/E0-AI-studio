@@ -35,11 +35,13 @@ import { useStore } from '../store';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import type { Asset, AssetType } from '../services/assetService';
 import { useCreditStore } from '../store/creditStore';
+import { useAuthStore } from '../store/authStore';
 import { useModal } from './ui/ModalProvider';
 import { generate3x3GridImage } from '../services/geminiService';
 import { generateThumbnail } from '../services/thumbnailService';
 import { supabase } from '../lib/supabase';
 import { GRID_ANGLES, STYLE_PROMPT_GUIDES } from '../constants';
+import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import { Project, Scene, AdDuration, VisualStyle, StoryboardLayout, SCENE_DURATION_MAP, SceneCount, ImageModel, IMAGE_MODEL_INFO, CategorizedRefImage, ReferenceCategory, REFERENCE_CATEGORY_INFO } from '../types';
 
 function getGridLayout(sceneCount: number, aspectRatio?: string): { rows: number; cols: number; scenesPerUnit: number } {
@@ -69,8 +71,19 @@ export const VisualizingStep: React.FC = () => {
   const [isPromptAutoSet, setIsPromptAutoSet] = useState(true);
   const [selectedModel, setSelectedModel] = useState<ImageModel>(ImageModel.GEMINI_3_1_FLASH);
   const [isStylePopupOpen, setIsStylePopupOpen] = useState(false);
+  // 사용자 커스텀 스타일 (설정 페이지에서 편집). ImageStudio 와 동일한 소스.
+  const [customStyles, setCustomStyles] = useState<CustomStyle[]>([]);
+  const { user } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importTxtRef = useRef<HTMLInputElement>(null);
+
+  // 커스텀 스타일 로드: 유저가 있으면 마운트 시 1회.
+  React.useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    listCustomStyles(user.id).then((rows) => { if (!cancelled) setCustomStyles(rows); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Initialize style prompt from project style
   React.useEffect(() => {
@@ -87,6 +100,17 @@ export const VisualizingStep: React.FC = () => {
       setCustomStylePrompt(STYLE_PROMPT_GUIDES[newStyle]);
       setIsPromptAutoSet(true);
     }
+  };
+
+  // 커스텀 스타일 선택: project.style 에 이름을 문자열로 넣어 라벨로 표시하고
+  //   프롬프트는 무조건 그 스타일의 prompt_guide 로 교체(사용자가 명시적으로 고른 것이므로).
+  const handleCustomStyleChange = (cs: CustomStyle) => {
+    if (!project) return;
+    // enum 이 아닌 커스텀 이름을 넣는 것은 타입상 편법이나, 실제 사용처는 모두 문자열로만
+    // 다루므로 안전하다 (STYLE_PROMPT_GUIDES 조회 시엔 undefined → 폴백).
+    setProject({ ...project, style: cs.name as unknown as VisualStyle });
+    setCustomStylePrompt(cs.prompt_guide);
+    setIsPromptAutoSet(true);
   };
 
   const handleImportTxt = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -886,6 +910,41 @@ CRITICAL RULES:
               <h4 className="text-lg font-black tracking-tight text-zinc-900">{t('visualizing.selectStyle')}</h4>
               <button onClick={() => setIsStylePopupOpen(false)} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"><X size={18} /></button>
             </div>
+
+            {/* 사용자 커스텀 스타일 (설정 페이지에서 등록) — 있을 때만 상단에 노출 */}
+            {customStyles.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400">내 스타일</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {customStyles.map((cs) => {
+                    const isSelected = (project.style as unknown as string) === cs.name;
+                    return (
+                      <button
+                        key={cs.id}
+                        onClick={() => { handleCustomStyleChange(cs); setIsStylePopupOpen(false); }}
+                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
+                          isSelected
+                            ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                            : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span className="text-3xl">{cs.icon_emoji || '🎨'}</span>
+                        <div>
+                          <div className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-zinc-600'}`}>{cs.name}</div>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                            <CheckCircle2 size={14} className="text-white" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pt-2">기본 스타일</div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.values(VisualStyle).map((styleVal) => {
                 const isSelected = project.style === styleVal;
