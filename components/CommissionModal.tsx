@@ -21,11 +21,10 @@ import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
 import { sceneImageToBlob } from '../services/imageUtils';
 
+// 사용자 요청: 서비스 옵션이 너무 많아 지금은 하나만 노출.
+// 추후 부가 서비스(사운드·자막·리사이즈 등)가 실제 제공 준비되면 배열에 추가.
 const SERVICES = [
   { id: 'video', label: '완성 영상 제작', desc: '씬 편집 · 트랜지션 · 최종 렌더링' },
-  { id: 'audio', label: '사운드 · 나레이션 · BGM', desc: '성우 녹음 · 배경음악 · 효과음' },
-  { id: 'branding', label: '자막 · 로고 · 브랜딩', desc: '자막 디자인 · 로고 삽입 · 톤 정리' },
-  { id: 'adspec', label: '광고 매체 규격', desc: '유튜브 · 인스타 · 틱톡 규격별 리사이즈' },
 ] as const;
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;

@@ -769,36 +769,14 @@ const SceneCard: React.FC<SceneCardProps> = ({
       {/* 카드 본체 */}
       <div className="p-5 pointer-events-auto">
         {done ? (
-          // ─── (c) 완료 상태: 결과 영상이 주인공 ───
-          <div className="space-y-3">
-            <div className="rounded-2xl overflow-hidden bg-black">
-              <video src={scene.video_url} controls loop className="w-full max-h-[60vh] object-contain" />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={scene.video_url}
-                download={sceneFilename(scene)}
-                className="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
-              >
-                <Download size={14} /> 다운로드
-              </a>
-              <button
-                onClick={onRegenerate}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-xs font-black text-white flex items-center gap-1.5"
-              >
-                <RefreshCw size={14} /> 다시 만들기
-              </button>
-            </div>
-            <details className="text-xs text-zinc-500">
-              <summary className="cursor-pointer font-bold hover:text-primary">
-                이 영상을 만든 설정 보기
-              </summary>
-              <div className="mt-2 p-3 rounded-xl bg-zinc-50 border border-zinc-100 space-y-2">
-                <p><span className="font-bold text-zinc-700">이미지 프롬프트:</span> {displayPrompts.image}</p>
-                <p><span className="font-bold text-zinc-700">영상 프롬프트:</span> {displayPrompts.video}</p>
-              </div>
-            </details>
-          </div>
+          // ─── (c) 완료 상태: 결과 영상이 주인공 (목업 그대로 · 그리드 분할) ───
+          <SceneDoneView
+            scene={scene}
+            settings={settings}
+            displayPrompts={displayPrompts}
+            nextSceneImage={nextSceneImage}
+            onRegenerate={onRegenerate}
+          />
         ) : cardMode === 'editor' ? (
           // ─── (b) 편집기 전개 ───
           <SceneEditor
@@ -832,6 +810,148 @@ const SceneCard: React.FC<SceneCardProps> = ({
           />
         )}
       </div>
+    </div>
+  );
+};
+
+// =============================================================
+//  씬 카드 (c) 완료 상태 — 결과 영상이 주인공
+//
+//  목업 (mode-b-with-upscale.html · 씬 1) 구조 그대로:
+//    · 좌: 큰 video + 하단 pill (해상도)
+//    · 우: 세로 액션 [전체화면 재생 · 다운로드 · 다시 만들기] + 안내 카드
+//    · 접힘 details "이 영상을 만든 설정 보기" — START/END 프레임 + 프롬프트 2단
+//
+//  Phase 2 (테이크 스택) 는 아직: 대표/추가 테이크 스트립은 목업엔 있지만
+//  types.ts 변경 필요라 이번엔 스킵. 안내 카드 문구로 방향만 남김.
+// =============================================================
+interface SceneDoneViewProps {
+  scene: Scene;
+  settings: SceneSettings;
+  displayPrompts: { image: string; video: string };
+  nextSceneImage?: string;
+  onRegenerate: () => void;
+}
+const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayPrompts, nextSceneImage, onRegenerate }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const regenerateCost = videoStudioCreditCost({
+    durationSec: settings.duration,
+    resolution: settings.resolution,
+    hasEndFrame: !!settings.endImage,
+  });
+
+  const openFullscreen = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.requestFullscreen) el.requestFullscreen();
+    // Safari 대응
+    // @ts-expect-error webkit prefix
+    else if (el.webkitEnterFullscreen) el.webkitEnterFullscreen();
+    el.play().catch(() => {});
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* 좌: 비디오 · 우: 액션 (목업 minmax(0,1.6fr) minmax(0,1fr)) */}
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        {/* ── 결과 영상 ── */}
+        <div className="relative rounded-2xl overflow-hidden bg-black">
+          <video
+            ref={videoRef}
+            src={scene.video_url}
+            controls
+            loop
+            playsInline
+            className="w-full max-h-[60vh] object-contain"
+          />
+          <div className="absolute bottom-2 left-2 flex gap-1.5 pointer-events-none">
+            <span className="px-2 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-black backdrop-blur">
+              {settings.resolution} · {settings.duration}s
+            </span>
+          </div>
+        </div>
+
+        {/* ── 액션 컬럼 ── */}
+        <div className="flex flex-col gap-2.5">
+          <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">이 씬 결과물</div>
+          <button
+            onClick={openFullscreen}
+            className="w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,80,191,0.28)] flex items-center justify-center gap-2 hover:shadow-[0_8px_20px_rgba(0,80,191,0.4)] transition-all"
+          >
+            <Play size={16} /> 전체화면 재생
+          </button>
+          <a
+            href={scene.video_url}
+            download={sceneFilename(scene)}
+            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 flex items-center justify-center gap-2"
+          >
+            <Download size={16} /> 대표 영상 다운로드
+          </a>
+          <button
+            onClick={onRegenerate}
+            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={16} /> 한 번 더 만들기 · {regenerateCost}cr
+          </button>
+          <div className="mt-auto p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
+              합치기에는 <strong>완성된 영상 1개</strong>가 들어갑니다. 여러 테이크 지원(대표 지정)은 다음 업데이트 예정.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 접힘 details: 만든 방식 보기 ── */}
+      <details className="rounded-2xl border border-zinc-200 bg-zinc-50/70 overflow-hidden">
+        <summary className="px-4 py-3 flex items-center gap-2 text-sm font-black text-zinc-600 cursor-pointer hover:bg-zinc-100">
+          <ChevronDown size={14} className="transition-transform" />
+          이 영상을 만든 설정 보기
+        </summary>
+        <div className="px-4 pb-4 space-y-4">
+          {/* START · END 프레임 시각화 */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_40px_1fr] gap-3 items-center pt-3">
+            <div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">START</div>
+              <div className="aspect-video rounded-xl overflow-hidden bg-zinc-900 border-2 border-primary/30">
+                {scene.image_url ? (
+                  <img src={scene.image_url} alt="" className="w-full h-full object-contain" />
+                ) : null}
+              </div>
+            </div>
+            <div className="hidden md:flex flex-col items-center justify-center gap-1 text-zinc-400">
+              <span className="text-xs font-black">{settings.duration}s</span>
+              <span className="text-[10px]">모션</span>
+              <span className="text-xs">→</span>
+            </div>
+            <div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">END</div>
+              <div className="aspect-video rounded-xl overflow-hidden bg-zinc-900 border-2 border-zinc-300 flex items-center justify-center">
+                {settings.endImage ? (
+                  <img src={settings.endImage} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-xs font-black text-zinc-500">END 프레임 미사용</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 프롬프트 2단 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">이미지 프롬프트</div>
+              <div className="px-3 py-2 rounded-lg bg-white border border-zinc-200 text-xs text-zinc-700 leading-relaxed min-h-[3em]">
+                {displayPrompts.image || <span className="text-zinc-400 italic">비어있음</span>}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">영상 프롬프트 · 모션</div>
+              <div className="px-3 py-2 rounded-lg bg-white border border-zinc-200 text-xs text-zinc-700 leading-relaxed min-h-[3em]">
+                {settings.prompt !== null && settings.prompt.trim() ? settings.prompt : displayPrompts.video || <span className="text-zinc-400 italic">비어있음</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
     </div>
   );
 };
