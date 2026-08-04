@@ -40,7 +40,7 @@ import { saveVideoHistory } from '../../services/videoHistoryService';
 import { useVideoGenStore, type VideoJob } from '../../store/videoGenStore';
 import {
   useModeBState, DEFAULT_SCENE_SETTINGS,
-  type SceneSettings, type CardMode, type UpscaleStatus,
+  type SceneSettings, type CardMode, type UpscaleStatus, type SceneTake,
 } from '../../store/modeBStateStore';
 import { AssetLibraryPicker } from '../AssetLibraryPicker';
 import type { Scene } from '../../types';
@@ -108,6 +108,11 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const setUpscaleJobStore = useModeBState((s) => s.setUpscaleJob);
   const setUpscaleProgressStore = useModeBState((s) => s.setUpscaleProgress);
   const setActiveSceneIdStore = useModeBState((s) => s.setActiveSceneId);
+  const takesMap = useModeBState((s) => s.takes);
+  const mainTakeIdMap = useModeBState((s) => s.mainTakeId);
+  const addTakeStore = useModeBState((s) => s.addTake);
+  const setMainTakeStore = useModeBState((s) => s.setMainTake);
+  const seedTakeFromPersisted = useModeBState((s) => s.seedTakeFromPersisted);
 
   // 프로젝트 진입 · 전환 시 스토어 초기화
   useEffect(() => {
@@ -116,6 +121,23 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     scenes.forEach((s) => { defaultSelected[s.id] = true; });
     ensureProject(project.id, defaultSelected, scenes[0]?.id ?? null);
   }, [project?.id, scenes, project, ensureProject]);
+
+  // 기존 저장된 video_url 있는 씬 → 첫 테이크로 seed (씬당 1회, 중복 방지 store 내부에서)
+  useEffect(() => {
+    scenes.forEach((s) => {
+      if (!s.video_url) return;
+      seedTakeFromPersisted(s.id, {
+        id: `persisted-${s.id}`,
+        videoUrl: s.video_url,
+        durationSec: 5, // 기존 저장에는 길이 정보 없음 → 기본값
+        resolution: '720p',
+        hasEndFrame: false,
+        createdAt: 0, // 가장 오래된 것으로 취급
+      });
+    });
+    // scenes 배열 참조 자체 변경 시만 재실행
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenes.length, project?.id]);
 
   // ── 헬퍼 (스토어 래퍼) ──
   const getSettings = useCallback((sceneId: string): SceneSettings => {
@@ -287,7 +309,17 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           }
         }
         updateJob(jobId, { status: 'done', videoUrl: finalUrl, historyId });
-        // Phase 1: video_url 을 덮어씀. Phase 2 에서 테이크 스택으로 이관.
+        // 세션 테이크 스택에 추가 (자동으로 대표 지정 · 브라우저 재로딩 시엔 최신 것만 살아남음)
+        addTakeStore(scene.id, {
+          id: jobId,
+          videoUrl: finalUrl,
+          durationSec: s.duration,
+          resolution: s.resolution,
+          hasEndFrame: !!endImage,
+          createdAt: Date.now(),
+          historyId,
+        });
+        // project.scenes[].video_url 은 최신(대표) 을 가리킴 → 새로고침 후에도 이 하나는 남음
         updateScene(scene.id, { video_url: finalUrl });
         // 완료 후 편집기 자동 접기 → done 뷰로 자동 전환
         setCardModeStore(scene.id, 'idle');
@@ -295,7 +327,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
       }
     })();
-  }, [addJob, alert, balance, buildKlingPrompt, confirm, deduct, getSettings, hasEnough, project?.title, projectTag, updateJob, updateScene, user?.id]);
+  }, [addJob, alert, balance, buildKlingPrompt, confirm, deduct, getSettings, hasEnough, project?.title, projectTag, updateJob, updateScene, user?.id, addTakeStore, setCardModeStore]);
 
   // ── 네비게이션: 씬 스크롤 이동 ──
   const scrollToScene = useCallback((sceneId: string) => {
@@ -541,11 +573,18 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             onSetMode={(m) => setCardModeStore(scene.id, m)}
             onPatchSettings={(patch) => patchSettings(scene.id, patch)}
             onPatchScene={(patch) => updateScene(scene.id, patch)}
+            takes={takesMap[scene.id] ?? []}
+            mainTakeId={mainTakeIdMap[scene.id]}
+            onSelectMainTake={(takeId) => {
+              setMainTakeStore(scene.id, takeId);
+              const take = (takesMap[scene.id] ?? []).find((t) => t.id === takeId);
+              if (take) updateScene(scene.id, { video_url: take.videoUrl });
+            }}
             onUpscale={() => runUpscale(scene)}
             onGenerate={() => runGenerate(scene)}
             onRegenerate={async () => {
               const ok = await confirm(
-                `씬 ${idx + 1} 영상을 다시 만들면 기존 영상이 교체됩니다.\n(현재는 씬당 결과 1개만 유지 · 향후 테이크 여러 개 지원 예정)\n\n계속할까요?`,
+                `씬 ${idx + 1} 에 새 테이크를 추가합니다.\n\n· 새로 만들면 하단 테이크 스택에 쌓이고 자동으로 대표가 됩니다\n· 기존 테이크는 계속 보관되며 클릭해서 대표를 바꿀 수 있어요\n· 브라우저 새로고침 시 이 세션의 추가 테이크는 사라지고 대표 하나만 유지됩니다 (영구 저장은 다음 업데이트)\n\n계속할까요?`,
               );
               if (ok) runGenerate(scene, { skipConfirm: true });
             }}
@@ -686,6 +725,9 @@ interface SceneCardProps {
   onSetMode: (m: CardMode) => void;
   onPatchSettings: (patch: Partial<SceneSettings>) => void;
   onPatchScene: (patch: Partial<Scene>) => void;
+  takes: SceneTake[];
+  mainTakeId?: string;
+  onSelectMainTake: (takeId: string) => void;
   onUpscale: () => void;
   onGenerate: () => void;
   onRegenerate: () => void;
@@ -696,7 +738,7 @@ interface SceneCardProps {
 
 const SceneCard: React.FC<SceneCardProps> = ({
   scene, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
-  job, nextSceneImage, language, displayPrompts,
+  job, nextSceneImage, language, displayPrompts, takes, mainTakeId, onSelectMainTake,
   onToggleSelect, onSetMode, onPatchSettings, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
   onPrev, onNext,
 }) => {
@@ -775,6 +817,9 @@ const SceneCard: React.FC<SceneCardProps> = ({
             settings={settings}
             displayPrompts={displayPrompts}
             nextSceneImage={nextSceneImage}
+            takes={takes}
+            mainTakeId={mainTakeId}
+            onSelectMainTake={onSelectMainTake}
             onRegenerate={onRegenerate}
           />
         ) : cardMode === 'editor' ? (
@@ -830,9 +875,12 @@ interface SceneDoneViewProps {
   settings: SceneSettings;
   displayPrompts: { image: string; video: string };
   nextSceneImage?: string;
+  takes: SceneTake[];
+  mainTakeId?: string;
+  onSelectMainTake: (takeId: string) => void;
   onRegenerate: () => void;
 }
-const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayPrompts, nextSceneImage, onRegenerate }) => {
+const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayPrompts, nextSceneImage, takes, mainTakeId, onSelectMainTake, onRegenerate }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const regenerateCost = videoStudioCreditCost({
     durationSec: settings.duration,
@@ -900,6 +948,61 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayP
           </div>
         </div>
       </div>
+
+      {/* ── 테이크 스택 (세션 메모리 · 브라우저 재로딩 시 최신 하나만 유지) ── */}
+      {takes.length > 0 && (
+        <div className="p-3 rounded-2xl border border-zinc-200 bg-zinc-50/70">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-xs font-black text-zinc-700">생성된 영상 {takes.length}개</span>
+            <span className="text-[11px] font-bold text-zinc-400">· 클릭하면 대표로 지정</span>
+            <span className="ml-auto text-[10px] font-bold text-amber-700">
+              세션 메모리 · 새로고침 시 대표 하나만 유지
+            </span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {takes.map((t, i) => {
+              const isMain = mainTakeId ? t.id === mainTakeId : i === takes.length - 1;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => onSelectMainTake(t.id)}
+                  className={`flex-none flex flex-col gap-1 rounded-xl border-2 overflow-hidden bg-white transition-all ${
+                    isMain ? 'border-primary shadow-[0_4px_12px_rgba(0,80,191,0.25)]' : 'border-zinc-200 hover:border-primary/40'
+                  }`}
+                  style={{ width: 128 }}
+                  title={isMain ? '대표 · 클릭해도 그대로' : '클릭하면 대표로 지정'}
+                >
+                  <div className="relative w-full aspect-video bg-black">
+                    <video
+                      src={t.videoUrl}
+                      muted
+                      loop
+                      playsInline
+                      onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                      onMouseLeave={(e) => { const el = e.target as HTMLVideoElement; el.pause(); el.currentTime = 0; }}
+                      className="w-full h-full object-contain"
+                    />
+                    {isMain && (
+                      <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-primary text-white text-[9px] font-black">
+                        대표
+                      </span>
+                    )}
+                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-white text-[9px] font-black">
+                      {t.durationSec}s · {t.resolution}
+                    </span>
+                  </div>
+                  <div className="px-2 py-1 text-left">
+                    <div className="text-[10px] font-black text-zinc-800">테이크 {i + 1}</div>
+                    <div className="text-[9px] text-zinc-400">
+                      {t.createdAt === 0 ? '이전 세션' : `${Math.max(1, Math.floor((Date.now() - t.createdAt) / 60000))}분 전`}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── 접힘 details: 만든 방식 보기 ── */}
       <details className="rounded-2xl border border-zinc-200 bg-zinc-50/70 overflow-hidden">

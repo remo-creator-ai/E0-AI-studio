@@ -32,6 +32,19 @@ export const DEFAULT_SCENE_SETTINGS: SceneSettings = {
 export type CardMode = 'idle' | 'editor';
 export type UpscaleStatus = 'idle' | 'running' | 'done' | 'failed';
 
+/** 씬 하나의 결과 영상 한 개 (테이크).
+ *  Phase 1: 세션 메모리에만 스택. 브라우저 새로고침 시 project.scenes[i].video_url 에
+ *  남아있는 "최근" 것만 살아남는다. Phase 2 (types.ts + DB 마이그레이션) 에서 영구 저장. */
+export interface SceneTake {
+  id: string;             // job id · 유일 식별자
+  videoUrl: string;
+  durationSec: VideoDuration;
+  resolution: VideoResolution;
+  hasEndFrame: boolean;
+  createdAt: number;
+  historyId?: string;     // saveVideoHistory 결과 (있으면 삭제/보관함 저장 링크)
+}
+
 interface ModeBState {
   /** 현재 캐시된 프로젝트 id (변경 감지용) */
   projectId: string | null;
@@ -41,6 +54,10 @@ interface ModeBState {
   upscaleJobs: Record<string, UpscaleStatus>;
   upscaleProgress: Record<string, number>;
   activeSceneId: string | null;
+  /** 씬별 테이크 스택 (최신이 마지막) · 세션 메모리 */
+  takes: Record<string, SceneTake[]>;
+  /** 씬별 대표 테이크 id · 없으면 배열 마지막이 대표 */
+  mainTakeId: Record<string, string>;
 
   /** 프로젝트 진입 시 호출 · 다른 프로젝트로 전환하면 모든 씬 상태 리셋 */
   ensureProject: (projectId: string, defaultSelected: Record<string, boolean>, defaultActiveId: string | null) => void;
@@ -52,6 +69,13 @@ interface ModeBState {
   setUpscaleJob: (sceneId: string, status: UpscaleStatus) => void;
   setUpscaleProgress: (sceneId: string, progress: number) => void;
   setActiveSceneId: (sceneId: string | null) => void;
+
+  /** 새 테이크 추가 → 자동으로 대표 지정. 브라우저 재로딩 시 project.video_url 만 남음. */
+  addTake: (sceneId: string, take: SceneTake) => void;
+  /** 사용자가 특정 테이크를 대표로 지정 (video_url 도 함께 갱신하려면 호출부에서) */
+  setMainTake: (sceneId: string, takeId: string) => void;
+  /** 프로젝트 로드 시 이미 저장된 video_url 을 첫 테이크로 시드 (씬당 1회) */
+  seedTakeFromPersisted: (sceneId: string, take: SceneTake) => void;
 }
 
 export const useModeBState = create<ModeBState>((set, get) => ({
@@ -62,6 +86,8 @@ export const useModeBState = create<ModeBState>((set, get) => ({
   upscaleJobs: {},
   upscaleProgress: {},
   activeSceneId: null,
+  takes: {},
+  mainTakeId: {},
 
   ensureProject: (projectId, defaultSelected, defaultActiveId) => {
     if (get().projectId === projectId) return;
@@ -74,6 +100,8 @@ export const useModeBState = create<ModeBState>((set, get) => ({
       upscaleJobs: {},
       upscaleProgress: {},
       activeSceneId: defaultActiveId,
+      takes: {},
+      mainTakeId: {},
     });
   },
 
@@ -100,4 +128,23 @@ export const useModeBState = create<ModeBState>((set, get) => ({
     set((s) => ({ upscaleProgress: { ...s.upscaleProgress, [sceneId]: progress } })),
 
   setActiveSceneId: (sceneId) => set({ activeSceneId: sceneId }),
+
+  addTake: (sceneId, take) =>
+    set((s) => ({
+      takes: { ...s.takes, [sceneId]: [...(s.takes[sceneId] ?? []), take] },
+      mainTakeId: { ...s.mainTakeId, [sceneId]: take.id },
+    })),
+
+  setMainTake: (sceneId, takeId) =>
+    set((s) => ({ mainTakeId: { ...s.mainTakeId, [sceneId]: takeId } })),
+
+  seedTakeFromPersisted: (sceneId, take) =>
+    set((s) => {
+      // 이미 seed 됐거나 새 테이크가 쌓였으면 건너뜀 (중복 방지)
+      if (s.takes[sceneId] && s.takes[sceneId].length > 0) return s;
+      return {
+        takes: { ...s.takes, [sceneId]: [take] },
+        mainTakeId: { ...s.mainTakeId, [sceneId]: take.id },
+      };
+    }),
 }));
