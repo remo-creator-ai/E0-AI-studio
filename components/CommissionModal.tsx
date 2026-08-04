@@ -237,6 +237,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
             >
               닫기
             </button>
+            <BuyPizzaLink />
           </div>
         ) : (
           <>
@@ -391,6 +392,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
               <p className="text-[10px] text-zinc-400 text-center">
                 의뢰는 무료이며, 견적 확인 후 진행 여부를 결정하실 수 있습니다.
               </p>
+              <BuyPizzaLink />
             </div>
           </>
         )}
@@ -398,6 +400,18 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
     </div>
   );
 };
+
+// 개발자 피자 후원 — remo-ai-studio 초기부터 있던 소소한 서비스 재입. 밝은 노랑으로 뚜렷하게.
+const BuyPizzaLink: React.FC = () => (
+  <a
+    href="https://buymeacoffee.com/remoimagevo"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="block w-full py-3 mt-1 bg-[#FFDD00] hover:bg-[#FFDD00]/90 rounded-full text-sm font-black flex items-center justify-center gap-2 transition-all active:scale-[0.99] text-black text-center shadow-[0_6px_16px_rgba(255,221,0,0.25)]"
+  >
+    <span className="text-lg">🍕</span> 개발자에게 피자 사주기
+  </a>
+);
 
 const AttachRow: React.FC<{
   icon: React.FC<{ size?: number; className?: string }>;
