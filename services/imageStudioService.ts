@@ -12,6 +12,9 @@
 
 import { MOCK_MODE } from '../lib/mockAuth';
 import { proxyClient, proxyHealth } from '../lib/aiProxy';
+// openaiImageService 는 geminiService 와 무관한 독립 전송 계층이라
+// 위 격리 원칙(영상 경로 프롬프트를 건드리지 않는다)을 깨지 않는다.
+import { isOpenAIImageModel, generateSingleImageOpenAI } from './openaiImageService';
 
 // ---------- 화면비 ----------
 // 영상 경로의 types.ts AspectRatio(16:9/9:16) 를 건드리지 않기 위한 전용 타입.
@@ -21,28 +24,22 @@ export const STUDIO_ASPECTS: StudioAspect[] = ['1:1', '16:9', '9:16'];
 export const DEFAULT_ASPECT: StudioAspect = '1:1';
 
 // ---------- 크레딧 단가 ----------
-// 확정: 단건 1장 = 1크레딧 (2026-07-22).
+// 단가는 "이미지 1장"당이며 모델별로 다르다 → IMAGE_STUDIO_MODELS (아래).
 //
-// 근거 (docs/IMAGE_MODEL_PRICING.md):
-//   - types.ts 의 IMAGE_MODEL_INFO.creditCost 는 "매트릭스(3x3, 최대 9장)" 단위다
-//     (VisualizingStep.tsx:266). 그 값을 그대로 쓰면 1장에 3크레딧이 되어 영상
-//     경로의 장당 단가(3cr/9장 = 0.33cr)보다 약 9배 비싸진다.
-//   - 문서의 영상 경로 권장안은 Imagen 4 Fast 5cr/매트릭스(장당 0.55cr, 마진 0%,
-//     대량 사용 유도). 단건 1cr 은 그 대비 약 2배의 단품 프리미엄이면서 마진이
-//     양수다(원가 $0.02~0.03 = 약 28~42원, 1cr ≈ 50원 기준).
+// 스토리보드(types.ts IMAGE_MODEL_INFO.creditCost)와 숫자를 공유하지 않는다.
+// 그쪽은 "시트 1장(=최대 9컷)" 단위라(VisualizingStep.tsx) 그대로 쓰면 장당
+// 9배 비싸진다.
 //
-// 주의: 현재 사용 모델(Gemini 3.1 Flash Image Preview)의 공식 원가는 아직
-//       미공개라 위 마진은 Imagen 4 Fast / GPT Image 2 원가를 대리 지표로 삼은
-//       추정이다. 문서의 액션 아이템(원가 재확인)이 끝나면 재검토할 것.
-export const IMAGE_STUDIO_CREDIT_COST = 1;
+// 예전에는 모델과 무관하게 1cr 고정이었다(IMAGE_STUDIO_CREDIT_COST).
+// 모델 선택이 생기면서 폐지했다 — 장당 원가가 모델마다 크게 달라, 고정 단가로는
+// 비싼 모델을 고를수록 적자가 된다.
 
 // ---------- 멀티샷 (Higgsfield 스타일: 6개 프리셋을 병렬 생성) ----------
-// 총액 6cr = 1cr/샷. 단일 이미지 단가와 동일해 부분 실패 시 성공 수만큼 차감하는 규칙이 자연스럽다.
+// 샷당 단가 = 선택 모델의 장당 단가. 총액은 그 6배다. 단일 생성과 장당 단가가
+// 같아서 부분 실패 시 성공한 샷 수만큼만 차감하는 규칙이 자연스럽게 성립한다.
 // 프리셋은 프롬프트 앞에 프리픽스로 합성된다 (STYLE_PROMPT_GUIDES 와 동일 패턴, 스타일 뒤에 놓인다).
-export const IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT = 1;
+// '1개 시트로 만들기' 는 6샷을 2x3 그리드 한 장으로 생성하므로(API 1회) 1장 단가다.
 export const IMAGE_STUDIO_MULTISHOT_SHOTS = 6;
-// 1개 시트로 만들기: 6샷을 한 장의 2x3 그리드 이미지로 생성 (API 호출 1번). 개별 6장 대비 저렴.
-export const IMAGE_STUDIO_MULTISHOT_SHEET_COST = 1;
 
 export interface MultishotShotPreset {
   id: string;         // 히스토리 style_value 나 로그에 저장할 stable id
@@ -101,9 +98,56 @@ export const MULTISHOT_PACKS: MultishotPack[] = [
 
 export const DEFAULT_MULTISHOT_PACK: MultishotPack['id'] = 'camera';
 
-// TODO(미정): 사용할 이미지 모델 확정 필요.
-// 확정 전까지 IMAGE_MODEL_INFO 가 Default 로 표기한 3.1 Flash 를 잠정 사용한다.
-export const IMAGE_STUDIO_MODEL = 'gemini-3.1-flash-image-preview';
+// ---------- 모델 선택 ----------
+// 스토리보드(IMAGE_MODEL_INFO)와 같은 모델을 쓰되 단가는 별도로 둔다 (위 주석 참고).
+// 단가는 장당 원가에 맞춰 차등한다.
+//   Nano Banana 2   원가 미공개(저렴 추정)      → 1cr (₩50)
+//   GPT Image 2     2K 단건 ~$0.05 = ₩68       → 3cr (₩150, 약 +120%)
+//   Nano Banana Pro 문서상 ~$0.134 = ₩182      → 6cr (₩300, 약 +65%)
+// ⚠️ Nano Banana 계열 원가는 Google 미공개다(docs/IMAGE_MODEL_PRICING.md §2-3).
+//    실청구 확인 후 재조정할 것.
+export interface ImageStudioModelInfo {
+  id: string;
+  label: string;
+  description: string;
+  creditCost: number;
+}
+
+export const IMAGE_STUDIO_MODELS: ImageStudioModelInfo[] = [
+  {
+    id: 'gemini-3.1-flash-image-preview',
+    label: 'Nano Banana 2',
+    description: '빠르고 저렴 · 기본',
+    creditCost: 1,
+  },
+  {
+    id: 'gpt-image-2',
+    label: 'GPT Image 2',
+    description: '고해상도 · 텍스트 렌더링 강함',
+    creditCost: 3,
+  },
+  {
+    id: 'gemini-3-pro-image-preview',
+    label: 'Nano Banana Pro',
+    description: '최고 품질',
+    creditCost: 6,
+  },
+];
+
+/** 기본값은 가장 저렴한 모델. 목록 순서와 무관하게 단가로 고른다. */
+export const DEFAULT_IMAGE_STUDIO_MODEL = IMAGE_STUDIO_MODELS
+  .reduce((cheapest, m) => (m.creditCost < cheapest.creditCost ? m : cheapest))
+  .id;
+
+export function imageStudioModelInfo(id?: string): ImageStudioModelInfo {
+  return IMAGE_STUDIO_MODELS.find((m) => m.id === id) ?? IMAGE_STUDIO_MODELS[0];
+}
+
+/** 선택 모델의 장당 크레딧. 미지정이면 기본 모델 단가. */
+export function imageStudioCreditCost(modelId?: string): number {
+  return imageStudioModelInfo(modelId).creditCost;
+}
+
 
 export type GenerateFailure =
   | 'no_api_key'      // admin_config 에 gemini_api_key 미등록
@@ -131,6 +175,8 @@ export interface GenerateInput {
   aspect: StudioAspect;
   /** 참고 이미지 (data URL 또는 http URL). 3단계에서 자산 보관함이 채운다. */
   references?: string[];
+  /** 선택 모델 id. 미지정이면 기본(가장 저렴) 모델. */
+  model?: string;
 }
 
 export async function generateStudioImage(input: GenerateInput): Promise<GenerateResult> {
@@ -141,6 +187,27 @@ export async function generateStudioImage(input: GenerateInput): Promise<Generat
     // 디자인(가계정) 모드: 실제 호출 없이 흐름만 확인한다.
     await new Promise((r) => setTimeout(r, 1200));
     return { ok: true, imageUrl: mockImage(input.aspect) };
+  }
+
+  const model = input.model ?? DEFAULT_IMAGE_STUDIO_MODEL;
+
+  // GPT Image 2 는 Google SDK 를 타지 않는다. 전용 서비스로 우회하되
+  // 반환 계약(GenerateResult)은 동일하게 맞춘다.
+  if (isOpenAIImageModel(model)) {
+    try {
+      const imageUrl = await generateSingleImageOpenAI(prompt, input.references, input.aspect);
+      return { ok: true, imageUrl };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('no_api_key') || msg.includes('OPENAI_API_KEY')) {
+        return { ok: false, failure: 'no_api_key', message: msg };
+      }
+      // OpenAI 는 정책 위반을 400 + moderation 문구로 알린다.
+      if (/moderation|safety|policy|rejected/i.test(msg)) {
+        return { ok: false, failure: 'blocked', message: msg };
+      }
+      return { ok: false, failure: 'error', message: msg };
+    }
   }
 
   const ai = await proxyClient();
@@ -169,7 +236,7 @@ export async function generateStudioImage(input: GenerateInput): Promise<Generat
     }
 
     const response = await ai.models.generateContent({
-      model: IMAGE_STUDIO_MODEL,
+      model,
       contents: { parts },
       config: {
         responseModalities: ['Image'],

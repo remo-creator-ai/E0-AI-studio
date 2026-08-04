@@ -27,9 +27,9 @@ import { ProjectStep, VisualStyle } from '../types';
 import { STYLE_PROMPT_GUIDES } from '../constants';
 import {
   generateStudioImage, isImageApiReady,
-  STUDIO_ASPECTS, DEFAULT_ASPECT, IMAGE_STUDIO_CREDIT_COST, IMAGE_STUDIO_MODEL,
-  MULTISHOT_PACKS, DEFAULT_MULTISHOT_PACK,
-  IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, IMAGE_STUDIO_MULTISHOT_SHOTS, IMAGE_STUDIO_MULTISHOT_SHEET_COST,
+  STUDIO_ASPECTS, DEFAULT_ASPECT,
+  IMAGE_STUDIO_MODELS, DEFAULT_IMAGE_STUDIO_MODEL, imageStudioCreditCost,
+  MULTISHOT_PACKS, DEFAULT_MULTISHOT_PACK, IMAGE_STUDIO_MULTISHOT_SHOTS,
   type StudioAspect, type GenerateFailure, type MultishotPack,
 } from '../services/imageStudioService';
 import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
@@ -167,6 +167,8 @@ export const ImageStudio: React.FC = () => {
   const [mode, setMode] = useState<Mode>('text');
   const [prompt, setPrompt] = useState('');
   const [aspect, setAspect] = useState<StudioAspect>(DEFAULT_ASPECT);
+  // 기본값은 가장 저렴한 모델 (imageStudioService 가 단가로 계산해 노출한다).
+  const [model, setModel] = useState<string>(DEFAULT_IMAGE_STUDIO_MODEL);
   // 스타일 기본값은 "선택 없음". Cinematic 을 강제하면 로고·라인아트 등의 결과가 왜곡된다.
   const [style, setStyle] = useState<SelectedStyle | null>(null);
   const [isStylePopup, setIsStylePopup] = useState(false);
@@ -269,11 +271,13 @@ export const ImageStudio: React.FC = () => {
     return () => { cancelled = true; };
   }, [pendingRef, clearPendingRef]);
 
-  // 단일: 1cr / 멀티샷 개별: 6cr (성공한 샷만 차감, 잔액 검사는 최대치)
-  // 멀티샷 시트: 1cr (API 1회, 2x3 그리드 한 장)
+  // 단가는 모델별로 다르다 (장당 원가 차이가 커서 단일 단가면 비싼 모델이 적자).
+  // 단일: 모델 단가 1장 / 멀티샷 개별: 모델 단가 × 6샷 (성공한 샷만 차감, 잔액 검사는 최대치)
+  // 멀티샷 시트: 모델 단가 1장 (API 1회, 2x3 그리드 한 장)
+  const unitCost = imageStudioCreditCost(model);
   const cost = mode === 'multishot'
-    ? (multishotAsSheet ? IMAGE_STUDIO_MULTISHOT_SHEET_COST : IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT * IMAGE_STUDIO_MULTISHOT_SHOTS)
-    : IMAGE_STUDIO_CREDIT_COST;
+    ? (multishotAsSheet ? unitCost : unitCost * IMAGE_STUDIO_MULTISHOT_SHOTS)
+    : unitCost;
   const enoughCredits = hasEnough(cost);
   // 이미지 모드: 참고 이미지 필수. 멀티샷: 참고 이미지 필수, 프롬프트는 선택.
   const needsRef = (mode === 'image' || mode === 'multishot') && refs.length === 0;
@@ -397,6 +401,7 @@ export const ImageStudio: React.FC = () => {
       prompt: composedPrompt(),
       aspect,
       references: mode === 'image' ? refs.map((r) => r.dataUrl) : undefined,
+      model,
     });
     if (res.ok && res.imageUrl) {
       setImage(res.imageUrl);
@@ -416,7 +421,7 @@ export const ImageStudio: React.FC = () => {
           aspect,
           styleKind,
           styleValue,
-          model: IMAGE_STUDIO_MODEL,
+          model,
           dataUrl: res.imageUrl,
         });
         if (hres.ok && hres.item) {
@@ -441,10 +446,11 @@ export const ImageStudio: React.FC = () => {
       prompt: composed,
       aspect,
       references: refs.length > 0 ? refs.map((r) => r.dataUrl) : undefined,
+      model,
     });
     if (res.ok && res.imageUrl) {
       const imageUrl = res.imageUrl;
-      await deduct(IMAGE_STUDIO_MULTISHOT_COST_PER_SHOT, `image_studio:multishot:${aspect}:${shotPreset.id}`);
+      await deduct(unitCost, `image_studio:multishot:${aspect}:${shotPreset.id}`);
       let historyId: string | undefined;
       if (user) {
         const hres = await saveHistory({
@@ -453,7 +459,7 @@ export const ImageStudio: React.FC = () => {
           aspect,
           styleKind: 'preset',
           styleValue: `multishot:${shotPreset.id}`,
-          model: IMAGE_STUDIO_MODEL,
+          model,
           dataUrl: imageUrl,
         });
         if (hres.ok && hres.item) {
@@ -503,11 +509,12 @@ export const ImageStudio: React.FC = () => {
         prompt: composedSheet,
         aspect,
         references: refs.length > 0 ? refs.map((r) => r.dataUrl) : undefined,
+        model,
       });
 
       if (res.ok && res.imageUrl) {
         setImage(res.imageUrl);
-        await deduct(IMAGE_STUDIO_MULTISHOT_SHEET_COST, `image_studio:multishot-sheet:${aspect}:${pack.id}`);
+        await deduct(unitCost, `image_studio:multishot-sheet:${aspect}:${pack.id}`);
         // 히스토리 적재 — style_value 를 'multishot-sheet:{packId}' 로 남겨 Remix 시 추적 가능.
         setCurrentHistoryId(null);
         if (user) {
@@ -517,7 +524,7 @@ export const ImageStudio: React.FC = () => {
             aspect,
             styleKind: 'preset',
             styleValue: `multishot-sheet:${pack.id}`,
-            model: IMAGE_STUDIO_MODEL,
+            model,
             dataUrl: res.imageUrl,
           });
           if (hres.ok && hres.item) {
@@ -920,6 +927,23 @@ export const ImageStudio: React.FC = () => {
           </span>
           <ChevronRight size={16} className="text-zinc-400 ml-auto" />
         </button>
+
+        {/* 생성 모델 — 기본값은 가장 저렴한 모델. 단가가 모델마다 달라 옆에 함께 보여준다. */}
+        <label className="text-xs font-bold text-zinc-600">{t('imageStudio.model.label')}</label>
+        <div className="relative mt-1.5 mb-5">
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full appearance-none px-4 py-3 pr-10 rounded-2xl border border-zinc-200 bg-white text-sm font-bold text-zinc-900 outline-none focus:border-primary cursor-pointer"
+          >
+            {IMAGE_STUDIO_MODELS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label} · {m.description} · {m.creditCost}cr
+              </option>
+            ))}
+          </select>
+          <ChevronRight size={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-zinc-400" />
+        </div>
 
         {/* 이미지 형태 */}
         <label className="text-xs font-bold text-zinc-600">{t('imageStudio.aspect.label')}</label>

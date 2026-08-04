@@ -57,10 +57,12 @@ export const SCENE_DURATION_MAP: Record<SceneCount, number> = {
   [SceneCount.CUTS_18]: 60,
 };
 
+// 라벨은 "Nano Banana" 별명 축으로 통일한다. 예전에는 3.1 Flash 만 별명으로,
+// 2.5 Flash 는 모델명으로 표기해 같은 계열의 구/신 세대가 서로 다른 것처럼 보였다.
+// (gemini-2.5-flash-image = 1세대 Nano Banana 는 구세대라 2026-08 목록에서 제외)
 export enum ImageModel {
   GEMINI_3_1_FLASH = 'gemini-3.1-flash-image-preview',
   GEMINI_3_PRO = 'gemini-3-pro-image-preview',
-  GEMINI_2_5_FLASH = 'gemini-2.5-flash-image',
   GPT_IMAGE_2 = 'gpt-image-2'
 }
 
@@ -71,14 +73,9 @@ export const IMAGE_MODEL_INFO: Record<ImageModel, { label: string; description: 
     creditCost: 3,
   },
   [ImageModel.GEMINI_3_PRO]: {
-    label: 'Gemini 3 Pro',
-    description: 'Best Quality (Nano Banana Pro)',
+    label: 'Nano Banana Pro',
+    description: 'Best Quality',
     creditCost: 5,
-  },
-  [ImageModel.GEMINI_2_5_FLASH]: {
-    label: 'Gemini 2.5 Flash',
-    description: 'Fast & Efficient',
-    creditCost: 2,
   },
   // GPT Image 2 는 임의 해상도를 지원해 시트를 3840x2160(4K)로 뽑는다.
   // 3×3 그리드 기준 컷 1개가 1280x720 으로, Kling std 입력 해상도와 정확히 맞는다.

@@ -208,7 +208,6 @@ export async function generate3x3GridImage(prompt: string, referenceImagesBase64
 const IMAGE_SIZE_LADDER: Record<string, string[]> = {
   'gemini-3-pro-image-preview': ['4K', '2K', '1K'],
   'gemini-3.1-flash-image-preview': ['2K', '1K'],
-  'gemini-2.5-flash-image': ['2K', '1K'],
 };
 const DEFAULT_IMAGE_SIZE_LADDER = ['2K', '1K'];
 

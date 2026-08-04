@@ -773,6 +773,9 @@
       "placeholder": "Describe the image you want to create.",
       "example": "e.g. A Korean team meeting in a sunlit modern office"
     },
+    "model": {
+      "label": "Model"
+    },
     "aspect": {
       "label": "Image shape",
       "square": "Square",

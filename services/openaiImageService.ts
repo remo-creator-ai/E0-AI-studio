@@ -40,14 +40,28 @@ export function isOpenAIImageModel(model?: string): boolean {
  * 4K 랜드스케이프(3840x2160 ≈ 8.3MP)와 픽셀 수를 맞춰 상한을 넘기지 않기
  * 위해서다. 3072x3072(9.4MP)는 상한을 넘길 소지가 있다.
  */
-const SIZE_BY_ASPECT: Record<string, string> = {
+const SHEET_SIZE_BY_ASPECT: Record<string, string> = {
   '16:9': '3840x2160',
   '9:16': '2160x3840',
   '1:1': '2160x2160',
 };
 
-function sizeFor(aspectRatio?: string): string {
-  return SIZE_BY_ASPECT[aspectRatio ?? '16:9'] ?? SIZE_BY_ASPECT['16:9'];
+/**
+ * 단건 이미지용 해상도. 9등분하지 않으므로 4K 는 과하다.
+ * 원가가 해상도에 비례해 오르는데(2K ~$0.05 vs 4K ~$0.06) 얻는 게 없다.
+ */
+const SINGLE_SIZE_BY_ASPECT: Record<string, string> = {
+  '16:9': '2048x1152',
+  '9:16': '1152x2048',
+  '1:1': '2048x2048',
+};
+
+/** 'sheet' = 3×3 그리드(9등분 전제, 4K) · 'single' = 단건(2K) */
+export type OpenAIImageTier = 'sheet' | 'single';
+
+function sizeFor(aspectRatio: string | undefined, tier: OpenAIImageTier): string {
+  const table = tier === 'sheet' ? SHEET_SIZE_BY_ASPECT : SINGLE_SIZE_BY_ASPECT;
+  return table[aspectRatio ?? '16:9'] ?? table['16:9'];
 }
 
 async function authHeader(): Promise<string> {
@@ -88,7 +102,7 @@ async function readImage(res: Response): Promise<string> {
  * quality 는 'high' 고정 — 스토리보드 시트는 9컷을 한 장에 담으므로
  * 컷당 디테일이 곧 결과 품질이다.
  */
-async function generate(prompt: string, aspectRatio?: string): Promise<string> {
+async function generate(prompt: string, aspectRatio: string | undefined, tier: OpenAIImageTier): Promise<string> {
   const res = await fetch(`${OPENAI_API_BASE}/v1/images/generations`, {
     method: 'POST',
     headers: {
@@ -98,7 +112,7 @@ async function generate(prompt: string, aspectRatio?: string): Promise<string> {
     body: JSON.stringify({
       model: GPT_IMAGE_MODEL,
       prompt,
-      size: sizeFor(aspectRatio),
+      size: sizeFor(aspectRatio, tier),
       quality: 'high',
       n: 1,
       output_format: 'png',
@@ -118,12 +132,13 @@ async function generate(prompt: string, aspectRatio?: string): Promise<string> {
 async function generateWithRefs(
   prompt: string,
   refs: string[],
-  aspectRatio?: string,
+  aspectRatio: string | undefined,
+  tier: OpenAIImageTier,
 ): Promise<string> {
   const form = new FormData();
   form.append('model', GPT_IMAGE_MODEL);
   form.append('prompt', prompt);
-  form.append('size', sizeFor(aspectRatio));
+  form.append('size', sizeFor(aspectRatio, tier));
   form.append('quality', 'high');
   form.append('n', '1');
   form.append('output_format', 'png');
@@ -156,8 +171,8 @@ export async function generateGridImageOpenAI(
 ): Promise<string> {
   const full = `${prompt}. High quality, detailed textures, natural lighting. No text or captions of any kind on the image.`;
   return referenceImages && referenceImages.length > 0
-    ? generateWithRefs(full, referenceImages, aspectRatio)
-    : generate(full, aspectRatio);
+    ? generateWithRefs(full, referenceImages, aspectRatio, 'sheet')
+    : generate(full, aspectRatio, 'sheet');
 }
 
 /** 단건 이미지 생성. geminiService.generateSingleImage 대응판. */
@@ -168,6 +183,6 @@ export async function generateSingleImageOpenAI(
 ): Promise<string> {
   const full = `${prompt}. High quality, detailed, professional photography.`;
   return referenceImages && referenceImages.length > 0
-    ? generateWithRefs(full, referenceImages, aspectRatio)
-    : generate(full, aspectRatio);
+    ? generateWithRefs(full, referenceImages, aspectRatio, 'single')
+    : generate(full, aspectRatio, 'single');
 }
