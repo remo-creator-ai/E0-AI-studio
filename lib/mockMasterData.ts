@@ -6,7 +6,7 @@
 // =============================================================
 
 export const MASTER_CREDIT_QUOTA = 60000; // 운영사가 설정하는 부여 한도(누계)
-export const SIGNUP_INITIAL_CREDITS = 20; // 구글 가입 시 자동 부여 크레딧
+export const SIGNUP_INITIAL_CREDITS = 100; // 구글 가입 시 자동 부여 크레딧 (Kling 5초 720p 30cr × 3편 여유)
 
 export type TxnType = 'deduct' | 'manual' | 'refund';
 
