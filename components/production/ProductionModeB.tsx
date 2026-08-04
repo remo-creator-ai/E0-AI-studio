@@ -36,7 +36,7 @@ import {
   type ConcreteAspect, type VideoDuration, type VideoResolution,
 } from '../../services/videoStudioService';
 import { upscaleSceneImage, IMAGE_UPSCALE_COST } from '../../services/imageUpscaleService';
-import { saveVideoHistory } from '../../services/videoHistoryService';
+import { saveVideoHistory, refreshVideoSignedUrl } from '../../services/videoHistoryService';
 import { useVideoGenStore, type VideoJob } from '../../store/videoGenStore';
 import {
   useModeBState, DEFAULT_SCENE_SETTINGS,
@@ -123,19 +123,30 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   }, [project?.id, scenes, project, ensureProject]);
 
   // 기존 저장된 video_url 있는 씬 → 첫 테이크로 seed (씬당 1회, 중복 방지 store 내부에서)
+  // signed URL 은 1시간 만료라 마운트 시점에 재발급 후 seed 한다. 재발급된 URL 은
+  // updateScene 으로 프로젝트에도 반영해 새로고침 시 다시 만료된 URL 이 저장되지 않게 한다.
   useEffect(() => {
-    scenes.forEach((s) => {
-      if (!s.video_url) return;
-      seedTakeFromPersisted(s.id, {
-        id: `persisted-${s.id}`,
-        videoUrl: s.video_url,
-        durationSec: 5, // 기존 저장에는 길이 정보 없음 → 기본값
-        resolution: '720p',
-        hasEndFrame: false,
-        createdAt: 0, // 가장 오래된 것으로 취급
-      });
-    });
-    // scenes 배열 참조 자체 변경 시만 재실행
+    if (!project) return;
+    let cancelled = false;
+    (async () => {
+      for (const s of scenes) {
+        if (!s.video_url || cancelled) continue;
+        const refreshed = await refreshVideoSignedUrl(s.video_url);
+        if (cancelled) return;
+        if (refreshed !== s.video_url) {
+          updateScene(s.id, { video_url: refreshed });
+        }
+        seedTakeFromPersisted(s.id, {
+          id: `persisted-${s.id}`,
+          videoUrl: refreshed,
+          durationSec: 5,
+          resolution: '720p',
+          hasEndFrame: false,
+          createdAt: 0,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenes.length, project?.id]);
 

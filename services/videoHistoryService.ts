@@ -193,6 +193,25 @@ export async function countVideoHistory(ownerId: string): Promise<number> {
   return count ?? 0;
 }
 
+// ================= signed URL 만료 대응 · 재발급 =================
+//
+// project.scenes[i].video_url 에는 저장 시점의 signed URL 이 박혀 있다.
+// SIGNED_TTL(1h) 이 지나면 그 URL 은 403 이 되어 <video> 가 검은 화면으로 표시된다.
+// 이 함수는 만료된 supabase 서명 URL 을 파싱해 storage_path 를 추출한 뒤 재발급한다.
+// supabase 형식이 아닌 URL 은 그대로 반환 (예: Kling 직접 URL).
+export async function refreshVideoSignedUrl(oldUrl: string): Promise<string> {
+  if (!oldUrl) return oldUrl;
+  // Supabase signed URL 패턴: <base>/storage/v1/object/sign/<bucket>/<path>?token=...
+  const m = oldUrl.match(/\/storage\/v1\/object\/sign\/([^/]+)\/(.+?)\?/);
+  if (!m) return oldUrl;
+  const [, bucketId, path] = m;
+  if (bucketId !== BUCKET) return oldUrl; // 다른 버킷은 재발급 못 함
+  if (MOCK_MODE) return oldUrl;
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_TTL);
+  if (error || !data?.signedUrl) return oldUrl;
+  return data.signedUrl;
+}
+
 // ================= 개별 삭제 =================
 export async function deleteVideoHistoryItem(id: string, storagePath: string): Promise<boolean> {
   if (MOCK_MODE) {
