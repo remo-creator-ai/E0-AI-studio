@@ -405,7 +405,7 @@ export const LandingPage: React.FC<LandingPageProps> = () => {
             <div className="flex items-center gap-3">
               <img src="/sodami.png" alt="소담이" className="w-8 h-8 rounded-lg shrink-0 object-cover" />
               <span className="text-lg font-black tracking-tight hidden sm:block">
-                Sodam AI Studio
+                소담 AI 스튜디오
               </span>
             </div>
 

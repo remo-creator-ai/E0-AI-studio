@@ -144,7 +144,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
       <aside className={`fixed inset-y-0 left-0 z-[60] w-80 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 overflow-y-auto print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-3 px-2 shrink-0">
           <img src="/sodami.png" alt="소담이" className="w-9 h-9 rounded-xl shrink-0 object-cover" />
-          <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900">Sodam <span className="text-primary">AI</span> Studio</h1>
+          <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900">소담 <span className="text-primary">AI</span> 스튜디오</h1>
         </div>
 
         {/* min-h-0 + overflow-y-auto: 화면이 짧으면 메뉴 영역만 안에서 스크롤되고
@@ -288,6 +288,13 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Sponsor / Powered by — 사이드바 최하단. 저작권처럼 눈에 띄지 않되 항상 노출. */}
+        <div className="shrink-0 text-center text-[10px] text-zinc-400 leading-relaxed">
+          Sponsored by <span className="font-bold text-zinc-500">openknwol</span>
+          <br />
+          AI powered by <span className="font-bold text-primary">REMO</span>
         </div>
       </aside>
 
