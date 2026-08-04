@@ -540,6 +540,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             onToggleSelect={() => toggleSelect(scene.id)}
             onSetMode={(m) => setCardModeStore(scene.id, m)}
             onPatchSettings={(patch) => patchSettings(scene.id, patch)}
+            onPatchScene={(patch) => updateScene(scene.id, patch)}
             onUpscale={() => runUpscale(scene)}
             onGenerate={() => runGenerate(scene)}
             onRegenerate={async () => {
@@ -684,6 +685,7 @@ interface SceneCardProps {
   onToggleSelect: () => void;
   onSetMode: (m: CardMode) => void;
   onPatchSettings: (patch: Partial<SceneSettings>) => void;
+  onPatchScene: (patch: Partial<Scene>) => void;
   onUpscale: () => void;
   onGenerate: () => void;
   onRegenerate: () => void;
@@ -695,7 +697,7 @@ interface SceneCardProps {
 const SceneCard: React.FC<SceneCardProps> = ({
   scene, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
   job, nextSceneImage, language, displayPrompts,
-  onToggleSelect, onSetMode, onPatchSettings, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
+  onToggleSelect, onSetMode, onPatchSettings, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
   onPrev, onNext,
 }) => {
   const done = !!scene.video_url;
@@ -826,9 +828,116 @@ const SceneCard: React.FC<SceneCardProps> = ({
             failedError={job?.error}
             onUpscale={onUpscale}
             onOpenEditor={() => onSetMode('editor')}
+            onPatchScene={onPatchScene}
           />
         )}
       </div>
+    </div>
+  );
+};
+
+// =============================================================
+//  이미지 프롬프트 편집기 (한글/영문 토글)
+//
+//  Scene 필드 매핑:
+//    - image_prompt_en: 이미지 생성용 영문 프롬프트 (Gemini/Imagen 이 실제로 씀)
+//    - content_kr: 씬 콘텐츠 설명 (한국어 · 사용자 이해용)
+//
+//  두 필드가 semantic 이 완벽히 같지 않지만, 사용자 관점에서는
+//  "이 씬의 프롬프트" 를 한/영 두 언어로 보고 편집하는 게 자연스럽다.
+//  Korean-only 리팩터에서 이 이중구조는 재정리 예정 (메모리 참조).
+// =============================================================
+interface ImagePromptEditorProps {
+  scene: Scene;
+  onPatch: (patch: Partial<Scene>) => void;
+}
+const ImagePromptEditor: React.FC<ImagePromptEditorProps> = ({ scene, onPatch }) => {
+  const [lang, setLang] = useState<'ko' | 'en'>('ko');
+  const [expanded, setExpanded] = useState(false);
+  const [draft, setDraft] = useState<string>('');
+  const [dirty, setDirty] = useState(false);
+
+  // scene 이 바뀌면 draft 리셋
+  useEffect(() => {
+    setDraft(lang === 'ko' ? (scene.content_kr ?? '') : (scene.image_prompt_en ?? ''));
+    setDirty(false);
+  }, [scene.id, scene.content_kr, scene.image_prompt_en, lang]);
+
+  const save = () => {
+    const patch: Partial<Scene> = lang === 'ko'
+      ? { content_kr: draft.trim() }
+      : { image_prompt_en: draft.trim() };
+    onPatch(patch);
+    setDirty(false);
+  };
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-zinc-100 bg-zinc-50">
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">이미지 프롬프트</span>
+        {/* 언어 토글 */}
+        <div className="flex gap-0.5 p-0.5 bg-white rounded-lg border border-zinc-200 ml-1">
+          {(['ko', 'en'] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`px-2 py-0.5 rounded text-[10px] font-black transition-colors ${
+                lang === l ? 'bg-primary text-white' : 'text-zinc-500 hover:text-zinc-800'
+              }`}
+            >
+              {l === 'ko' ? '한글' : '영문'}
+            </button>
+          ))}
+        </div>
+        <span className="text-[10px] text-zinc-400 ml-auto">
+          {lang === 'ko' ? 'content_kr' : 'image_prompt_en'}
+        </span>
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="text-[11px] text-primary font-bold hover:underline"
+        >
+          {expanded ? '접기' : '펼치기'}
+        </button>
+      </div>
+      {expanded ? (
+        <div className="p-3 space-y-2">
+          <textarea
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); setDirty(true); }}
+            rows={4}
+            placeholder={lang === 'ko' ? '이 씬의 한국어 설명' : '이미지 생성용 영문 프롬프트'}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
+          />
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-zinc-400">
+              {dirty ? '⚠️ 저장 필요' : '저장됨 · 스토리보드 재생성 시 이 프롬프트 사용'}
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => {
+                  setDraft(lang === 'ko' ? (scene.content_kr ?? '') : (scene.image_prompt_en ?? ''));
+                  setDirty(false);
+                }}
+                disabled={!dirty}
+                className="px-2.5 py-1 rounded-md bg-white border border-zinc-200 hover:bg-zinc-50 text-[11px] font-bold text-zinc-700 disabled:opacity-40"
+              >
+                되돌리기
+              </button>
+              <button
+                onClick={save}
+                disabled={!dirty}
+                className="px-3 py-1 rounded-md bg-primary hover:bg-[#003E99] text-white text-[11px] font-black disabled:opacity-40"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="p-3 text-xs text-zinc-600 leading-relaxed line-clamp-3">
+          {(lang === 'ko' ? scene.content_kr : scene.image_prompt_en) || <span className="text-zinc-400 italic">비어있음</span>}
+        </p>
+      )}
     </div>
   );
 };
@@ -846,13 +955,15 @@ interface SceneActionPickerProps {
   failedError?: string;
   onUpscale: () => void;
   onOpenEditor: () => void;
+  /** 이미지 프롬프트 편집 반영 (image_prompt_en 또는 content_kr 필드) */
+  onPatchScene: (patch: Partial<Scene>) => void;
 }
 const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
-  scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError, onUpscale, onOpenEditor,
+  scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError, onUpscale, onOpenEditor, onPatchScene,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-5">
-      {/* 좌: START 프레임 + 프롬프트 */}
+      {/* 좌: START 프레임 + 이미지 프롬프트 (편집 가능 · 언어 토글) */}
       <div className="space-y-3">
         <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">START 프레임 (씬 이미지)</div>
         <div className="aspect-video rounded-2xl overflow-hidden bg-zinc-900 flex items-center justify-center">
@@ -865,14 +976,7 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
             </div>
           )}
         </div>
-        {scene.image_prompt_en && (
-          <details className="text-[11px] text-zinc-500">
-            <summary className="cursor-pointer font-bold hover:text-primary">이미지 프롬프트 보기</summary>
-            <p className="mt-1 p-2 rounded-lg bg-zinc-50 border border-zinc-100 leading-relaxed">
-              {scene.image_prompt_en}
-            </p>
-          </details>
-        )}
+        <ImagePromptEditor scene={scene} onPatch={onPatchScene} />
       </div>
 
       {/* 우: 액션 3개 */}
