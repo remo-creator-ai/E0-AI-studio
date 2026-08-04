@@ -69,7 +69,8 @@ function pickEvenlySpaced(total: number, pick: number): number[] {
   return Array.from(new Set(idxs));
 }
 
-/** 문자열을 max 이하로 잘라내되 가능하면 문장(마침표) 경계에서 자른다. */
+/** 문자열을 max 이하로 잘라내되 가능하면 문장(마침표) 경계에서 자른다.
+ *  "..." 폴백은 프롬프트 흐름을 방해해 없앰. 단어 경계에서 끝내는 것으로 대체. */
 function truncateSmart(text: string, max: number): string {
   const t = text.trim();
   if (t.length <= max) return t;
@@ -83,8 +84,8 @@ function truncateSmart(text: string, max: number): string {
   const best = Math.max(...boundaries);
   if (best > max * 0.6) return cut.slice(0, best + 1).trim();
   const lastSpace = cut.lastIndexOf(' ');
-  if (lastSpace > max * 0.6) return cut.slice(0, lastSpace).trim() + '...';
-  return cut.trim() + '...';
+  if (lastSpace > max * 0.6) return cut.slice(0, lastSpace).trim() + '.';
+  return cut.trim() + '.';
 }
 
 /** 시퀀스 프롬프트 조립. Kling 2500 자 상한(안전 2400) 을 강제로 지킨다.
