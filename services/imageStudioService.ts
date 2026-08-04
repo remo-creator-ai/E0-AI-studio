@@ -163,10 +163,17 @@ export interface GenerateResult {
 }
 
 /** 키 미등록 상태를 UI 가 미리 알 수 있도록 별도 노출 (생성 버튼 안내용).
- *  프록시의 /health 는 설정 여부(boolean)만 알려주고 키 값은 돌려주지 않는다. */
-export async function isImageApiReady(): Promise<boolean> {
+ *  프록시의 /health 는 설정 여부(boolean)만 알려주고 키 값은 돌려주지 않는다.
+ *
+ *  모델별로 필요한 키가 다르다:
+ *    - GPT Image 2 (gpt-image-*) → OPENAI_API_KEY
+ *    - Nano Banana 계열 (gemini-*) → GEMINI_API_KEY
+ *  모델을 안 넘기면 기본 모델(가장 저렴 = Gemini) 기준으로 판정한다. */
+export async function isImageApiReady(model?: string): Promise<boolean> {
   if (MOCK_MODE) return true;
   const health = await proxyHealth();
+  const chosen = model ?? DEFAULT_IMAGE_STUDIO_MODEL;
+  if (isOpenAIImageModel(chosen)) return Boolean(health?.openai);
   return Boolean(health?.gemini);
 }
 

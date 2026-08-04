@@ -335,6 +335,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.assets')}</span>
                     ) : currentStep === ProjectStep.IMAGE_STUDIO ? (
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.imageStudio')}</span>
+                    ) : currentStep === ProjectStep.VIDEO_STUDIO ? (
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.videoStudio')}</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button

@@ -212,7 +212,8 @@ export const ImageStudio: React.FC = () => {
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   const { confirm: modalConfirm } = useModal();
 
-  useEffect(() => { isImageApiReady().then(setApiReady); }, []);
+  // model 이 바뀌면 그 모델에 필요한 키(OpenAI 또는 Gemini)로 다시 검사.
+  useEffect(() => { isImageApiReady(model).then(setApiReady); }, [model]);
   // 새 이미지가 뜨면 이전 저장 상태를 초기화한다.
   useEffect(() => { setSaveState({ kind: 'idle' }); }, [image]);
 
