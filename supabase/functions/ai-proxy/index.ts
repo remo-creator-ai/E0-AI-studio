@@ -14,6 +14,7 @@
 //   KLING_API_KEY             — 신규 단일 키 방식 (트라이얼/간편, Bearer 직전달) — 우선순위 1
 //   KLING_ACCESS_KEY_ID       — Legacy JWT 방식 (엔터프라이즈) — 폴백
 //   KLING_ACCESS_KEY_SECRET   — Legacy JWT 방식 — 폴백
+//   OPENAI_API_KEY            — GPT Image 2 (이미지 생성)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 는 프로젝트에 기본 주입됨
 //
 // 라우팅:
@@ -21,6 +22,10 @@
 //     @google/genai SDK 의 httpOptions.baseUrl 을 이 함수로 지정하면 SDK 가
 //     알아서 이 경로로 호출한다. 덕분에 클라이언트는 클라이언트 생성부만
 //     바뀌고 프롬프트·모델·응답 파싱은 그대로다.
+//   /ai-proxy/kling/...   → api.klingai.com
+//   /ai-proxy/openai/...  → api.openai.com (GPT Image 2)
+//     주의: '/openai' 분기는 Gemini 분기보다 먼저 평가해야 한다. Gemini 쪽이
+//     '/v1' 접두사를 통째로 받으므로 순서가 뒤바뀌면 Google 로 잘못 나간다.
 //
 // 보안: 호출자 JWT 를 검증하고 profiles.status='active' 인 사용자만 통과시킨다.
 
@@ -28,6 +33,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const GEMINI_HOST = 'https://generativelanguage.googleapis.com'
 const KLING_HOST = 'https://api.klingai.com'
+const OPENAI_HOST = 'https://api.openai.com'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +52,11 @@ const corsHeaders = {
  */
 async function geminiKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
   return config(admin, 'gemini_api_key', 'GEMINI_API_KEY')
+}
+
+/** OpenAI 키 조달 (GPT Image 2). 조달 규칙은 Gemini 와 동일. */
+async function openaiKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
+  return config(admin, 'openai_api_key', 'OPENAI_API_KEY')
 }
 
 /**
@@ -155,7 +166,43 @@ Deno.serve(async (req) => {
       ok: true,
       gemini: Boolean(await geminiKey(admin)),
       kling: Boolean(await klingKeys(admin)),
+      openai: Boolean(await openaiKey(admin)),
     })
+  }
+
+  // ---------- 2.6 OpenAI 포워드 (GPT Image 2) ----------
+  // /ai-proxy/openai/v1/images/generations → https://api.openai.com/v1/images/generations
+  //
+  // ⚠️ Gemini/Kling 분기보다 먼저 와야 한다. 아래 Gemini 분기가 '/v1' 로 시작하는
+  //    경로를 전부 가로채므로, '/openai/v1/...' 도 그쪽으로 빨려들어간다.
+  //
+  // ⚠️ 본문을 req.text() 로 읽지 않는다. 참조 이미지를 쓰는 /v1/images/edits 는
+  //    multipart/form-data 라서 텍스트로 디코딩하면 바이너리가 깨진다.
+  //    req.body 를 그대로 흘려보내고 Content-Type(boundary 포함)만 전달한다.
+  if (rest.startsWith('/openai')) {
+    const apiKey = await openaiKey(admin)
+    if (!apiKey) return json({ error: 'OPENAI_API_KEY 가 설정되지 않았습니다.' }, 503)
+
+    const target = `${OPENAI_HOST}${rest.slice('/openai'.length)}${url.search}`
+
+    const headers = new Headers()
+    const ct = req.headers.get('Content-Type')
+    if (ct) headers.set('Content-Type', ct)
+    headers.set('Authorization', `Bearer ${apiKey}`)
+
+    const hasBody = req.method !== 'GET' && req.method !== 'HEAD'
+    const upstream = await fetch(target, {
+      method: req.method,
+      headers,
+      body: hasBody ? req.body : undefined,
+      // 스트림 본문을 그대로 전달할 때 Deno/undici 가 요구한다.
+      ...(hasBody ? { duplex: 'half' } : {}),
+    } as RequestInit)
+
+    const respHeaders = new Headers(corsHeaders)
+    const upstreamCt = upstream.headers.get('Content-Type')
+    if (upstreamCt) respHeaders.set('Content-Type', upstreamCt)
+    return new Response(upstream.body, { status: upstream.status, headers: respHeaders })
   }
 
   // ---------- 3. Gemini 포워드 ----------

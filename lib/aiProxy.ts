@@ -62,7 +62,7 @@ export async function proxyFetch(googleUrl: string, init?: RequestInit): Promise
  * 공급자 키가 서버에 설정돼 있는지 여부만 확인한다.
  * 프록시의 /health 는 boolean 만 돌려주고 키 값은 반환하지 않는다.
  */
-export async function proxyHealth(): Promise<{ gemini: boolean; kling: boolean } | null> {
+export async function proxyHealth(): Promise<{ gemini: boolean; kling: boolean; openai: boolean } | null> {
   const token = await accessToken();
   if (!token) return null;
   try {
@@ -71,7 +71,11 @@ export async function proxyHealth(): Promise<{ gemini: boolean; kling: boolean }
     });
     if (!res.ok) return null;
     const body = await res.json();
-    return { gemini: Boolean(body?.gemini), kling: Boolean(body?.kling) };
+    return {
+      gemini: Boolean(body?.gemini),
+      kling: Boolean(body?.kling),
+      openai: Boolean(body?.openai),
+    };
   } catch {
     return null;
   }

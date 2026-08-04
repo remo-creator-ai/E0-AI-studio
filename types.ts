@@ -60,7 +60,8 @@ export const SCENE_DURATION_MAP: Record<SceneCount, number> = {
 export enum ImageModel {
   GEMINI_3_1_FLASH = 'gemini-3.1-flash-image-preview',
   GEMINI_3_PRO = 'gemini-3-pro-image-preview',
-  GEMINI_2_5_FLASH = 'gemini-2.5-flash-image'
+  GEMINI_2_5_FLASH = 'gemini-2.5-flash-image',
+  GPT_IMAGE_2 = 'gpt-image-2'
 }
 
 export const IMAGE_MODEL_INFO: Record<ImageModel, { label: string; description: string; creditCost: number }> = {
@@ -78,6 +79,14 @@ export const IMAGE_MODEL_INFO: Record<ImageModel, { label: string; description: 
     label: 'Gemini 2.5 Flash',
     description: 'Fast & Efficient',
     creditCost: 2,
+  },
+  // GPT Image 2 는 임의 해상도를 지원해 시트를 3840x2160(4K)로 뽑는다.
+  // 3×3 그리드 기준 컷 1개가 1280x720 으로, Kling std 입력 해상도와 정확히 맞는다.
+  // 원가 ~$0.06/장(₩82) → 5cr(₩250) 기준 마진 약 +205%.
+  [ImageModel.GPT_IMAGE_2]: {
+    label: 'GPT Image 2',
+    description: '4K Sheet · Sharpest Cuts',
+    creditCost: 5,
   },
 };
 
