@@ -998,26 +998,26 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
               </button>
             </div>
           ) : (
-            <div className="aspect-video rounded-xl border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center gap-1.5 p-2 bg-zinc-50">
+            <div className="aspect-video rounded-xl border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center gap-2.5 p-3 bg-zinc-50">
               {nextSceneImage && (
                 <button
                   onClick={() => onPatch({ endImage: nextSceneImage })}
-                  className="text-[11px] font-bold text-primary hover:underline"
+                  className="px-3 py-1.5 rounded-lg bg-white border border-primary/30 text-sm font-bold text-primary hover:bg-primary hover:text-white transition-colors flex items-center gap-1.5"
                 >
-                  + 다음 씬 이미지
+                  <span className="text-base leading-none">+</span> 다음 씬 이미지
                 </button>
               )}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[11px] font-bold text-zinc-500 hover:text-primary flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:border-primary/40 hover:text-primary transition-colors flex items-center gap-1.5"
               >
-                <Upload size={11} /> 파일
+                <Upload size={14} /> 파일
               </button>
               <button
                 onClick={onOpenLibrary}
-                className="text-[11px] font-bold text-zinc-500 hover:text-primary flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-sm font-bold text-zinc-700 hover:border-primary/40 hover:text-primary transition-colors flex items-center gap-1.5"
               >
-                <Package size={11} /> 보관함
+                <Package size={14} /> 보관함
               </button>
               <input
                 ref={fileInputRef}
