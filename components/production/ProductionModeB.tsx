@@ -21,9 +21,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Clock, Download,
-  ImageUp, Loader2, Package, Play, RefreshCw, Rocket, Sparkles, Trash2,
+  DownloadCloud, ImageUp, Loader2, Package, Play, RefreshCw, Rocket, Sparkles, Trash2,
   Upload, Video, X, AlertCircle, Wand2, Film as FilmIcon,
 } from 'lucide-react';
+import JSZip from 'jszip';
 import { useStore } from '../../store';
 import { useAuthStore } from '../../store/authStore';
 import { useCreditStore } from '../../store/creditStore';
@@ -49,6 +50,25 @@ import type { Scene } from '../../types';
 const MODEL_LABEL_BASE = 'Kling ' + VIDEO_STUDIO_MODEL.replace(/^kling-v/, '').replace('-', '.');
 const MODEL_LABEL_STD = MODEL_LABEL_BASE;               // 'Kling 2.6'
 const MODEL_LABEL_PRO = `${MODEL_LABEL_BASE} pro`;      // 'Kling 2.6 pro'
+
+// ── 파일명 규칙 (Phase 2 대비) ──
+// 지금: 씬당 결과 1개 → 'scene-01.mp4' (order 는 1-based)
+// 향후: 씬당 여러 테이크 → main_take 만 파일명에 '-main' 붙임 · 나머지 테이크는 zip 미포함
+//       예: 'scene-01-main.mp4' (main), 'scene-01-take-2.mp4' (추가 다운로드 옵션)
+function sceneFilename(scene: Scene, isMain = true): string {
+  const num = String(scene.order).padStart(2, '0');
+  const tag = isMain ? '' : ''; // Phase 1: 항상 main. 향후 '-main' 태그 여기서 결정.
+  return `scene-${num}${tag}.mp4`;
+}
+
+/** 프로젝트 제목 → 파일명 안전 슬러그 */
+function slugifyForFile(title: string, fallback = 'sodam'): string {
+  const s = title.trim()
+    .replace(/[<>:"/\\|?*]+/g, '')  // 파일명 금지 문자
+    .replace(/\s+/g, '-')
+    .slice(0, 40);
+  return s || fallback;
+}
 
 // ── 로컬 타입 (재-export 목적 · 실 정의는 modeBStateStore) ──
 // SceneSettings · CardMode · UpscaleStatus 는 store 에서 import.
@@ -327,6 +347,48 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const scenesNeedingUpscale = selectedScenes.filter((s) => !isUpscaled(s) && !!s.image_url);
   const upscaleBatchCost = scenesNeedingUpscale.length * IMAGE_UPSCALE_COST;
 
+  // ── 완료된 씬 영상 배치 다운로드 (zip) ──
+  const [batchDownloading, setBatchDownloading] = useState(false);
+  const downloadAllVideos = useCallback(async () => {
+    // "선택된 씬" 중 완료된 것만 대상 (사용자가 최종 영상에 넣기로 한 씬 기준)
+    const targets = selectedScenes.filter((s) => !!s.video_url);
+    if (targets.length === 0) {
+      await alert('다운로드할 완료된 씬 영상이 없습니다.', { type: 'warning' });
+      return;
+    }
+    setBatchDownloading(true);
+    try {
+      const zip = new JSZip();
+      // 각 씬 mp4 를 병렬로 fetch 해 zip 에 담기
+      await Promise.all(
+        targets.map(async (s) => {
+          try {
+            const res = await fetch(s.video_url!);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            zip.file(sceneFilename(s), blob);
+          } catch (e) {
+            // 개별 실패는 스킵 · 나머지는 계속
+            console.warn('scene download failed:', s.order, e);
+          }
+        }),
+      );
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugifyForFile(project?.title ?? 'sodam')}-scenes.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      await alert(`배치 다운로드 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
+    } finally {
+      setBatchDownloading(false);
+    }
+  }, [selectedScenes, alert, project?.title]);
+
   const runUpscaleSelected = useCallback(async () => {
     if (scenesNeedingUpscale.length === 0) return;
     if (!hasEnough(upscaleBatchCost)) {
@@ -405,6 +467,18 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               >
                 <ImageUp size={16} />
                 선택 업스케일 ({scenesNeedingUpscale.length}개 · {upscaleBatchCost}cr)
+              </button>
+            )}
+            {/* 완료된 씬 배치 다운로드 (zip) */}
+            {doneSelectedScenes.length > 0 && (
+              <button
+                onClick={downloadAllVideos}
+                disabled={batchDownloading}
+                className="px-4 py-3 rounded-2xl bg-white border-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 font-black text-sm flex items-center gap-2 disabled:opacity-60"
+                title="선택된 씬 중 완료된 영상을 zip 으로 묶어 다운로드 (파일명: scene-01.mp4, scene-02.mp4 …)"
+              >
+                {batchDownloading ? <Loader2 size={16} className="animate-spin" /> : <DownloadCloud size={16} />}
+                {batchDownloading ? '묶는 중...' : `zip 다운로드 (${doneSelectedScenes.length}개)`}
               </button>
             )}
             <button
@@ -701,7 +775,7 @@ const SceneCard: React.FC<SceneCardProps> = ({
             <div className="flex flex-wrap gap-2">
               <a
                 href={scene.video_url}
-                download={`sodam-scene-${index + 1}.mp4`}
+                download={sceneFilename(scene)}
                 className="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
               >
                 <Download size={14} /> 다운로드
