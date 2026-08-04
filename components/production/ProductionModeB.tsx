@@ -37,6 +37,10 @@ import {
 import { upscaleSceneImage, IMAGE_UPSCALE_COST } from '../../services/imageUpscaleService';
 import { saveVideoHistory } from '../../services/videoHistoryService';
 import { useVideoGenStore, type VideoJob } from '../../store/videoGenStore';
+import {
+  useModeBState, DEFAULT_SCENE_SETTINGS,
+  type SceneSettings, type CardMode, type UpscaleStatus,
+} from '../../store/modeBStateStore';
 import { AssetLibraryPicker } from '../AssetLibraryPicker';
 import type { Scene } from '../../types';
 
@@ -46,18 +50,8 @@ const MODEL_LABEL_BASE = 'Kling ' + VIDEO_STUDIO_MODEL.replace(/^kling-v/, '').r
 const MODEL_LABEL_STD = MODEL_LABEL_BASE;               // 'Kling 2.6'
 const MODEL_LABEL_PRO = `${MODEL_LABEL_BASE} pro`;      // 'Kling 2.6 pro'
 
-// ── 로컬 타입 ──
-type UpscaleStatus = 'idle' | 'running' | 'done' | 'failed';
-type CardMode = 'idle' | 'editor';
-
-interface SceneSettings {
-  /** 사용자가 편집한 프롬프트. null 이면 원본 video_motion_en 사용. */
-  prompt: string | null;
-  duration: VideoDuration;
-  resolution: VideoResolution;
-  endImage?: string;
-}
-const DEFAULT_SETTINGS: SceneSettings = { prompt: null, duration: 5, resolution: '720p' };
+// ── 로컬 타입 (재-export 목적 · 실 정의는 modeBStateStore) ──
+// SceneSettings · CardMode · UpscaleStatus 는 store 에서 import.
 
 interface ModeBProps {
   onBack: () => void;
@@ -79,35 +73,36 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const scenes = project?.scenes ?? [];
   const projectTag = project ? `mode-b:${project.id}` : '';
 
-  // ── 씬별 상태 ──
-  const [cardMode, setCardMode] = useState<Record<string, CardMode>>({});
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [upscaleJobs, setUpscaleJobs] = useState<Record<string, UpscaleStatus>>({});
-  const [upscaleProgress, setUpscaleProgress] = useState<Record<string, number>>({});
-  const [settings, setSettings] = useState<Record<string, SceneSettings>>({});
-  const [activeSceneId, setActiveSceneId] = useState<string | null>(null);
+  // ── 세션 스토어 (프로젝트 이탈해도 유지) ──
+  const settings = useModeBState((s) => s.settings);
+  const cardMode = useModeBState((s) => s.cardMode);
+  const selected = useModeBState((s) => s.selected);
+  const upscaleJobs = useModeBState((s) => s.upscaleJobs);
+  const upscaleProgress = useModeBState((s) => s.upscaleProgress);
+  const activeSceneId = useModeBState((s) => s.activeSceneId);
+  const ensureProject = useModeBState((s) => s.ensureProject);
+  const patchSettingsStore = useModeBState((s) => s.patchSettings);
+  const setCardModeStore = useModeBState((s) => s.setCardMode);
+  const toggleSelectStore = useModeBState((s) => s.toggleSelect);
+  const setAllSelectedStore = useModeBState((s) => s.setAllSelected);
+  const setUpscaleJobStore = useModeBState((s) => s.setUpscaleJob);
+  const setUpscaleProgressStore = useModeBState((s) => s.setUpscaleProgress);
+  const setActiveSceneIdStore = useModeBState((s) => s.setActiveSceneId);
 
-  // 씬 목록 변화 시 selected 초기화 (모두 포함)
+  // 프로젝트 진입 · 전환 시 스토어 초기화
   useEffect(() => {
-    setSelected((prev) => {
-      const next: Record<string, boolean> = {};
-      scenes.forEach((s) => { next[s.id] = prev[s.id] ?? true; });
-      return next;
-    });
-    if (!activeSceneId && scenes.length > 0) setActiveSceneId(scenes[0].id);
-  }, [scenes, activeSceneId]);
+    if (!project) return;
+    const defaultSelected: Record<string, boolean> = {};
+    scenes.forEach((s) => { defaultSelected[s.id] = true; });
+    ensureProject(project.id, defaultSelected, scenes[0]?.id ?? null);
+  }, [project?.id, scenes, project, ensureProject]);
 
-  // ── 헬퍼 ──
+  // ── 헬퍼 (스토어 래퍼) ──
   const getSettings = useCallback((sceneId: string): SceneSettings => {
-    return settings[sceneId] ?? DEFAULT_SETTINGS;
+    return settings[sceneId] ?? DEFAULT_SCENE_SETTINGS;
   }, [settings]);
 
-  const patchSettings = useCallback((sceneId: string, patch: Partial<SceneSettings>) => {
-    setSettings((prev) => ({
-      ...prev,
-      [sceneId]: { ...(prev[sceneId] ?? DEFAULT_SETTINGS), ...patch },
-    }));
-  }, []);
+  const patchSettings = patchSettingsStore;
 
   const isUpscaled = (scene: Scene) => !!scene.upscale_level;
   const upscaleStatus = (sceneId: string): UpscaleStatus => upscaleJobs[sceneId] ?? 'idle';
@@ -161,15 +156,13 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       await alert(`크레딧이 부족합니다. (필요 ${IMAGE_UPSCALE_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
       return;
     }
-    setUpscaleJobs((prev) => ({ ...prev, [scene.id]: 'running' }));
-    setUpscaleProgress((prev) => ({ ...prev, [scene.id]: 0 }));
+    setUpscaleJobStore(scene.id, 'running');
+    setUpscaleProgressStore(scene.id, 0);
 
     // Kling 실제 진행률이 없으므로 추정 진행률 (rAF 대신 interval)
     const progressTimer = window.setInterval(() => {
-      setUpscaleProgress((prev) => {
-        const cur = prev[scene.id] ?? 0;
-        return { ...prev, [scene.id]: Math.min(90, cur + 4) };
-      });
+      const cur = useModeBState.getState().upscaleProgress[scene.id] ?? 0;
+      setUpscaleProgressStore(scene.id, Math.min(90, cur + 4));
     }, 400);
 
     try {
@@ -177,20 +170,20 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       const result = await upscaleSceneImage({ imageUrl: scene.image_url, aspect });
       window.clearInterval(progressTimer);
       if (!result.ok || !result.dataUrl) {
-        setUpscaleJobs((prev) => ({ ...prev, [scene.id]: 'failed' }));
+        setUpscaleJobStore(scene.id, 'failed');
         await alert(`업스케일 실패: ${result.message ?? 'unknown'}`, { type: 'error' });
         return;
       }
       await deduct(IMAGE_UPSCALE_COST, `업스케일 (씬 ${scene.order})`);
       updateScene(scene.id, { image_url: result.dataUrl, upscale_level: '2K' });
-      setUpscaleJobs((prev) => ({ ...prev, [scene.id]: 'done' }));
-      setUpscaleProgress((prev) => ({ ...prev, [scene.id]: 100 }));
+      setUpscaleJobStore(scene.id, 'done');
+      setUpscaleProgressStore(scene.id, 100);
     } catch (e) {
       window.clearInterval(progressTimer);
-      setUpscaleJobs((prev) => ({ ...prev, [scene.id]: 'failed' }));
+      setUpscaleJobStore(scene.id, 'failed');
       await alert(`업스케일 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
     }
-  }, [alert, balance, deduct, hasEnough, updateScene]);
+  }, [alert, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore]);
 
   // ── 씬 영상 생성 실행 (fire-and-forget) ──
   const runGenerate = useCallback(async (scene: Scene, options?: { skipConfirm?: boolean }) => {
@@ -277,7 +270,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         // Phase 1: video_url 을 덮어씀. Phase 2 에서 테이크 스택으로 이관.
         updateScene(scene.id, { video_url: finalUrl });
         // 완료 후 편집기 자동 접기 → done 뷰로 자동 전환
-        setCardMode((prev) => ({ ...prev, [scene.id]: 'idle' }));
+        setCardModeStore(scene.id, 'idle');
       } catch (e) {
         updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
       }
@@ -289,7 +282,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     const el = document.getElementById(`scene-card-${sceneId}`);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setActiveSceneId(sceneId);
+    setActiveSceneIdStore(sceneId);
   }, []);
 
   const moveActive = useCallback((delta: -1 | 1) => {
@@ -312,13 +305,11 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     return () => document.removeEventListener('keydown', onKey);
   }, [moveActive]);
 
-  // ── 씬 선택 관리 ──
-  const toggleSelect = (sceneId: string) => {
-    setSelected((prev) => ({ ...prev, [sceneId]: !prev[sceneId] }));
-  };
-  const selectAll = () => setSelected(Object.fromEntries(scenes.map((s) => [s.id, true])));
-  const clearAll = () => setSelected(Object.fromEntries(scenes.map((s) => [s.id, false])));
-  const selectCompleted = () => setSelected(Object.fromEntries(scenes.map((s) => [s.id, !!s.video_url])));
+  // ── 씬 선택 관리 (스토어 위임) ──
+  const toggleSelect = (sceneId: string) => toggleSelectStore(sceneId);
+  const selectAll = () => setAllSelectedStore(Object.fromEntries(scenes.map((s) => [s.id, true])));
+  const clearAll = () => setAllSelectedStore(Object.fromEntries(scenes.map((s) => [s.id, false])));
+  const selectCompleted = () => setAllSelectedStore(Object.fromEntries(scenes.map((s) => [s.id, !!s.video_url])));
 
   const selectedScenes = scenes.filter((s) => selected[s.id]);
   const doneScenes = scenes.filter((s) => !!s.video_url);
@@ -472,7 +463,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             language={language}
             displayPrompts={getDisplayPrompts(scene)}
             onToggleSelect={() => toggleSelect(scene.id)}
-            onSetMode={(m) => setCardMode((p) => ({ ...p, [scene.id]: m }))}
+            onSetMode={(m) => setCardModeStore(scene.id, m)}
             onPatchSettings={(patch) => patchSettings(scene.id, patch)}
             onUpscale={() => runUpscale(scene)}
             onGenerate={() => runGenerate(scene)}
