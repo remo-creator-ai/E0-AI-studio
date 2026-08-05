@@ -19,6 +19,7 @@ import {
   Package,
   ImagePlus,
   Film,
+  Mic,
   Pencil,
   Check as CheckIcon,
   X,
@@ -170,6 +171,12 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
               label={t('nav.videoStudio')}
               active={currentStep === ProjectStep.VIDEO_STUDIO}
               onClick={() => handleNavigate(ProjectStep.VIDEO_STUDIO)}
+            />
+            <SidebarItem
+              icon={Mic}
+              label={t('nav.voiceStudio')}
+              active={currentStep === ProjectStep.VOICE_STUDIO}
+              onClick={() => handleNavigate(ProjectStep.VOICE_STUDIO)}
             />
             <SidebarItem
               icon={Package}
@@ -344,6 +351,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.imageStudio')}</span>
                     ) : currentStep === ProjectStep.VIDEO_STUDIO ? (
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.videoStudio')}</span>
+                    ) : currentStep === ProjectStep.VOICE_STUDIO ? (
+                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.voiceStudio')}</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button
@@ -480,6 +489,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           currentStep === ProjectStep.ASSETS ? 'max-w-7xl mx-auto' :
           currentStep === ProjectStep.IMAGE_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
           currentStep === ProjectStep.VIDEO_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
+          currentStep === ProjectStep.VOICE_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
           currentStep === ProjectStep.SETTINGS ? 'max-w-4xl mx-auto' :
           currentStep === ProjectStep.ADMIN ? 'max-w-5xl mx-auto' :
           'max-w-6xl mx-auto'

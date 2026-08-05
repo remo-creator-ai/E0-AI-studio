@@ -19,6 +19,7 @@ const AdminPage = React.lazy(() => import('./components/AdminPage').then(m => ({
 const AssetLibrary = React.lazy(() => import('./components/AssetLibrary').then(m => ({ default: m.AssetLibrary })));
 const ImageStudio = React.lazy(() => import('./components/ImageStudio').then(m => ({ default: m.ImageStudio })));
 const VideoStudio = React.lazy(() => import('./components/VideoStudio').then(m => ({ default: m.VideoStudio })));
+const VoiceStudio = React.lazy(() => import('./components/VoiceStudio').then(m => ({ default: m.VoiceStudio })));
 const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 const App: React.FC = () => {
@@ -93,6 +94,8 @@ const App: React.FC = () => {
         return <ImageStudio />;
       case ProjectStep.VIDEO_STUDIO:
         return <VideoStudio />;
+      case ProjectStep.VOICE_STUDIO:
+        return <VoiceStudio />;
       case ProjectStep.ASSETS:
         return <AssetLibrary />;
       case ProjectStep.SETTINGS:
