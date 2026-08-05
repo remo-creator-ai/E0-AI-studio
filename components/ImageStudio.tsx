@@ -731,8 +731,11 @@ export const ImageStudio: React.FC = () => {
       {/* ================= 생성 설정 패널 ================= */}
       <aside className="w-full lg:w-[380px] lg:shrink-0 flex flex-col bg-white border border-zinc-200 rounded-3xl p-6">
         <div className="mb-5">
-          <h1 className="text-2xl font-black tracking-tight text-zinc-900">{t('imageStudio.title')}</h1>
-          <p className="text-xs text-zinc-500 mt-1">{t('imageStudio.subtitle')}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <ImagePlus className="text-primary" size={22} />
+            <h1 className="text-2xl font-black tracking-tight text-zinc-900">{t('imageStudio.title')}</h1>
+          </div>
+          <p className="text-xs text-zinc-500">{t('imageStudio.subtitle')}</p>
         </div>
 
         {/* 생성 방식 — 3세그먼트: 텍스트 / 이미지 / 멀티샷 */}
