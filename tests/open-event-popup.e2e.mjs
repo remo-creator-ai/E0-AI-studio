@@ -40,7 +40,19 @@ try {
   assert.equal(await active.page.locator('[data-open-event-link]').getAttribute('target'), '_blank');
   assert.ok(await active.page.locator('[data-open-event-image]').evaluate((image) => image.naturalWidth > 0));
 
-  await active.page.locator('[data-open-event-close]').click();
+  const applyButton = active.page.locator('[data-open-event-apply]');
+  const closeButton = active.page.locator('[data-open-event-close]');
+  assert.equal(await applyButton.getAttribute('href'), formUrl);
+  assert.equal(await applyButton.getAttribute('target'), '_blank');
+  assert.equal((await applyButton.textContent())?.trim(), '지금 신청하기');
+
+  const applyBox = await applyButton.boundingBox();
+  const closeBox = await closeButton.boundingBox();
+  assert.ok(applyBox && closeBox, 'footer actions must be visible');
+  assert.ok(closeBox.x > applyBox.x + applyBox.width, 'close must sit to the right of the apply button');
+  assert.ok(closeBox.width < applyBox.width / 2, 'close must remain visually smaller than the apply button');
+
+  await closeButton.click();
   assert.equal(await popup.count(), 0, 'normal close must hide the popup');
   await active.page.reload({ waitUntil: 'domcontentloaded' });
   await active.page.locator('[data-open-event-popup]').waitFor();

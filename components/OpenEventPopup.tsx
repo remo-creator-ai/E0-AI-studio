@@ -89,24 +89,33 @@ export const OpenEventPopup: React.FC = () => {
             alt="소담 AI 스튜디오 오픈 기념, 30초 AI 쇼츠 제작 교육과 제작지원 및 5만원 상당 크레딧 제공 안내"
             width={984}
             height={1313}
-            className="block max-h-[calc(94vh-64px)] w-auto max-w-full object-contain"
+            className="block max-h-[calc(94vh-72px)] w-auto max-w-full object-contain"
           />
         </a>
 
-        <div className="grid h-14 shrink-0 grid-cols-2 divide-x divide-zinc-200 border-t border-zinc-200 bg-white text-sm font-bold">
+        <div className="flex h-16 shrink-0 items-center gap-2 border-t border-zinc-200 bg-white p-2 text-sm font-bold sm:px-3">
           <button
             type="button"
             data-open-event-hide-today
             onClick={hideToday}
-            className="text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            className="shrink-0 whitespace-nowrap rounded-lg px-2 py-2 text-xs text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-3 sm:text-sm"
           >
             오늘 하루 보지 않기
           </button>
+          <a
+            data-open-event-apply
+            href={FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-w-0 flex-1 items-center justify-center rounded-xl bg-primary px-3 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-base"
+          >
+            지금 신청하기
+          </a>
           <button
             type="button"
             data-open-event-close
             onClick={close}
-            className="text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+            className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-3"
           >
             닫기
           </button>
