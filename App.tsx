@@ -3,6 +3,7 @@ import React, { Suspense, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { LandingPage } from './components/LandingPage';
 import { Dashboard } from './components/Dashboard';
+import { OpenEventPopup } from './components/OpenEventPopup';
 import { ModalProvider } from './components/ui/ModalProvider';
 import { useStore } from './store';
 import { useAuthStore } from './store/authStore';
@@ -72,11 +73,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Not authenticated
-  if (!user) {
-    return <LandingPage />;
-  }
-
   // Authenticated — all views inside Layout
   const renderContent = () => {
     switch (currentStep) {
@@ -108,20 +104,27 @@ const App: React.FC = () => {
   };
 
   return (
-    <ModalProvider>
-      <Layout saveStatus={saveStatus} flushSave={flush}>
-        <Suspense fallback={
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          </div>
-        }>
-          {renderContent()}
-        </Suspense>
-      </Layout>
-      <Suspense fallback={null}>
-        <OnboardingTour />
-      </Suspense>
-    </ModalProvider>
+    <>
+      {!user ? (
+        <LandingPage />
+      ) : (
+        <ModalProvider>
+          <Layout saveStatus={saveStatus} flushSave={flush}>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              </div>
+            }>
+              {renderContent()}
+            </Suspense>
+          </Layout>
+          <Suspense fallback={null}>
+            <OnboardingTour />
+          </Suspense>
+        </ModalProvider>
+      )}
+      <OpenEventPopup />
+    </>
   );
 };
 
