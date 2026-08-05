@@ -215,14 +215,6 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           />
           </div>
 
-          <div className="mt-8 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.settings')}</div>
-          <SidebarItem
-            icon={Settings}
-            label={t('nav.settings')}
-            active={currentStep === ProjectStep.SETTINGS}
-            onClick={() => handleNavigate(ProjectStep.SETTINGS)}
-          />
-
           {isAdmin(user?.email ?? undefined) && (
             <>
               <div className="h-[1px] bg-zinc-200 my-4" />
@@ -252,49 +244,67 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           </button>
         )}
 
+        <div data-sidebar-account className="shrink-0 space-y-2">
         {/* Credit Balance — 골드 (크레딧=가치/보상) */}
-        <div data-tour="sidebar-credits" className="shrink-0 px-4 py-3 bg-[#E5EDFA] border border-[#C0D4F0] rounded-2xl">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold text-[#0050BF] uppercase tracking-widest">{t('common.credits')}</span>
-            <Coins size={14} className="text-[#0050BF]" />
+        <div data-tour="sidebar-credits" className="h-[48px] px-3 py-2 bg-[#E5EDFA] border border-[#C0D4F0] rounded-xl flex items-center gap-2.5">
+          <Coins size={16} className="text-[#0050BF] shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2 leading-none">
+              <div className="flex items-baseline gap-1 shrink-0">
+                <span className={`text-base font-black ${balance <= 10 ? 'text-[#64748B]' : 'text-[#0050BF]'}`}>{balance}</span>
+                <span className="text-[9px] font-bold text-[#7B93B8]">/ {maxCredits}</span>
+              </div>
+              {!isMasterUi && (
+                <button
+                  onClick={() => setShowCreditRequest(true)}
+                  className="text-[10px] font-bold text-[#0050BF] hover:text-[#003E99] hover:underline whitespace-nowrap"
+                >
+                  + 크레딧 신청
+                </button>
+              )}
+            </div>
+            <div className="mt-1 h-1 bg-[#D6E3F7] rounded-full overflow-hidden" aria-label={t('common.credits')}>
+              <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
+            </div>
           </div>
-          <div className="flex items-baseline gap-1">
-            <span className={`text-2xl font-black ${balance <= 10 ? 'text-[#64748B]' : 'text-[#0050BF]'}`}>{balance}</span>
-            <span className="text-[10px] font-bold text-[#7B93B8]">/ {maxCredits}</span>
-          </div>
-          <div className="mt-2 h-1.5 bg-[#D6E3F7] rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
-          </div>
-          {!isMasterUi && (
-            <button
-              onClick={() => setShowCreditRequest(true)}
-              className="mt-2 w-full text-[11px] font-bold text-[#0050BF] hover:text-[#003E99] hover:underline text-left"
-            >
-              + 크레딧 신청
-            </button>
-          )}
         </div>
 
         {/* User Profile */}
-        <div className="shrink-0 p-4 bg-zinc-50 rounded-2xl border border-zinc-200 group">
-          <div className="flex items-center gap-3">
+        <div data-sidebar-profile className="h-[48px] px-3 py-2 bg-zinc-50 rounded-xl border border-zinc-200 group">
+          <div className="flex items-center gap-2 h-full">
             {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="" className="w-10 h-10 rounded-full shrink-0" />
+              <img src={user.user_metadata.avatar_url} alt="" className="w-[32px] h-[32px] rounded-full shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-[#1E6FD9] shrink-0" />
+              <div className="w-[32px] h-[32px] rounded-full bg-gradient-to-tr from-primary to-[#1E6FD9] shrink-0" />
             )}
-            <div className="flex flex-col items-start overflow-hidden flex-1">
-              <div className="text-sm font-bold truncate w-full text-zinc-900">
+            <div className="flex flex-col items-start overflow-hidden flex-1 min-w-0 leading-tight">
+              <div className="text-xs font-bold truncate w-full text-zinc-900">
                 {user?.user_metadata?.full_name || 'Creative Lead'}
               </div>
               <button
                 onClick={signOut}
-                className="text-[10px] text-zinc-500 hover:text-zinc-500 flex items-center gap-1 transition-colors hover:underline"
+                className="text-[9px] text-zinc-500 hover:text-zinc-700 flex items-center gap-1 transition-colors hover:underline"
               >
-                <LogOut size={10} /> {t('common.logout')}
+                <LogOut size={9} /> {t('common.logout')}
               </button>
             </div>
+            <button
+              type="button"
+              data-sidebar-settings
+              onClick={() => handleNavigate(ProjectStep.SETTINGS)}
+              aria-label={t('nav.settings')}
+              title={t('nav.settings')}
+              aria-current={currentStep === ProjectStep.SETTINGS ? 'page' : undefined}
+              className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-lg transition-all ${
+                currentStep === ProjectStep.SETTINGS
+                  ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.2)]'
+                  : 'text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900'
+              }`}
+            >
+              <Settings size={16} />
+            </button>
           </div>
+        </div>
         </div>
 
         {/* Sponsor / Powered by — 사이드바 최하단. 저작권처럼 눈에 띄지 않되 항상 노출. */}
