@@ -58,14 +58,17 @@ export const VoiceStudio: React.FC = () => {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
-  useEffect(() => { isTtsReady().then(setApiReady); }, []);
+  // 초기 판정은 정보용 · 실패해도 버튼은 활성 · 실제 실패 시 generate 가 503→no_api_key 로 재보고.
+  // (예전엔 여기서 false 나오면 버튼이 영구 비활성 → 관리자에 키 저장했는데도 오알람 뜸)
+  useEffect(() => { isTtsReady().then(setApiReady).catch(() => setApiReady(true)); }, []);
 
   const charCount = text.trim().length;
   const cost = ttsCreditCost(charCount || 1);
   const enough = hasEnough(cost);
   const voice = useMemo(() => VOICE_PRESETS.find((v) => v.id === voiceId) ?? DEFAULT_VOICE, [voiceId]);
 
-  const canGenerate = charCount > 0 && charCount <= TTS_MAX_CHARS && !busy && enough && apiReady;
+  // apiReady 는 게이팅에서 제외 · 정보성 배너로만 사용. 실 판정은 서버 응답으로.
+  const canGenerate = charCount > 0 && charCount <= TTS_MAX_CHARS && !busy && enough;
 
   const generate = async () => {
     if (charCount === 0) {
@@ -137,17 +140,18 @@ export const VoiceStudio: React.FC = () => {
     if (playingId === id) { audioRef.current?.pause(); setPlayingId(null); }
   };
 
-  const errorMessage = !apiReady
-    ? 'Google TTS 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
-    : charCount > TTS_MAX_CHARS
-      ? `스크립트는 최대 ${TTS_MAX_CHARS}자까지 지원합니다. (현재 ${charCount}자)`
-      : !enough && charCount > 0
-        ? `크레딧이 부족합니다. (필요 ${cost}cr / 잔액 ${balance}cr)`
-        : failure === 'no_api_key'
-          ? 'Google TTS 키 미설정'
-          : failure === 'too_long'
-            ? `너무 깁니다 (최대 ${TTS_MAX_CHARS}자)`
-            : errorMsg;
+  // 초기 apiReady 판정 실패는 경고에서 제외 · 실 실패 (failure='no_api_key') 만 반영.
+  // health 응답이 인증/캐시 문제로 false 여도 서버는 실제로 잘 동작할 수 있어서
+  // 미리 막지 않고 시도 후 판정.
+  const errorMessage = charCount > TTS_MAX_CHARS
+    ? `스크립트는 최대 ${TTS_MAX_CHARS}자까지 지원합니다. (현재 ${charCount}자)`
+    : !enough && charCount > 0
+      ? `크레딧이 부족합니다. (필요 ${cost}cr / 잔액 ${balance}cr)`
+      : failure === 'no_api_key'
+        ? 'Google TTS 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
+        : failure === 'too_long'
+          ? `너무 깁니다 (최대 ${TTS_MAX_CHARS}자)`
+          : errorMsg;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
