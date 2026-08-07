@@ -1007,6 +1007,34 @@
       "replayAll": "Replay All Guides",
       "replayAllDesc": "Reset and replay all page tours from the beginning.",
       "replayPage": "Replay Guide"
+    },
+    "imageStudio": {
+      "mode": {
+        "title": "Pick a Mode",
+        "desc": "Generate from text alone, guide it with reference images, or capture several angles at once."
+      },
+      "model": {
+        "title": "Pick a Model",
+        "desc": "Each model differs in sharpness and strengths. Start with the default, and switch if the result falls short."
+      },
+      "generate": {
+        "title": "Generate",
+        "desc": "Results stay in your history. Save the ones you like to the Asset Library and reuse them in storyboards or videos."
+      }
+    },
+    "videoStudio": {
+      "frames": {
+        "title": "Start & End Frames",
+        "desc": "The start frame opens the video. Add an end frame and it will lead into that shot. You can pull either straight from the Asset Library."
+      },
+      "resolution": {
+        "title": "Length & Resolution",
+        "desc": "Choose the length and resolution. Setting an end frame requires the higher resolution, so it switches over automatically."
+      },
+      "generate": {
+        "title": "Generate Video",
+        "desc": "Queue the next job while one is still running. Finished videos collect in the history on the right, ready to save."
+      }
     }
   }
 }

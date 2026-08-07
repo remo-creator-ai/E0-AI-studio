@@ -644,7 +644,7 @@ export const VideoStudio: React.FC = () => {
         </div>
 
         {/* Frame slots */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div data-tour="video-studio-frames" className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <FrameSlot
             label="시작 프레임 (선택)"
             dataUrl={startFrame}
@@ -797,7 +797,7 @@ export const VideoStudio: React.FC = () => {
         </div>
 
         {/* Resolution — 720p(std) / 1080p(pro) */}
-        <div>
+        <div data-tour="video-studio-resolution">
           <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">해상도</label>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
             {VIDEO_RESOLUTIONS.map((r) => (
@@ -829,6 +829,7 @@ export const VideoStudio: React.FC = () => {
 
         {/* Generate — 진행 중이어도 새 잡을 추가할 수 있게 항상 활성 (Kling 스타일 큐) */}
         <button
+          data-tour="video-studio-generate"
           onClick={generate}
           disabled={!prompt.trim()}
           className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"

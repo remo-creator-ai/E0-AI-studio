@@ -740,7 +740,7 @@ export const ImageStudio: React.FC = () => {
 
         {/* 생성 방식 — 3세그먼트: 텍스트 / 이미지 / 멀티샷 */}
         <label className="text-xs font-bold text-zinc-600">{t('imageStudio.mode.label')}</label>
-        <div className="mt-1.5 mb-5 flex gap-1 p-1 bg-zinc-100 rounded-xl">
+        <div data-tour="image-studio-mode" className="mt-1.5 mb-5 flex gap-1 p-1 bg-zinc-100 rounded-xl">
           <button
             type="button"
             onClick={() => setMode('text')}
@@ -934,7 +934,7 @@ export const ImageStudio: React.FC = () => {
 
         {/* 생성 모델 — 기본값은 가장 저렴한 모델. 단가가 모델마다 달라 옆에 함께 보여준다. */}
         <label className="text-xs font-bold text-zinc-600">{t('imageStudio.model.label')}</label>
-        <div className="relative mt-1.5 mb-5">
+        <div data-tour="image-studio-model" className="relative mt-1.5 mb-5">
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
@@ -979,7 +979,7 @@ export const ImageStudio: React.FC = () => {
         )}
 
         {/* 생성 버튼 — 패널 하단 고정 (계획서 §5.6) */}
-        <div className="mt-auto pt-2">
+        <div data-tour="image-studio-generate" className="mt-auto pt-2">
           <button
             type="button"
             onClick={mode === 'multishot' ? runMultishot : run}

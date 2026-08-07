@@ -5,7 +5,14 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
 import { ProjectStep } from '../types';
 
-export type TourId = 'dashboard' | 'planning' | 'visualizing' | 'assembly' | 'production';
+export type TourId =
+  | 'dashboard'
+  | 'imageStudio'
+  | 'videoStudio'
+  | 'planning'
+  | 'visualizing'
+  | 'assembly'
+  | 'production';
 
 interface TourStepDef {
   element: string;
@@ -23,6 +30,18 @@ const TOUR_DEFINITIONS: Record<TourId, TourStepDef[]> = {
     { element: '[data-tour="dashboard-new-project"]', titleKey: 'onboarding.dashboard.newProject.title', descKey: 'onboarding.dashboard.newProject.desc', side: 'bottom' },
     { element: '[data-tour="dashboard-project-grid"]', titleKey: 'onboarding.dashboard.projectGrid.title', descKey: 'onboarding.dashboard.projectGrid.desc', side: 'top', requiresElement: true },
     { element: '[data-tour="sidebar-credits"]', titleKey: 'onboarding.dashboard.credits.title', descKey: 'onboarding.dashboard.credits.desc', side: 'right', mobileSkip: true },
+  ],
+  // 사이드바 크리에이티브 도구. 워크플로우와 달리 단독으로 쓰는 화면이라
+  // 프로젝트 없이도 진입할 수 있고, 투어도 독립적으로 돈다.
+  imageStudio: [
+    { element: '[data-tour="image-studio-mode"]', titleKey: 'onboarding.imageStudio.mode.title', descKey: 'onboarding.imageStudio.mode.desc', side: 'bottom' },
+    { element: '[data-tour="image-studio-model"]', titleKey: 'onboarding.imageStudio.model.title', descKey: 'onboarding.imageStudio.model.desc', side: 'bottom' },
+    { element: '[data-tour="image-studio-generate"]', titleKey: 'onboarding.imageStudio.generate.title', descKey: 'onboarding.imageStudio.generate.desc', side: 'top' },
+  ],
+  videoStudio: [
+    { element: '[data-tour="video-studio-frames"]', titleKey: 'onboarding.videoStudio.frames.title', descKey: 'onboarding.videoStudio.frames.desc', side: 'bottom' },
+    { element: '[data-tour="video-studio-resolution"]', titleKey: 'onboarding.videoStudio.resolution.title', descKey: 'onboarding.videoStudio.resolution.desc', side: 'top' },
+    { element: '[data-tour="video-studio-generate"]', titleKey: 'onboarding.videoStudio.generate.title', descKey: 'onboarding.videoStudio.generate.desc', side: 'top' },
   ],
   planning: [
     { element: '[data-tour="planning-idea-input"]', titleKey: 'onboarding.planning.ideaInput.title', descKey: 'onboarding.planning.ideaInput.desc', side: 'bottom' },
@@ -56,6 +75,8 @@ const TOUR_DEFINITIONS: Record<TourId, TourStepDef[]> = {
  */
 export const STEP_TO_TOUR: Partial<Record<ProjectStep, TourId>> = {
   [ProjectStep.DASHBOARD]: 'dashboard',
+  [ProjectStep.IMAGE_STUDIO]: 'imageStudio',
+  [ProjectStep.VIDEO_STUDIO]: 'videoStudio',
   [ProjectStep.PLANNING]: 'planning',
   [ProjectStep.VISUALIZING]: 'visualizing',
   [ProjectStep.ASSEMBLY]: 'assembly',
