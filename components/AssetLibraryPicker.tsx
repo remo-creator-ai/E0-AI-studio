@@ -14,11 +14,18 @@
 //  Caller 는 excludeIds/maxRemaining 으로 중복·상한을 통제한다.
 //  onPick 콜백은 Asset 원본과 dataUrl(참고 이미지 API 에 그대로 전달 가능)을
 //  선택된 자산 수만큼 반복 호출한다.
+//
+//  ⚠️ 이미지 전용 픽커다 (mediaFilter 기본값 'image').
+//     현재 호출부는 모두 "참고 이미지 / 프레임 이미지" 용도라서 동영상 자산
+//     (asset_type='video', 037 마이그레이션 이후 보관함에 존재)은 목록에서
+//     제외한다. 동영상을 노출하면 <img> 로 그려져 깨진 썸네일이 되고,
+//     선택 시 mp4 가 base64 dataUrl 로 변환돼 이미지 생성 API 에 그대로
+//     전달되는 QA 이슈가 발생한다.
 // =============================================================
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ImagePlus, RefreshCw, Package, Check } from 'lucide-react';
+import { X, ImagePlus, RefreshCw, Package, Check, Info } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { listAssets, type Asset } from '../services/assetService';
 
@@ -34,7 +41,24 @@ export interface AssetLibraryPickerProps {
   /** 팝업 제목/부제 (i18n 키 대신 이미 번역된 문자열을 받는다). */
   title: string;
   subtitle?: string;
+  /**
+   * 노출할 자산 종류. 기본 'image' — 동영상 자산은 목록에서 제외한다.
+   * 동영상을 참고로 쓰는 화면이 생기면 'all' 로 열되, 그때는 카드 렌더러도
+   * <video> 로 분기해야 한다.
+   */
+  mediaFilter?: 'image' | 'all';
 }
+
+/**
+ * 동영상 자산 판별.
+ * asset_type 이 1차 근거(보관함 저장 경로가 항상 'video' 로 넣는다)이고,
+ * signed URL 확장자는 과거 데이터·수기 입력 대비 보조 방어선이다.
+ */
+const isVideoAsset = (a: Asset): boolean => {
+  if (a.asset_type === 'video') return true;
+  const path = a.primary_url?.split('?')[0] ?? '';
+  return /\.(mp4|webm|mov|m4v)$/i.test(path);
+};
 
 /** signed URL → base64 dataUrl. Gemini inlineData 로 그대로 넘길 수 있다. */
 const urlToDataUrl = async (url: string): Promise<string> => {
@@ -50,7 +74,7 @@ const urlToDataUrl = async (url: string): Promise<string> => {
 };
 
 export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
-  open, onClose, onPick, excludeIds, maxRemaining, title, subtitle,
+  open, onClose, onPick, excludeIds, maxRemaining, title, subtitle, mediaFilter = 'image',
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -86,11 +110,21 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
     return () => { cancelled = true; };
   }, [open, user]);
 
+  // 이미지 전용 모드에서는 동영상 자산을 목록에서 제외한다.
+  // 숨긴 개수는 하단 안내로 알려준다 — "보관함에 저장한 동영상이 왜 안 보이지?" 혼란 방지.
+  const visibleAssets = useMemo(() => {
+    if (!assets) return null;
+    return mediaFilter === 'all' ? assets : assets.filter((a) => !isVideoAsset(a));
+  }, [assets, mediaFilter]);
+  const hiddenVideoCount = (assets?.length ?? 0) - (visibleAssets?.length ?? 0);
+
   const remaining = maxRemaining === undefined ? Infinity : maxRemaining;
   const isCapped = remaining <= 0;
 
   const toggleSelect = useCallback((asset: Asset) => {
     if (!asset.primary_url) return;
+    // 방어선: 이미지 전용 모드에서 동영상은 절대 선택되지 않는다.
+    if (mediaFilter !== 'all' && isVideoAsset(asset)) return;
     setPickError(null);
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -103,15 +137,16 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
       }
       return next;
     });
-  }, [remaining]);
+  }, [remaining, mediaFilter]);
 
   const handleConfirm = useCallback(async () => {
-    if (selectedIds.size === 0 || !assets || confirming) return;
+    if (selectedIds.size === 0 || !visibleAssets || confirming) return;
     setConfirming(true);
     setPickError(null);
     try {
-      // assets 순서를 유지해 사용자가 클릭한 대략적 순서를 반영. (Set 순서는 삽입 순)
-      const selectedAssets = assets.filter((a) => selectedIds.has(a.id));
+      // visibleAssets 순서를 유지해 사용자가 클릭한 대략적 순서를 반영. (Set 순서는 삽입 순)
+      // visibleAssets 기준이라 이미지 전용 모드에서 동영상은 여기까지 오지 않는다.
+      const selectedAssets = visibleAssets.filter((a) => selectedIds.has(a.id));
       const results = await Promise.all(selectedAssets.map(async (asset) => {
         try {
           if (!asset.primary_url) return { asset, dataUrl: null as string | null };
@@ -134,7 +169,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
     } finally {
       setConfirming(false);
     }
-  }, [selectedIds, assets, confirming, onPick, onClose, t]);
+  }, [selectedIds, visibleAssets, confirming, onPick, onClose, t]);
 
   if (!open) return null;
 
@@ -172,16 +207,27 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
           {pickError && (
             <div className="text-xs text-red-600">{pickError}</div>
           )}
-          {!loading && !error && assets && assets.length === 0 && (
+          {!loading && !error && visibleAssets && visibleAssets.length === 0 && (
             <div className="py-16 text-center">
               <Package size={28} className="mx-auto text-zinc-300 mb-2" />
-              <p className="text-sm text-zinc-500">{t('imageStudio.reference.libraryEmpty')}</p>
+              <p className="text-sm text-zinc-500">
+                {hiddenVideoCount > 0
+                  ? t('imageStudio.reference.libraryOnlyVideos')
+                  : t('imageStudio.reference.libraryEmpty')}
+              </p>
             </div>
           )}
 
-          {!loading && assets && assets.length > 0 && (
+          {!loading && !error && visibleAssets && visibleAssets.length > 0 && hiddenVideoCount > 0 && (
+            <div className="flex items-start gap-1.5 text-[11px] text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-2">
+              <Info size={13} className="shrink-0 mt-px" />
+              <span>{t('imageStudio.reference.libraryVideoHidden', { count: hiddenVideoCount })}</span>
+            </div>
+          )}
+
+          {!loading && visibleAssets && visibleAssets.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {assets.map((a) => {
+              {visibleAssets.map((a) => {
                 const excluded = excludeIds?.includes(a.id);
                 const selected = selectedIds.has(a.id);
                 const capReached = !selected && selectedCount >= remaining;
