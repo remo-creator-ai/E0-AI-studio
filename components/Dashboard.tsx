@@ -41,6 +41,12 @@ const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200',
 };
 
+const normalizeRequestStatus = (status: string): RequestStatus => (
+  ['pending', 'in_progress', 'completed', 'cancelled'].includes(status)
+    ? status as RequestStatus
+    : 'pending'
+);
+
 interface ProductionRequestSummary {
   id: string;
   project_title: string;
@@ -464,8 +470,30 @@ export const Dashboard: React.FC = () => {
                 <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
               </div>
             ) : (
-              // 표 리스트 형태 (사용자 요청: 카드뷰 대신 컴팩트한 테이블)
-              <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden">
+              <>
+              <div data-dashboard-request-cards className="space-y-3 md:hidden">
+                {myRequests.map((req) => {
+                  const validKey = normalizeRequestStatus(req.status || 'pending');
+                  return (
+                    <article key={req.id} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h4 className="truncate text-sm font-black text-zinc-900" title={req.project_title}>{req.project_title}</h4>
+                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-500" title={req.purpose}>{req.purpose}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-bold uppercase ${REQUEST_STATUS_COLORS[validKey]}`}>
+                          {t(`status.${validKey === 'in_progress' ? 'inProgress' : validKey}`)}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1 border-t border-zinc-100 pt-3 text-[11px] font-medium text-zinc-400">
+                        <Clock size={12} /> {formatDate(req.created_at)}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div data-dashboard-request-table className="hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-[10px] uppercase tracking-wider text-zinc-400 bg-zinc-50">
@@ -477,10 +505,7 @@ export const Dashboard: React.FC = () => {
                   </thead>
                   <tbody>
                     {myRequests.map((req) => {
-                      const statusKey = (req.status || 'pending') as RequestStatus;
-                      const validKey: RequestStatus = ['pending', 'in_progress', 'completed', 'cancelled'].includes(statusKey)
-                        ? statusKey
-                        : 'pending';
+                      const validKey = normalizeRequestStatus(req.status || 'pending');
                       return (
                         <tr key={req.id} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50 transition-colors">
                           <td className="px-4 py-3 text-zinc-900 font-bold max-w-[280px] truncate" title={req.project_title}>
@@ -506,6 +531,7 @@ export const Dashboard: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </div>
         )}

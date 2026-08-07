@@ -73,12 +73,18 @@ try {
     await context.close();
   }
 
-  const imageNavigation = await openDashboard(390, 844);
-  await imageNavigation.page.locator('[data-dashboard-quick-action="image"]').click();
-  await imageNavigation.page.locator('[data-dashboard-mobile-title]').waitFor({ state: 'detached' });
-  await imageNavigation.page.getByText('이미지 생성', { exact: true }).first().waitFor();
-  assert.equal(await imageNavigation.page.locator('[data-dashboard-mobile-title]').count(), 0, 'quick action must leave the dashboard');
-  await imageNavigation.context.close();
+  for (const action of [
+    { id: 'image', title: '이미지 생성' },
+    { id: 'video', title: '동영상 생성' },
+    { id: 'voice', title: '음성 생성' },
+  ]) {
+    const navigation = await openDashboard(390, 844);
+    await navigation.page.locator(`[data-dashboard-quick-action="${action.id}"]`).click();
+    await navigation.page.locator('[data-dashboard-mobile-title]').waitFor({ state: 'detached' });
+    await navigation.page.getByText(action.title, { exact: true }).first().waitFor();
+    assert.equal(await navigation.page.locator('[data-dashboard-mobile-title]').count(), 0, `${action.id} quick action must leave the dashboard`);
+    await navigation.context.close();
+  }
 
   const populated = await openDashboard(390, 844, {
     projects: [{
@@ -113,6 +119,25 @@ try {
   assert.equal(await populated.page.locator('[data-dashboard-request-table]').isVisible(), false);
   assert.equal(await populated.page.evaluate(() => document.documentElement.scrollWidth), 390);
   await populated.context.close();
+
+  const desktop = await openDashboard(1440, 900, {
+    projects: [{
+      id: 'project-1', title: '동네 카페 쇼츠', style: 'CINEMATIC', duration: 30,
+      created_at: '2026-08-06T01:00:00.000Z', updated_at: '2026-08-07T01:00:00.000Z',
+      scenes_count: 4, images_done: 4, videos_done: 2, thumbnail: null,
+      current_stage: 'PRODUCTION', original_creator_id: null,
+      creator_display_name: null, creator_avatar_url: null,
+    }],
+    requests: [{
+      id: 'request-1', project_title: '동네 카페 쇼츠', status: 'in_progress',
+      created_at: '2026-08-07T01:00:00.000Z', purpose: '매장 SNS 홍보용 세로형 쇼츠 제작',
+    }],
+  });
+  await desktop.page.locator('[data-dashboard-project-grid]').waitFor();
+  assert.equal(await desktop.page.locator('[data-dashboard-request-cards]').isVisible(), false);
+  assert.equal(await desktop.page.locator('[data-dashboard-request-table]').isVisible(), true);
+  assert.equal(await desktop.page.evaluate(() => document.documentElement.scrollWidth), 1440);
+  await desktop.context.close();
 } finally {
   await browser.close();
 }
