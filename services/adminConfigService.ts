@@ -4,6 +4,7 @@ import { MOCK_MODE, getMockRole } from '../lib/mockAuth';
 export type AdminConfigKey =
   | 'gemini_api_key'
   | 'openai_api_key'               // GPT Image 2 (이미지 생성) — Bearer 로 직접 전달
+  | 'google_tts_api_key'           // Google Cloud Text-to-Speech (음성 생성) — query param ?key= 로 전달
   | 'kling_api_key'                // 신규 단일 키 방식 (트라이얼·간편) — Bearer 로 직접 전달
   | 'kling_access_key_id'          // Legacy JWT 방식 (엔터프라이즈) — 서버가 HS256 서명
   | 'kling_access_key_secret';     // Legacy JWT 방식 — HMAC 시크릿

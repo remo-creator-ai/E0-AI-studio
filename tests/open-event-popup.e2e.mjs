@@ -44,7 +44,7 @@ try {
   const closeButton = active.page.locator('[data-open-event-close]');
   assert.equal(await applyButton.getAttribute('href'), formUrl);
   assert.equal(await applyButton.getAttribute('target'), '_blank');
-  assert.equal((await applyButton.textContent())?.trim(), '지금 신청하기');
+  assert.equal((await applyButton.textContent())?.trim(), '신청하기');
 
   const applyBox = await applyButton.boundingBox();
   const closeBox = await closeButton.boundingBox();

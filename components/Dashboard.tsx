@@ -11,6 +11,7 @@ import {
   User,
   Monitor,
   Smartphone,
+  Mic,
   X,
   Sparkles,
   ClipboardList,
@@ -255,23 +256,57 @@ export const Dashboard: React.FC = () => {
     });
   };
 
+  const quickActions = [
+    { id: 'image', label: t('nav.imageStudio'), icon: ImageIcon, step: ProjectStep.IMAGE_STUDIO },
+    { id: 'video', label: t('nav.videoStudio'), icon: Film, step: ProjectStep.VIDEO_STUDIO },
+    { id: 'voice', label: t('nav.voiceStudio'), icon: Mic, step: ProjectStep.VOICE_STUDIO },
+  ] as const;
+
   return (
-    <div className="space-y-8">
-        <div className="flex items-end justify-between">
-          <div data-tour="dashboard-welcome" className="space-y-2">
-            <h2 className="text-5xl font-black italic uppercase tracking-tighter text-zinc-900">
+    <div className="space-y-6 md:space-y-8">
+        <section data-tour="dashboard-welcome" className="space-y-5 md:flex md:items-end md:justify-between md:space-y-0">
+          <div className="min-w-0 space-y-2">
+            <h1 data-dashboard-mobile-title className="text-[2rem] font-black leading-[1.15] tracking-[-0.04em] text-zinc-900 md:hidden">
+              {t('dashboard.mobileTitle')}
+            </h1>
+            <h2 className="hidden text-5xl font-black italic uppercase tracking-tighter text-zinc-900 md:block">
               {t('dashboard.title')} <span className="text-primary">{t('dashboard.titleHighlight')}</span>
             </h2>
-            <p className="text-zinc-500 text-sm">{t('dashboard.subtitle')}</p>
+            <p data-dashboard-mobile-subtitle className="text-sm leading-6 text-zinc-500 md:hidden">{t('dashboard.mobileSubtitle')}</p>
+            <p className="hidden text-sm text-zinc-500 md:block">{t('dashboard.subtitle')}</p>
           </div>
           <button
             data-tour="dashboard-new-project"
+            data-dashboard-primary-cta
             onClick={handleNewProject}
-            className="px-7 py-3 bg-primary text-white rounded-full font-bold flex items-center gap-2 hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
+            className="flex min-h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-[0_8px_20px_rgba(0,80,191,0.22)] transition-all hover:bg-[#003E99] active:scale-[0.98] md:w-auto md:rounded-full md:px-7"
           >
-            <Plus size={20} /> {t('dashboard.newProject')}
+            <Plus size={20} /> {t('dashboard.newShortProject')}
           </button>
-        </div>
+        </section>
+
+        <section data-dashboard-quick-actions className="space-y-3">
+          <h2 className="text-sm font-black tracking-tight text-zinc-900 md:text-base">{t('dashboard.quickStart')}</h2>
+          <div className="grid grid-cols-3 gap-2 md:max-w-2xl md:gap-3">
+            {quickActions.map((action) => {
+              const ActionIcon = action.icon;
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  data-dashboard-quick-action={action.id}
+                  onClick={() => setStep(action.step)}
+                  className="group flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-2 py-3 text-zinc-700 shadow-sm transition hover:border-primary/40 hover:bg-[#F7FAFF] hover:text-primary active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:min-h-0 md:flex-row md:justify-start md:px-5 md:py-4"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF3FC] text-primary transition group-hover:bg-primary group-hover:text-white">
+                    <ActionIcon size={18} />
+                  </span>
+                  <span className="whitespace-nowrap text-[11px] font-bold sm:text-xs md:text-sm">{action.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* Loading */}
         {isLoading && (
@@ -282,27 +317,22 @@ export const Dashboard: React.FC = () => {
 
         {/* Empty State */}
         {!isLoading && projects.length === 0 && (
-          <div className="text-center py-20 space-y-6">
-            <div className="w-20 h-20 bg-[#EEF3FC] border border-[#C0D4F0] rounded-full flex items-center justify-center mx-auto">
-              <Film size={40} className="text-primary" />
+          <div className="rounded-3xl border border-dashed border-[#C0D4F0] bg-white/60 px-5 py-10 text-center md:py-16">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#C0D4F0] bg-[#EEF3FC]">
+              <Film size={30} className="text-primary" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('dashboard.emptyTitle')}</h3>
-              <p className="text-zinc-500 text-sm">{t('dashboard.emptySubtitle')}</p>
+            <div className="mt-5 space-y-2">
+              <h3 data-dashboard-empty-title className="text-xl font-black tracking-tight text-zinc-900 md:text-2xl">{t('dashboard.emptyTitle')}</h3>
+              <p className="text-sm leading-6 text-zinc-500">{t('dashboard.emptySubtitle')}</p>
             </div>
-            <button
-              onClick={handleNewProject}
-              className="px-9 py-4 bg-primary text-white rounded-full font-bold hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
-            >
-              <Plus size={20} className="inline mr-2" /> {t('dashboard.createProject')}
-            </button>
           </div>
         )}
 
         {/* Project Grid */}
         {!isLoading && projects.length > 0 && (
           <div className="space-y-4">
-          <div data-tour="dashboard-project-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="text-lg font-black tracking-tight text-zinc-900 md:text-xl">{t('dashboard.recentProjects')}</h2>
+          <div data-tour="dashboard-project-grid" data-dashboard-project-grid className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {(showAllProjects ? projects : projects.slice(0, 3)).map((project) => (
               <div
                 key={project.id}
@@ -325,7 +355,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Info */}
-                <div className="p-6 space-y-4">
+                <div className="space-y-4 p-4 md:p-6">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-3 py-1 bg-[#E5EDFA] border border-[#C0D4F0] rounded-full text-[10px] font-bold text-[#0050BF] uppercase">
                       {project.style}

@@ -1,0 +1,18 @@
+{
+  "scope": "open-event-popup-footer",
+  "iteration": 1,
+  "verdict": "pass",
+  "score": 97,
+  "screenshots": {
+    "desktop": ".omx/state/open-event-popup/desktop-final.png",
+    "mobile": ".omx/state/open-event-popup/mobile-final.png"
+  },
+  "checks": {
+    "apply_cta_prominent": true,
+    "close_action_small_and_right_aligned": true,
+    "today_suppression_remains_clear": true,
+    "mobile_footer_fits_without_wrapping": true,
+    "artwork_remains_clickable": true
+  },
+  "notes": "The dedicated blue CTA is visually dominant on desktop and mobile. The close action remains compact at the far right, while today suppression stays available at the left."
+}

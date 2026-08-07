@@ -15,6 +15,7 @@
 //   KLING_ACCESS_KEY_ID       — Legacy JWT 방식 (엔터프라이즈) — 폴백
 //   KLING_ACCESS_KEY_SECRET   — Legacy JWT 방식 — 폴백
 //   OPENAI_API_KEY            — GPT Image 2 (이미지 생성)
+//   GOOGLE_TTS_API_KEY        — Google Cloud Text-to-Speech (음성 생성)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 는 프로젝트에 기본 주입됨
 //
 // 라우팅:
@@ -34,6 +35,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const GEMINI_HOST = 'https://generativelanguage.googleapis.com'
 const KLING_HOST = 'https://api.klingai.com'
 const OPENAI_HOST = 'https://api.openai.com'
+const GOOGLE_TTS_HOST = 'https://texttospeech.googleapis.com'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,6 +59,11 @@ async function geminiKey(admin: ReturnType<typeof createClient>): Promise<string
 /** OpenAI 키 조달 (GPT Image 2). 조달 규칙은 Gemini 와 동일. */
 async function openaiKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
   return config(admin, 'openai_api_key', 'OPENAI_API_KEY')
+}
+
+/** Google Cloud TTS 키 조달. Gemini 와 다른 키 (aistudio 계정과 gcp 계정이 다르기 때문). */
+async function googleTtsKey(admin: ReturnType<typeof createClient>): Promise<string | null> {
+  return config(admin, 'google_tts_api_key', 'GOOGLE_TTS_API_KEY')
 }
 
 /**
@@ -167,6 +174,7 @@ Deno.serve(async (req) => {
       gemini: Boolean(await geminiKey(admin)),
       kling: Boolean(await klingKeys(admin)),
       openai: Boolean(await openaiKey(admin)),
+      googleTts: Boolean(await googleTtsKey(admin)),
     })
   }
 
@@ -198,6 +206,36 @@ Deno.serve(async (req) => {
       // 스트림 본문을 그대로 전달할 때 Deno/undici 가 요구한다.
       ...(hasBody ? { duplex: 'half' } : {}),
     } as RequestInit)
+
+    const respHeaders = new Headers(corsHeaders)
+    const upstreamCt = upstream.headers.get('Content-Type')
+    if (upstreamCt) respHeaders.set('Content-Type', upstreamCt)
+    return new Response(upstream.body, { status: upstream.status, headers: respHeaders })
+  }
+
+  // ---------- 2.7 Google Cloud TTS 포워드 (음성 생성) ----------
+  // /ai-proxy/google/tts/v1/text:synthesize → https://texttospeech.googleapis.com/v1/text:synthesize
+  //
+  // ⚠️ Gemini 분기(rest.startsWith('/v1')) 보다 먼저 와야 한다.
+  // Google TTS 는 URL query 로 ?key=<KEY> 를 붙이는 방식으로 인증한다
+  // (Bearer 아님). 클라이언트가 보낸 query 는 무시하고 서버에서만 붙인다.
+  if (rest.startsWith('/google/tts')) {
+    const apiKey = await googleTtsKey(admin)
+    if (!apiKey) return json({ error: 'GOOGLE_TTS_API_KEY 가 설정되지 않았습니다.' }, 503)
+
+    const pathAfter = rest.slice('/google/tts'.length)  // 예: /v1/text:synthesize
+    const target = `${GOOGLE_TTS_HOST}${pathAfter}?key=${encodeURIComponent(apiKey)}`
+
+    const headers = new Headers()
+    const ct = req.headers.get('Content-Type')
+    if (ct) headers.set('Content-Type', ct)
+
+    const hasBody = req.method !== 'GET' && req.method !== 'HEAD'
+    const upstream = await fetch(target, {
+      method: req.method,
+      headers,
+      body: hasBody ? await req.text() : undefined,
+    })
 
     const respHeaders = new Headers(corsHeaders)
     const upstreamCt = upstream.headers.get('Content-Type')
