@@ -68,8 +68,8 @@ export function buildMockSession(user: User): Session {
   } as unknown as Session;
 }
 
-/** 가계정 크레딧 (디자인 확인용 표시값) — 신규 가입 시 60 크레딧 부여 기준 (021 원복) */
+/** 가계정 크레딧 (디자인 확인용 표시값) — 신규 가입 시 100 크레딧 부여 기준 (038) */
 export const MOCK_CREDITS: Record<MockRole, { balance: number; maxCredits: number }> = {
-  master: { balance: 48, maxCredits: 60 },
-  user: { balance: 14, maxCredits: 60 },
+  master: { balance: 78, maxCredits: 100 },
+  user: { balance: 24, maxCredits: 100 },
 };
