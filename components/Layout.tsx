@@ -29,6 +29,7 @@ import { useAuthStore } from '../store/authStore';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ProjectStep } from '../types';
+import { STEP_TO_TOUR } from '../hooks/useOnboardingTour';
 import { isAdmin } from '../services/adminConfigService';
 import { CreditRequestModal } from './CreditRequestModal';
 import { renameProject } from '../services/projectService';
@@ -88,13 +89,6 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   const cancelTitleEdit = () => setTitleEditing(false);
   const { balance, maxCredits } = useCreditStore();
   const { requestTourReplay } = useSettingsStore();
-
-  const STEP_TO_TOUR: Partial<Record<ProjectStep, string>> = {
-    [ProjectStep.DASHBOARD]: 'dashboard',
-    [ProjectStep.PLANNING]: 'planning',
-    [ProjectStep.VISUALIZING]: 'visualizing',
-    [ProjectStep.ASSEMBLY]: 'assembly',
-  };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);

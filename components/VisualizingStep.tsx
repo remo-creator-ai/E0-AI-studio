@@ -698,7 +698,7 @@ CRITICAL RULES:
         </div>
 
         {/* Model Selection */}
-        <div className="flex items-center gap-4">
+        <div data-tour="visualizing-model" className="flex items-center gap-4">
           <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest shrink-0">Image Model</label>
           <div className="flex gap-3 flex-1">
             {Object.values(ImageModel).map((model) => {

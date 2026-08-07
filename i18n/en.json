@@ -309,9 +309,14 @@
     "title": "My",
     "titleHighlight": "Projects",
     "subtitle": "Select a project or create a new one.",
+    "mobileTitle": "What will you create?",
+    "mobileSubtitle": "Start AI shorts, images, video, and voice in one place.",
+    "newShortProject": "New Shorts Project",
+    "quickStart": "Quick Start",
+    "recentProjects": "Recent Projects",
     "newProject": "New Project",
-    "emptyTitle": "No Projects Yet",
-    "emptySubtitle": "Start your first video project today.",
+    "emptyTitle": "No projects yet",
+    "emptySubtitle": "Bring an idea and AI will guide the production process.",
     "createProject": "Create Project",
     "images": "Images",
     "videos": "Videos",
@@ -919,7 +924,7 @@
       },
       "workflow": {
         "title": "4-Step Workflow",
-        "desc": "Projects follow Planning, Visualizing, Assembly, and Production steps."
+        "desc": "Move through 1. Draft Planning → 2. Create Storyboard → 3. Refine Storyboard → 4. Produce Full Video. The Creative menu above also lets you generate images and videos on their own."
       },
       "newProject": {
         "title": "Create New Project",
@@ -955,11 +960,15 @@
       },
       "matrix": {
         "title": "Image Matrix",
-        "desc": "AI-generated images are displayed in a grid."
+        "desc": "Generated cuts appear together on a single sheet. The grid shape changes with the number of cuts."
       },
       "generate": {
         "title": "Generate Images",
         "desc": "Use Generate + Apply for the current unit, or Generate All for batch processing."
+      },
+      "model": {
+        "title": "Pick an Image Model",
+        "desc": "The model you pick changes how sharp the storyboard sheet looks. Start with the default, and switch if you need crisper cuts."
       }
     },
     "assembly": {
@@ -977,17 +986,13 @@
       }
     },
     "production": {
-      "engine": {
-        "title": "Select Video Engine",
-        "desc": "Choose between Kling AI or VEO 3.1 to generate your videos."
+      "modeSelect": {
+        "title": "Choose How to Produce",
+        "desc": "Turn the whole storyboard into one video in a single pass, or build it scene by scene with fine control."
       },
-      "progress": {
-        "title": "Production Progress",
-        "desc": "Track the video generation progress for all scenes."
-      },
-      "batch": {
-        "title": "Batch Generation",
-        "desc": "Select multiple scenes and generate videos in one batch."
+      "recommend": {
+        "title": "Which One to Pick",
+        "desc": "Pick the left one if this is your first time or you want it done fast; pick the right one when a specific scene has to look right. You can also draft on the left, then redo only the weak scenes on the right."
       }
     },
     "buttons": {

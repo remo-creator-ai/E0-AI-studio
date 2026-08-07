@@ -91,7 +91,7 @@ const Landing: React.FC<{ onSelect: (m: Mode) => void }> = ({ onSelect }) => (
       <h2 className="text-xl font-bold text-zinc-700 mb-1">스토리보드를 어떻게 영상으로 만드시겠어요?</h2>
       <p className="text-sm text-zinc-500">두 가지 방식 중 프로젝트에 맞는 걸 골라주세요.</p>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div data-tour="production-mode-select" className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <ModeCard
         icon={Wand2}
         title="스토리보드로 한번에 만들기"
@@ -120,7 +120,7 @@ const Landing: React.FC<{ onSelect: (m: Mode) => void }> = ({ onSelect }) => (
         onClick={() => onSelect('modeB')}
       />
     </div>
-    <div className="mt-4 p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+    <div data-tour="production-recommend" className="mt-4 p-4 rounded-2xl bg-blue-50 border border-blue-100 flex items-start gap-3">
       <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
       <div className="text-xs text-blue-900 leading-relaxed">
         <strong>추천:</strong> 처음 만드는 분·빠른 완성 원하면 <strong>왼쪽</strong>, 특정 씬 품질이 중요하면 <strong>오른쪽</strong>.

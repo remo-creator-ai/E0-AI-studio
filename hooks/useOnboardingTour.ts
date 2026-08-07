@@ -5,7 +5,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
 import { ProjectStep } from '../types';
 
-export type TourId = 'dashboard' | 'planning' | 'visualizing' | 'assembly';
+export type TourId = 'dashboard' | 'planning' | 'visualizing' | 'assembly' | 'production';
 
 interface TourStepDef {
   element: string;
@@ -31,6 +31,8 @@ const TOUR_DEFINITIONS: Record<TourId, TourStepDef[]> = {
   ],
   visualizing: [
     { element: '[data-tour="visualizing-style"]', titleKey: 'onboarding.visualizing.style.title', descKey: 'onboarding.visualizing.style.desc', side: 'bottom' },
+    // 모델에 따라 시트 화질이 크게 달라지는데 그동안 안내가 없었다.
+    { element: '[data-tour="visualizing-model"]', titleKey: 'onboarding.visualizing.model.title', descKey: 'onboarding.visualizing.model.desc', side: 'bottom', requiresElement: true },
     { element: '[data-tour="visualizing-matrix"]', titleKey: 'onboarding.visualizing.matrix.title', descKey: 'onboarding.visualizing.matrix.desc', side: 'top', requiresElement: true },
     { element: '[data-tour="visualizing-generate"]', titleKey: 'onboarding.visualizing.generate.title', descKey: 'onboarding.visualizing.generate.desc', side: 'left', requiresElement: true },
   ],
@@ -39,13 +41,25 @@ const TOUR_DEFINITIONS: Record<TourId, TourStepDef[]> = {
     { element: '[data-tour="assembly-timeline"]', titleKey: 'onboarding.assembly.timeline.title', descKey: 'onboarding.assembly.timeline.desc', side: 'top', requiresElement: true },
     { element: '[data-tour="assembly-export"]', titleKey: 'onboarding.assembly.export.title', descKey: 'onboarding.assembly.export.desc', side: 'left', requiresElement: true },
   ],
+  // 4단계는 ProductionStepShell 의 랜딩(모드 선택)에서만 안내한다. 모드에 들어가면
+  // 화면이 통째로 바뀌므로 requiresElement 로 자동 스킵되게 둔다.
+  production: [
+    { element: '[data-tour="production-mode-select"]', titleKey: 'onboarding.production.modeSelect.title', descKey: 'onboarding.production.modeSelect.desc', side: 'bottom', requiresElement: true },
+    { element: '[data-tour="production-recommend"]', titleKey: 'onboarding.production.recommend.title', descKey: 'onboarding.production.recommend.desc', side: 'top', requiresElement: true },
+  ],
 };
 
-const STEP_TO_TOUR: Partial<Record<ProjectStep, TourId>> = {
+/**
+ * 단계 → 투어 매핑. Layout 의 '이 페이지 가이드 다시보기' 버튼도 이 값을 쓴다.
+ * (예전에는 Layout 이 같은 표를 따로 갖고 있어, 투어를 추가해도 버튼에는 안 뜨는
+ *  어긋남이 생겼다. 단일 소스로 둔다.)
+ */
+export const STEP_TO_TOUR: Partial<Record<ProjectStep, TourId>> = {
   [ProjectStep.DASHBOARD]: 'dashboard',
   [ProjectStep.PLANNING]: 'planning',
   [ProjectStep.VISUALIZING]: 'visualizing',
   [ProjectStep.ASSEMBLY]: 'assembly',
+  [ProjectStep.PRODUCTION]: 'production',
 };
 
 export function useOnboardingTour() {
