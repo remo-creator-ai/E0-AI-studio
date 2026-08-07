@@ -97,7 +97,6 @@ Expected: FAIL because the mobile title and quick-action elements do not exist.
 {
   "mobileTitle": "무엇을 만들어볼까요?",
   "mobileSubtitle": "AI 쇼츠부터 이미지·영상·음성까지 한곳에서 시작하세요.",
-  "newShortProject": "새 쇼츠 프로젝트",
   "quickStart": "바로 시작하기",
   "recentProjects": "최근 프로젝트",
   "emptyTitle": "아직 만든 프로젝트가 없어요",
@@ -105,7 +104,7 @@ Expected: FAIL because the mobile title and quick-action elements do not exist.
 }
 ```
 
-Add equivalent English values: `What will you create?`, `Start AI shorts, images, video, and voice in one place.`, `New Shorts Project`, `Quick Start`, `Recent Projects`, `No projects yet`, and `Bring an idea and AI will guide the production process.`
+Add equivalent English values: `What will you create?`, `Start AI shorts, images, video, and voice in one place.`, `Quick Start`, `Recent Projects`, `No projects yet`, and `Bring an idea and AI will guide the production process.` Reuse the existing `newProject` key for the CTA.
 
 - [ ] **Step 4: Implement responsive hero and shortcuts**
 

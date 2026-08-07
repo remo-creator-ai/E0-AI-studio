@@ -287,7 +287,7 @@ export const Dashboard: React.FC = () => {
             onClick={handleNewProject}
             className="flex min-h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-[0_8px_20px_rgba(0,80,191,0.22)] transition-all hover:bg-[#003E99] active:scale-[0.98] md:w-auto md:rounded-full md:px-7"
           >
-            <Plus size={20} /> {t('dashboard.newShortProject')}
+            <Plus size={20} /> {t('dashboard.newProject')}
           </button>
         </section>
 

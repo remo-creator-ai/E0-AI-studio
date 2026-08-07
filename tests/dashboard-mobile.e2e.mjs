@@ -61,7 +61,7 @@ try {
     await mobileTitle.waitFor();
     assert.equal((await mobileTitle.textContent())?.trim(), '무엇을 만들어볼까요?');
     assert.equal((await page.locator('[data-dashboard-mobile-subtitle]').textContent())?.trim(), 'AI 쇼츠부터 이미지·영상·음성까지 한곳에서 시작하세요.');
-    assert.equal((await primaryCta.textContent())?.replace(/\s+/g, ' ').trim(), '새 쇼츠 프로젝트');
+    assert.equal((await primaryCta.textContent())?.replace(/\s+/g, ' ').trim(), '새 프로젝트');
     assert.equal(await quickActions.count(), 3);
     assert.equal(await page.locator('[data-dashboard-empty-title]').textContent(), '아직 만든 프로젝트가 없어요');
 
