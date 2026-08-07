@@ -213,7 +213,10 @@ export const ImageStudio: React.FC = () => {
   const { confirm: modalConfirm } = useModal();
 
   // model 이 바뀌면 그 모델에 필요한 키(OpenAI 또는 Gemini)로 다시 검사.
-  useEffect(() => { isImageApiReady(model).then(setApiReady); }, [model]);
+  // 실패해도 true 폴백 — 실 판정은 generateStudioImage 가 503 을 리턴하는 것으로.
+  // (예전엔 첫 health 실패 시 apiReady 가 영구 false 로 고정되어 관리자에서 키를
+  //  나중에 저장해도 화면 재마운트 없인 복구 불가했음)
+  useEffect(() => { isImageApiReady(model).then(setApiReady).catch(() => setApiReady(true)); }, [model]);
   // 새 이미지가 뜨면 이전 저장 상태를 초기화한다.
   useEffect(() => { setSaveState({ kind: 'idle' }); }, [image]);
 
@@ -284,7 +287,8 @@ export const ImageStudio: React.FC = () => {
   const needsRef = (mode === 'image' || mode === 'multishot') && refs.length === 0;
   // 텍스트/이미지 모드는 프롬프트 필수. 멀티샷은 프롬프트 선택(참고 이미지가 있으므로).
   const promptOk = mode === 'multishot' ? true : prompt.trim().length > 0;
-  const canGenerate = promptOk && !busy && apiReady && enoughCredits && !needsRef;
+  // apiReady 는 게이팅에서 제외 · 낙관적으로 시도 · 실 서버 503 응답으로만 판정.
+  const canGenerate = promptOk && !busy && enoughCredits && !needsRef;
 
   const addRefFiles = useCallback(async (files: File[]) => {
     setRefError(null);
@@ -638,19 +642,19 @@ export const ImageStudio: React.FC = () => {
   }, [image]);
 
   // 오류가 나도 프롬프트/형태/참고 이미지/스타일은 유지한다 (계획서 §9).
-  const errorMessage = !apiReady
-    ? t('imageStudio.error.noApiKey')
-    : !enoughCredits
-      ? t('imageStudio.error.notEnoughCredits', { cost, balance })
-      : needsRef
-        ? t('imageStudio.error.needReference')
-        : failure === 'no_api_key'
-          ? t('imageStudio.error.noApiKey')
-          : failure === 'blocked'
-            ? t('imageStudio.error.blocked')
-            : failure
-              ? t('imageStudio.error.failed')
-              : null;
+  // 초기 apiReady 판정 실패는 경고에서 제외 · 실 시도의 failure='no_api_key' 만 반영.
+  // (관리자 콘솔에 키 저장돼 있어도 캐시/세션 문제로 health false 나오면 오알람 → 이 게이팅 제거)
+  const errorMessage = !enoughCredits
+    ? t('imageStudio.error.notEnoughCredits', { cost, balance })
+    : needsRef
+      ? t('imageStudio.error.needReference')
+      : failure === 'no_api_key'
+        ? t('imageStudio.error.noApiKey')
+        : failure === 'blocked'
+          ? t('imageStudio.error.blocked')
+          : failure
+            ? t('imageStudio.error.failed')
+            : null;
 
   // ---- 히스토리 스트립: xl+ 인라인, 그 미만은 서랍(drawer)에 같은 내용을 재사용 ----
   const historyStripContent = (
