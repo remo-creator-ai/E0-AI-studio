@@ -1,0 +1,8 @@
+{
+  "01-dashboard-sidebar.png": "한글 로고 \"소담 AI 스튜디오\" · 사이드바 최하단 스폰서 · Powered by 표시 · 크리에이티브 섹션에 새 항목 \"음성 생성\"(Mic) 추가",
+  "02-image-studio-header.png": "이미지 생성 헤더 · 좌측 ImagePlus 파란 아이콘 (동영상 생성과 대칭 통일). 기본 진입 상태",
+  "03-video-studio-header.png": "동영상 생성 헤더 · Video 파란 아이콘 · 신설된 \"스타일 선택\" 버튼 (프롬프트 위) 확인",
+  "04-voice-studio-empty.png": "음성 생성 (신규) · 3영역 (설정 · 재생 안내 · 세션 히스토리) · Mic 헤더 아이콘 · 4가지 한국어 목소리 프리셋",
+  "04b-voice-studio-filled.png": "음성 생성 · 스크립트 입력 후 · 글자수 카운터 · 크레딧 자동 계산 (100자당 1cr) · 생성 버튼 활성",
+  "05-admin-api-keys.png": "관리자 콘솔 · API Keys 탭 · Gemini · OpenAI(GPT Image 2) · Google Cloud TTS(신규) · Kling 키 필드 · 각 필드는 \"설정됨\" 뱃지 · 새 값 입력 시 교체"
+}
