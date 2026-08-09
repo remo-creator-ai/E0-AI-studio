@@ -403,6 +403,37 @@ export interface Database {
         };
         Relationships: [];
       };
+      voice_generation_history: {
+        Row: {
+          id: string;
+          owner_id: string;
+          text: string;
+          voice_id: string;
+          voice_label: string;
+          char_count: number;
+          speaking_rate: number;
+          pitch: number;
+          storage_path: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          text: string;
+          voice_id: string;
+          voice_label: string;
+          char_count: number;
+          speaking_rate?: number;
+          pitch?: number;
+          storage_path: string;
+          created_at?: string;
+        };
+        Update: {
+          text?: string;
+          voice_label?: string;
+        };
+        Relationships: [];
+      };
       user_custom_styles: {
         Row: {
           id: string;

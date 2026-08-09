@@ -1,35 +1,25 @@
 // =============================================================
 //  음성 생성 · Google Cloud TTS
 //
-//  MVP:
-//   - 스크립트 텍스트 (최대 1500자)
-//   - 목소리 프리셋 (한국어 4종)
-//   - 속도 · 톤 슬라이더
-//   - 미리듣기 · 다운로드
-//   - 세션 히스토리 (브라우저 메모리 · 새로고침 시 사라짐)
-//
-//  v2 예정: DB 히스토리 (voice_generation_history 테이블 · 30일 TTL) ·
-//           자산 보관함 저장 · 씬별 자동 나레이션 배선
+//  - 스크립트 (최대 1500자) · 목소리 프리셋 · 속도/톤 · 재생 · mp3 다운로드
+//  - 히스토리: DB 영구 저장 (migration 039 · 30일 TTL · 100개 상한)
+//  - 자산 보관함 저장은 하지 않음 (사용자 결정, 2026-08-09)
 // =============================================================
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Mic, Play, Pause, Download, Loader2, AlertCircle, Volume2, Wand2, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Mic, Play, Pause, Download, Loader2, AlertCircle, Volume2, Wand2, Trash2, Clock, RefreshCw } from 'lucide-react';
 import { useModal } from './ui/ModalProvider';
 import { useCreditStore } from '../store/creditStore';
+import { useAuthStore } from '../store/authStore';
 import {
   generateTts, isTtsReady, ttsCreditCost,
   VOICE_PRESETS, DEFAULT_VOICE, TTS_MAX_CHARS,
   type GenerateTtsFailure,
 } from '../services/ttsService';
-
-interface HistoryEntry {
-  id: string;
-  text: string;
-  voiceLabel: string;
-  audioUrl: string;
-  createdAt: number;
-  charCount: number;
-}
+import {
+  saveTtsHistory, listTtsHistory, deleteTtsHistoryItem, refreshTtsSignedUrl,
+  type TtsHistoryItem,
+} from '../services/ttsHistoryService';
 
 const SAMPLE_SCRIPTS = [
   '안녕하세요, 소담 AI 스튜디오입니다. 지금부터 시작합니다.',
@@ -37,11 +27,14 @@ const SAMPLE_SCRIPTS = [
   '단 한 잔의 커피가 오늘 하루를 완벽하게 만들어 드립니다.',
 ];
 
+const HISTORY_LIMIT = 20;
+
 export const VoiceStudio: React.FC = () => {
-  const { alert } = useModal();
+  const { alert, confirm } = useModal();
   const balance = useCreditStore((s) => s.balance);
   const hasEnough = useCreditStore((s) => s.hasEnough);
   const deduct = useCreditStore((s) => s.deduct);
+  const user = useAuthStore((s) => s.user);
 
   const [text, setText] = useState('');
   const [voiceId, setVoiceId] = useState(DEFAULT_VOICE.id);
@@ -53,26 +46,42 @@ export const VoiceStudio: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [apiReady, setApiReady] = useState(true);
 
-  const [current, setCurrent] = useState<HistoryEntry | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  // DB 히스토리 상태 · 재생 대상 · 로딩
+  const [current, setCurrent] = useState<TtsHistoryItem | null>(null);
+  const [history, setHistory] = useState<TtsHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
-  // 초기 판정은 정보용 · 실패해도 버튼은 활성 · 실제 실패 시 generate 가 503→no_api_key 로 재보고.
-  // (예전엔 여기서 false 나오면 버튼이 영구 비활성 → 관리자에 키 저장했는데도 오알람 뜸)
   useEffect(() => { isTtsReady().then(setApiReady).catch(() => setApiReady(true)); }, []);
+
+  // 히스토리 로드 · 유저 있으면 마운트 시 + 만료 signed URL 방어 (첫 아이템만 재발급 시도)
+  const loadHistory = useCallback(async () => {
+    if (!user?.id) { setHistory([]); return; }
+    setHistoryLoading(true);
+    try {
+      const rows = await listTtsHistory(user.id, HISTORY_LIMIT, 0);
+      setHistory(rows);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const charCount = text.trim().length;
   const cost = ttsCreditCost(charCount || 1);
   const enough = hasEnough(cost);
   const voice = useMemo(() => VOICE_PRESETS.find((v) => v.id === voiceId) ?? DEFAULT_VOICE, [voiceId]);
-
-  // apiReady 는 게이팅에서 제외 · 정보성 배너로만 사용. 실 판정은 서버 응답으로.
   const canGenerate = charCount > 0 && charCount <= TTS_MAX_CHARS && !busy && enough;
 
   const generate = async () => {
     if (charCount === 0) {
       await alert('스크립트를 입력해 주세요.', { type: 'warning' });
+      return;
+    }
+    if (!user?.id) {
+      await alert('로그인이 필요합니다.', { type: 'warning' });
       return;
     }
     setBusy(true);
@@ -87,22 +96,45 @@ export const VoiceStudio: React.FC = () => {
       }
       await deduct(cost, `음성 생성 (${charCount}자 · ${voice.label})`);
 
-      const entry: HistoryEntry = {
-        id: `tts-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      // DB 저장 · 실패해도 사용자가 방금 만든 mp3 는 재생 가능하도록 임시 아이템으로 표시
+      const save = await saveTtsHistory({
+        ownerId: user.id,
         text: text.trim(),
+        voiceId,
         voiceLabel: voice.label,
-        audioUrl: result.audioUrl,
-        createdAt: Date.now(),
         charCount: result.charCount ?? charCount,
-      };
-      setCurrent(entry);
-      setHistory((prev) => [entry, ...prev].slice(0, 20));
+        speakingRate,
+        pitch,
+        audioDataUrl: result.audioUrl,
+      });
 
-      // 자동 재생
-      setTimeout(() => {
-        audioRef.current?.play().catch(() => { /* user gesture 필요할 수 있음 */ });
-        setPlayingId(entry.id);
-      }, 100);
+      if (save.ok && save.item) {
+        setCurrent(save.item);
+        // 히스토리 재로드 (signed URL 최신화 + 100개 상한 트리밍 반영)
+        loadHistory();
+        setTimeout(() => {
+          audioRef.current?.play().catch(() => {});
+          setPlayingId(save.item!.id);
+        }, 100);
+      } else {
+        // 저장 실패 시 data URL 로 임시 재생만 (오류 안내)
+        console.warn('TTS DB 저장 실패:', save.error);
+        const tempItem: TtsHistoryItem = {
+          id: `temp-${Date.now()}`,
+          owner_id: user.id,
+          text: text.trim(),
+          voice_id: voiceId,
+          voice_label: voice.label,
+          char_count: result.charCount ?? charCount,
+          speaking_rate: speakingRate,
+          pitch,
+          storage_path: '',
+          url: result.audioUrl,
+          created_at: new Date().toISOString(),
+        };
+        setCurrent(tempItem);
+        setErrorMsg(`재생은 가능하지만 히스토리 저장에 실패했습니다: ${save.error ?? 'unknown'}`);
+      }
     } catch (e) {
       setFailure('error');
       setErrorMsg(e instanceof Error ? e.message : String(e));
@@ -111,38 +143,53 @@ export const VoiceStudio: React.FC = () => {
     }
   };
 
-  const togglePlay = (entry: HistoryEntry) => {
+  const togglePlay = async (entry: TtsHistoryItem) => {
     if (!audioRef.current) return;
     if (current?.id === entry.id && playingId === entry.id) {
       audioRef.current.pause();
       setPlayingId(null);
-    } else {
-      if (current?.id !== entry.id) setCurrent(entry);
-      setTimeout(() => {
-        audioRef.current?.play().catch(() => {});
-        setPlayingId(entry.id);
-      }, 50);
+      return;
     }
+    // 다른 항목 · 만료된 signed URL 이면 재발급 시도
+    let target = entry;
+    if (entry.url) {
+      const fresh = await refreshTtsSignedUrl(entry.url);
+      if (fresh !== entry.url) target = { ...entry, url: fresh };
+    }
+    setCurrent(target);
+    setTimeout(() => {
+      audioRef.current?.play().catch(() => {});
+      setPlayingId(target.id);
+    }, 50);
   };
 
-  const download = (entry: HistoryEntry) => {
+  const download = (entry: TtsHistoryItem) => {
     const a = document.createElement('a');
-    a.href = entry.audioUrl;
-    a.download = `voice-${new Date(entry.createdAt).toISOString().slice(0, 19).replace(/[T:]/g, '-')}.mp3`;
+    a.href = entry.url;
+    a.download = `voice-${new Date(entry.created_at).toISOString().slice(0, 19).replace(/[T:]/g, '-')}.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  const removeHistory = (id: string) => {
-    setHistory((prev) => prev.filter((h) => h.id !== id));
-    if (current?.id === id) setCurrent(null);
-    if (playingId === id) { audioRef.current?.pause(); setPlayingId(null); }
+  const removeHistory = async (entry: TtsHistoryItem) => {
+    const ok = await confirm('이 음성을 삭제할까요? 되돌릴 수 없습니다.', { type: 'warning' });
+    if (!ok) return;
+    // 임시 항목(저장 실패 · id 가 temp-) 은 DB 호출 없이 로컬에서만 제거
+    if (entry.id.startsWith('temp-')) {
+      if (current?.id === entry.id) setCurrent(null);
+      return;
+    }
+    const success = await deleteTtsHistoryItem(entry.id, entry.storage_path);
+    if (!success) {
+      await alert('삭제 실패. 잠시 후 다시 시도해 주세요.', { type: 'error' });
+      return;
+    }
+    setHistory((prev) => prev.filter((h) => h.id !== entry.id));
+    if (current?.id === entry.id) setCurrent(null);
+    if (playingId === entry.id) { audioRef.current?.pause(); setPlayingId(null); }
   };
 
-  // 초기 apiReady 판정 실패는 경고에서 제외 · 실 실패 (failure='no_api_key') 만 반영.
-  // health 응답이 인증/캐시 문제로 false 여도 서버는 실제로 잘 동작할 수 있어서
-  // 미리 막지 않고 시도 후 판정.
   const errorMessage = charCount > TTS_MAX_CHARS
     ? `스크립트는 최대 ${TTS_MAX_CHARS}자까지 지원합니다. (현재 ${charCount}자)`
     : !enough && charCount > 0
@@ -181,7 +228,7 @@ export const VoiceStudio: React.FC = () => {
           disabled={busy}
         />
 
-        {/* 샘플 스크립트 · 빠른 시작 */}
+        {/* 샘플 스크립트 */}
         <div className="flex flex-wrap gap-1.5 mb-5">
           {SAMPLE_SCRIPTS.map((sample, i) => (
             <button
@@ -279,12 +326,12 @@ export const VoiceStudio: React.FC = () => {
             <div className="flex items-center gap-2 mb-4">
               <Volume2 size={16} className="text-primary" />
               <span className="text-xs font-black uppercase tracking-widest text-zinc-500">현재 재생</span>
-              <span className="ml-auto text-[10px] text-zinc-400">{current.voiceLabel} · {current.charCount}자</span>
+              <span className="ml-auto text-[10px] text-zinc-400">{current.voice_label} · {current.char_count}자</span>
             </div>
 
             <audio
               ref={audioRef}
-              src={current.audioUrl}
+              src={current.url}
               controls
               onPlay={() => setPlayingId(current.id)}
               onPause={() => setPlayingId(null)}
@@ -317,20 +364,29 @@ export const VoiceStudio: React.FC = () => {
         )}
       </div>
 
-      {/* ===== 오른쪽: 세션 히스토리 ===== */}
+      {/* ===== 오른쪽: 히스토리 (DB · 30일 · 100개) ===== */}
       <aside className="w-full lg:w-[300px] lg:shrink-0 flex flex-col bg-white border border-zinc-200 rounded-3xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Volume2 size={14} className="text-primary" />
-          <h3 className="text-sm font-black text-zinc-900">이 세션</h3>
+        <div className="flex items-center gap-2 mb-1">
+          <Clock size={14} className="text-primary" />
+          <h3 className="text-sm font-black text-zinc-900">히스토리</h3>
           <span className="ml-auto text-[10px] text-zinc-400 tabular-nums">{history.length}개</span>
         </div>
         <p className="text-[10px] text-zinc-400 leading-relaxed mb-3">
-          브라우저 메모리에 임시 저장. 새로고침 시 사라집니다. 유지가 필요하면 다운로드 하세요.
+          30일 뒤 자동 삭제 · 계속 사용하려면 다운로드 하세요.
         </p>
 
-        {history.length === 0 ? (
+        {!user && (
+          <div className="text-xs text-zinc-500 text-center py-8">로그인이 필요합니다.</div>
+        )}
+        {user && historyLoading && (
+          <div className="text-xs text-zinc-500 text-center py-8 flex items-center justify-center gap-2">
+            <RefreshCw size={12} className="animate-spin" /> 로딩 중...
+          </div>
+        )}
+        {user && !historyLoading && history.length === 0 && (
           <div className="text-xs text-zinc-400 text-center py-8">아직 생성한 음성이 없습니다.</div>
-        ) : (
+        )}
+        {user && !historyLoading && history.length > 0 && (
           <div className="space-y-2 overflow-y-auto flex-1">
             {history.map((h) => {
               const isPlaying = playingId === h.id;
@@ -352,7 +408,7 @@ export const VoiceStudio: React.FC = () => {
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] text-zinc-800 line-clamp-2 leading-snug">{h.text}</p>
                       <p className="text-[9px] text-zinc-400 mt-1">
-                        {h.voiceLabel} · {h.charCount}자
+                        {h.voice_label} · {h.char_count}자
                       </p>
                     </div>
                     <div className="flex flex-col gap-1 shrink-0">
@@ -364,7 +420,7 @@ export const VoiceStudio: React.FC = () => {
                         <Download size={11} />
                       </button>
                       <button
-                        onClick={() => removeHistory(h.id)}
+                        onClick={() => removeHistory(h)}
                         className="p-1 text-zinc-400 hover:text-red-500 rounded"
                         title="삭제"
                       >
