@@ -236,6 +236,25 @@ After:
   - 구현: 기존 `isAdmin(email)` **사이드바 게이팅 패턴 그대로 재사용** → `accounts.role='master'` 기반 전환. `/master` 라우트는 role 가드 + 서버 RLS/RPC 이중 검증
 - `accounts` 스키마에 `role(master/user)`·`master_id` 필드 추가 반영
 
+### 2026-08-09 (세션) — scene-images 버킷 재발 + base64 백필
+
+#### 발견과 해결
+| # | 발견 | 해결 |
+|---|------|------|
+| 1 | 모드 B에서 "대표"로 지정된 씬 영상이 상단 레일·카드 메인에서 검은 화면 (하단 테이크 썸네일만 정상) | 대표 테이크 URL과 `scene.video_url` 이 갈라진 것. 렌더 시 대표 테이크를 우선하고 `scene.video_url` 로 역동기화. signed URL 재발급 루프를 씬별 독립 실행으로 교체, `SelfHealingVideo` 로 재생 실패 시 자동 재발급 (`56fbe57`) |
+| 2 | `useAutoSave` 의 `setProject(processedProject)` 가 저장 시작 시점 스냅샷을 통째로 덮어써 저장 중 발생한 갱신을 되돌림 | 업로드로 실제 바뀐 것(base64 → Storage URL)만 현재 store 위에 병합 (`56fbe57`) |
+| 3 | `Bucket not found: scene-images` **재발** — 2026-05-14에 대시보드에서 손으로 만든 버킷이라 신규 Supabase 프로젝트(`rbeujkljbnderksgldrz`)엔 없었음 | `supabase/migrations/041_storage_scene_images.sql` 로 코드화 후 적용. public · 20MB · 이미지 MIME 화이트리스트, 쓰기는 최상위 폴더가 본인 소유 프로젝트일 때만 |
+| 4 | 업로드 실패 시 base64 폴백이라 아무 에러도 안 보이고 이미지가 `projects.scenes` JSONB에 그대로 저장 → **테이블 197MB** | `Bucket not found` 를 세션당 1회 조치법과 함께 `console.error`. 기존 데이터는 백필로 정리 |
+
+#### base64 백필 (일회성 운영 작업)
+- 대상: 15개 프로젝트 중 14개 · 파일 118개 · **106.8MB** (씬 이미지 + 스토리보드 그리드)
+- 경로·캐시버스터 규칙은 `services/storageService.ts` 와 동일하게 맞춤 (`{project_id}/scenes/{scene_id}.png`, `{project_id}/grid/{idx}.png`)
+- 결과: `scenes+grid_images` **143MB → 88kB**, `projects` 테이블 **197MB → 592kB** (VACUUM FULL)
+- `updated_at` 자동 갱신 트리거 때문에 대시보드 정렬이 흐트러지므로, 트리거를 잠시 끄고 원래 시각으로 복원 (mismatched 0 확인)
+- **롤백용 백업 테이블**: `public.projects_image_backup_20260809` (id · user_id · scenes · grid_images · orig_updated_at, RLS 켜짐/정책 없음, 148MB).
+  이상 없음이 확인되면 `DROP TABLE public.projects_image_backup_20260809;` 로 정리할 것.
+- 썸네일(`projects.thumbnail`)은 base64 그대로 두었음 — 15개 합쳐 366kB로 미미하고 앱도 업로드 대상에 넣지 않음.
+
 ## 미해결 / 다음 작업 (소담 트랙)
 | 우선도 | 작업 | 비고 |
 |--------|------|------|
