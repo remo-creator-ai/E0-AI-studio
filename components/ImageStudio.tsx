@@ -33,6 +33,7 @@ import {
   type StudioAspect, type GenerateFailure, type MultishotPack,
 } from '../services/imageStudioService';
 import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
+import { track } from '../lib/analytics';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import {
@@ -414,6 +415,7 @@ export const ImageStudio: React.FC = () => {
       // IMAGE-08: 성공한 생성에만 차감한다.
       const styleLabel = style ? (style.kind === 'preset' ? style.value : `custom:${style.id}`) : 'none';
       await deduct(cost, `image_studio:${mode}:${aspect}:${styleLabel}`);
+      track('image_generated', { success: true, model, mode, aspect, cost, has_style: !!style, has_refs: refs.length > 0 });
 
       // 히스토리 적재 — 로그인 사용자에 한해. 실패해도 이미지 결과는 유지한다.
       setCurrentHistoryId(null);
@@ -437,9 +439,10 @@ export const ImageStudio: React.FC = () => {
       }
     } else {
       setFailure(res.failure ?? 'error');
+      track('image_generated', { success: false, failure: res.failure ?? 'error', model, mode, aspect });
     }
     setBusy(false);
-  }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user]);
+  }, [canGenerate, composedPrompt, aspect, mode, refs, cost, style, deduct, prompt, user, model]);
 
   // ---------- 멀티샷 ----------
   // 개별 6장 모드에서 샷 하나만 실행하는 헬퍼. Promise.allSettled 안에서 최신 state 를

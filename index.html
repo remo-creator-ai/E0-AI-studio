@@ -63,6 +63,18 @@
     }
     </script>
 
+    <!-- Google Analytics 4 · Measurement ID: G-Q8VNCJHG0Z
+         gtag.js 는 async 로 로드 · 실 이벤트는 lib/analytics.ts 에서 dispatch.
+         MOCK 세션은 스크립트가 로드되어도 gtag 호출을 skip 하도록 analytics 유틸에서 가드. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q8VNCJHG0Z"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', 'G-Q8VNCJHG0Z', { send_page_view: false });
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>

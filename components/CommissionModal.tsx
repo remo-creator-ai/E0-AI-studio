@@ -20,6 +20,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { MOCK_MODE } from '../lib/mockAuth';
 import { sceneImageToBlob } from '../services/imageUtils';
+import { track } from '../lib/analytics';
 
 // 사용자 요청: 서비스 옵션이 너무 많아 지금은 하나만 노출.
 // 추후 부가 서비스(사운드·자막·리사이즈 등)가 실제 제공 준비되면 배열에 추가.
@@ -189,6 +190,13 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
       if (uploadWarnings.length > 0) {
         console.warn('production request upload warnings:', uploadWarnings);
       }
+      track('commission_requested', {
+        services: services.map((s) => s.id).join(','),
+        scene_count: project.scenes.length,
+        has_storyboard: !!storyboardUrl,
+        has_assets: !!assetsUrl,
+        extra_files: extraFiles.length,
+      });
       setPhase('done');
     } catch (err) {
       console.error('commission submit error:', err);

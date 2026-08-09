@@ -40,6 +40,7 @@ import {
 import { saveVideoAsAsset } from '../services/videoLibraryService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { useVideoGenStore, type VideoJob } from '../store/videoGenStore';
+import { track } from '../lib/analytics';
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -528,9 +529,15 @@ export const VideoStudio: React.FC = () => {
               : result.failure === 'no_api_key' ? 'API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
               : (result.message ?? '생성 실패'),
           });
+          track('video_generated', { success: false, failure: result.failure ?? 'error', duration, resolution, aspect: resolvedAspect });
           return;
         }
         await deduct(cost, `동영상 생성 (${duration}s${endImageSnapshot ? ' · end frame' : ''})`);
+        track('video_generated', {
+          success: true, duration, resolution, aspect: resolvedAspect,
+          has_start_frame: !!startImageSnapshot, has_end_frame: !!endImageSnapshot,
+          has_style: !!style, cost,
+        });
 
         if (user?.id) {
           const saveResult = await saveVideoHistory({

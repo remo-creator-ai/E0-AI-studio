@@ -10,6 +10,22 @@ import { useAuthStore } from './store/authStore';
 import { useCreditStore } from './store/creditStore';
 import { useAutoSave } from './hooks/useAutoSave';
 import { ProjectStep } from './types';
+import { pageView, setUserId } from './lib/analytics';
+
+// currentStep enum → analytics 용 path 문자열. GA 대시보드에서 페이지 구분에 씀.
+const STEP_TO_PATH: Record<ProjectStep, string> = {
+  [ProjectStep.DASHBOARD]: '/dashboard',
+  [ProjectStep.IMAGE_STUDIO]: '/image-studio',
+  [ProjectStep.VIDEO_STUDIO]: '/video-studio',
+  [ProjectStep.VOICE_STUDIO]: '/voice-studio',
+  [ProjectStep.ASSETS]: '/assets',
+  [ProjectStep.PLANNING]: '/planning',
+  [ProjectStep.VISUALIZING]: '/visualizing',
+  [ProjectStep.ASSEMBLY]: '/assembly',
+  [ProjectStep.PRODUCTION]: '/production',
+  [ProjectStep.SETTINGS]: '/settings',
+  [ProjectStep.ADMIN]: '/admin',
+};
 
 const PlanningStep = React.lazy(() => import('./components/PlanningStep').then(m => ({ default: m.PlanningStep })));
 const VisualizingStep = React.lazy(() => import('./components/VisualizingStep').then(m => ({ default: m.VisualizingStep })));
@@ -60,6 +76,18 @@ const App: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
+
+  // GA4 페이지뷰 · SPA 라 URL 이 안 바뀌므로 currentStep 변경마다 수동 전송
+  useEffect(() => {
+    if (!user) return; // 로그인 전 랜딩은 첫 진입 1회 (아래 분기)
+    pageView(STEP_TO_PATH[currentStep] ?? '/', currentStep);
+  }, [currentStep, user]);
+
+  // 로그인 상태 · GA user_id 매핑 (익명 · 이메일 미포함) · signup 이벤트는 authStore 에서
+  useEffect(() => {
+    setUserId(user?.id ?? null);
+    if (!user) pageView('/landing', 'Landing');
+  }, [user?.id]);
 
   // Auth loading
   if (isAuthLoading) {

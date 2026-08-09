@@ -20,6 +20,7 @@ import {
   saveTtsHistory, listTtsHistory, deleteTtsHistoryItem, refreshTtsSignedUrl,
   type TtsHistoryItem,
 } from '../services/ttsHistoryService';
+import { track } from '../lib/analytics';
 
 const SAMPLE_SCRIPTS = [
   '안녕하세요, 소담 AI 스튜디오입니다. 지금부터 시작합니다.',
@@ -92,9 +93,24 @@ export const VoiceStudio: React.FC = () => {
       if (!result.ok || !result.audioUrl) {
         setFailure(result.failure ?? 'error');
         setErrorMsg(result.message ?? '생성 실패');
+        track('voice_generated', {
+          success: false,
+          failure: result.failure ?? 'error',
+          voice_id: voiceId,
+          char_count: charCount,
+        });
         return;
       }
       await deduct(cost, `음성 생성 (${charCount}자 · ${voice.label})`);
+      track('voice_generated', {
+        success: true,
+        voice_id: voiceId,
+        voice_tier: voice.tier,
+        char_count: result.charCount ?? charCount,
+        speaking_rate: speakingRate,
+        pitch,
+        cost,
+      });
 
       // DB 저장 · 실패해도 사용자가 방금 만든 mp3 는 재생 가능하도록 임시 아이템으로 표시
       const save = await saveTtsHistory({
