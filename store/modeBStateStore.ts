@@ -76,6 +76,8 @@ interface ModeBState {
   setMainTake: (sceneId: string, takeId: string) => void;
   /** 프로젝트 로드 시 이미 저장된 video_url 을 첫 테이크로 시드 (씬당 1회) */
   seedTakeFromPersisted: (sceneId: string, take: SceneTake) => void;
+  /** 만료된 signed URL 을 재발급했을 때 해당 테이크의 URL 을 교체 */
+  healTakeUrl: (sceneId: string, staleUrl: string, freshUrl: string) => void;
 }
 
 export const useModeBState = create<ModeBState>((set, get) => ({
@@ -145,6 +147,18 @@ export const useModeBState = create<ModeBState>((set, get) => ({
       return {
         takes: { ...s.takes, [sceneId]: [take] },
         mainTakeId: { ...s.mainTakeId, [sceneId]: take.id },
+      };
+    }),
+
+  healTakeUrl: (sceneId, staleUrl, freshUrl) =>
+    set((s) => {
+      const list = s.takes[sceneId];
+      if (!list?.some((t) => t.videoUrl === staleUrl)) return s;
+      return {
+        takes: {
+          ...s.takes,
+          [sceneId]: list.map((t) => (t.videoUrl === staleUrl ? { ...t, videoUrl: freshUrl } : t)),
+        },
       };
     }),
 }));

@@ -2,6 +2,28 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 import { saveProject } from '../services/projectService';
+import { isBase64DataUri } from '../services/storageService';
+import type { Project } from '../types';
+
+/** 업로드로 base64 → Storage URL 이 된 값만 현재 store 프로젝트 위에 얹는다.
+ *  저장 도중 다른 화면이 갱신한 필드(scene.video_url 등)는 그대로 보존된다. */
+function mergeUploadedUrls(live: Project, processed: Project): Project {
+  const uploadedScene = new Map(processed.scenes.map((s) => [s.id, s.image_url]));
+  return {
+    ...live,
+    scenes: live.scenes.map((s) => {
+      const uploaded = uploadedScene.get(s.id);
+      // live 가 아직 base64 인 씬만 치환 — 그 사이 다른 이미지로 바뀌었으면 live 우선
+      return uploaded && !isBase64DataUri(uploaded) && isBase64DataUri(s.image_url)
+        ? { ...s, image_url: uploaded }
+        : s;
+    }),
+    grid_images: live.grid_images.map((g, i) => {
+      const uploaded = processed.grid_images[i];
+      return uploaded && !isBase64DataUri(uploaded) && isBase64DataUri(g) ? uploaded : g;
+    }),
+  };
+}
 
 export function useAutoSave() {
   const project = useStore((s) => s.project);
@@ -22,12 +44,21 @@ export function useAutoSave() {
       const { processedProject } = await saveProject(user.id, project);
 
       // If images were uploaded to Storage, update store with URL-based project.
-      // Storing the processedProject's JSON here prevents the next tick from
-      // re-saving the same content — important because uploadImageToStorage
-      // adds a ?v=<timestamp> cache-buster, so URLs differ from the input
-      // payload. See services/storageService.ts.
+      //
+      // 주의: processedProject 는 저장 시작 시점의 스냅샷에서 파생된다. 업로드가
+      // 도는 수 초 사이에 다른 화면이 store 를 갱신했다면(예: 모드 B 가 만료된
+      // signed URL 을 재발급해 scene.video_url 을 갱신, 씬 영상 생성 완료) 통째로
+      // setProject 하면 그 갱신이 조용히 되돌아간다 — 사용자에겐 "대표로 지정돼
+      // 있는데 검은 플레이어" 로 보인다. 그래서 업로드로 실제 바뀐 것(base64 →
+      // Storage URL)만 현재 store 값 위에 얹는다.
       if (processedProject) {
-        setProject(processedProject);
+        const live = useStore.getState().project;
+        const merged: Project = live && live.id === processedProject.id
+          ? mergeUploadedUrls(live, processedProject)
+          : processedProject;
+        setProject(merged);
+        // 저장된 내용은 어디까지나 processedProject. merged 에 그 사이 생긴 변경이
+        // 섞여 있으면 다음 debounce 에서 그 차이만큼 다시 저장된다.
         lastSavedRef.current = JSON.stringify(processedProject);
       } else {
         lastSavedRef.current = projectJson;

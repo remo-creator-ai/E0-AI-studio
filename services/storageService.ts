@@ -2,6 +2,9 @@ import { supabase } from '../lib/supabase';
 
 const BUCKET = 'scene-images';
 
+/** 버킷 부재 경고는 세션당 1회만 (씬 수만큼 중복 출력 방지) */
+let warnedMissingBucket = false;
+
 /**
  * Check if a string is a base64 data URI
  */
@@ -44,7 +47,19 @@ export async function uploadImageToStorage(
     .upload(path, blob, { upsert: true, contentType: blob.type });
 
   if (error) {
-    console.warn(`Storage upload failed for ${path}:`, error.message);
+    // 버킷 자체가 없으면 모든 씬 업로드가 같은 이유로 실패한다. 씬마다 warn 을
+    // 쏟아내면 진짜 원인이 묻히므로 한 번만 크게 알린다.
+    // 이 상태에서는 base64 가 projects.scenes 에 그대로 저장돼 행이 비대해지고,
+    // hasBase64 게이트가 계속 열려 자동저장마다 업로드를 재시도한다.
+    if (/bucket not found/i.test(error.message) && !warnedMissingBucket) {
+      warnedMissingBucket = true;
+      console.error(
+        `[storage] '${BUCKET}' 버킷이 없습니다. supabase/migrations/041_storage_scene_images.sql 을 적용하세요. ` +
+        `그때까지 씬 이미지는 base64 로 DB 에 저장됩니다.`,
+      );
+    } else if (!/bucket not found/i.test(error.message)) {
+      console.warn(`Storage upload failed for ${path}:`, error.message);
+    }
     return base64DataUri; // Fallback: keep base64
   }
 

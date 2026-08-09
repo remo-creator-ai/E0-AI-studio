@@ -103,7 +103,12 @@ HTTP 상태는 429지만 실제 원인은:
 
 ### `Bucket not found` (Supabase 측 에러)
 - `scene-images` 또는 `production-attachments` 버킷이 Supabase Storage에 없음
-- 이미 한 번 해결된 이슈 (2026-05-14에 `scene-images` 버킷 신규 생성)
+- 2026-05-14에 대시보드에서 손으로 `scene-images` 를 만들었다가 재발 (프로젝트를 새로
+  붙이면 없는 상태로 시작). 2026-08-09에 `supabase/migrations/041_storage_scene_images.sql`
+  로 코드화했으니 재발 시 그 마이그레이션을 적용할 것.
+- **조용히 실패한다**: `uploadImageToStorage` 는 실패 시 base64 를 그대로 반환하므로
+  화면엔 정상으로 보이고 이미지가 `projects.scenes` JSONB 에 통째로 저장된다. 콘솔에
+  `[storage] 'scene-images' 버킷이 없습니다` 가 뜨는지 확인.
 
 ### Kling 호출 자체가 안 떠짐
 - `vercel.json`의 `/api/kling/*` rewrite 확인

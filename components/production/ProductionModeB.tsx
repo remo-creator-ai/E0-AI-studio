@@ -43,6 +43,7 @@ import {
   type SceneSettings, type CardMode, type UpscaleStatus, type SceneTake,
 } from '../../store/modeBStateStore';
 import { AssetLibraryPicker } from '../AssetLibraryPicker';
+import { SelfHealingVideo } from '../ui/SelfHealingVideo';
 import type { Scene } from '../../types';
 
 // ── 모델 라벨 파생 (하드코딩 금지, VIDEO_STUDIO_MODEL 상수에서 파생) ──
@@ -113,6 +114,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const addTakeStore = useModeBState((s) => s.addTake);
   const setMainTakeStore = useModeBState((s) => s.setMainTake);
   const seedTakeFromPersisted = useModeBState((s) => s.seedTakeFromPersisted);
+  const healTakeUrl = useModeBState((s) => s.healTakeUrl);
 
   // 프로젝트 진입 · 전환 시 스토어 초기화
   useEffect(() => {
@@ -124,18 +126,25 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
 
   // 기존 저장된 video_url 있는 씬 → 첫 테이크로 seed (씬당 1회, 중복 방지 store 내부에서)
   // signed URL 은 1시간 만료라 마운트 시점에 재발급 후 seed 한다. 재발급된 URL 은
-  // updateScene 으로 프로젝트에도 반영해 새로고침 시 다시 만료된 URL 이 저장되지 않게 한다.
+  // 아래 "대표 테이크 → scene.video_url 동기화" 이펙트가 프로젝트에 반영한다.
+  //
+  // 씬마다 순차 await 하던 예전 구현은 씬 하나가 느리거나 실패하면 뒤쪽 씬이 통째로
+  // 건너뛰어졌고(그 씬만 검은 화면), 언마운트/의존성 변화로 cancelled 가 서면 남은 씬의
+  // 재발급이 아예 사라졌다. 씬별로 독립 실행 + allSettled 로 서로 영향을 주지 않게 한다.
   useEffect(() => {
     if (!project) return;
     let cancelled = false;
-    (async () => {
-      for (const s of scenes) {
-        if (!s.video_url || cancelled) continue;
-        const refreshed = await refreshVideoSignedUrl(s.video_url);
-        if (cancelled) return;
-        if (refreshed !== s.video_url) {
-          updateScene(s.id, { video_url: refreshed });
+    const targets = scenes.filter((s) => !!s.video_url);
+    if (targets.length === 0) return;
+    void Promise.allSettled(
+      targets.map(async (s) => {
+        let refreshed = s.video_url!;
+        try {
+          refreshed = await refreshVideoSignedUrl(s.video_url!);
+        } catch (e) {
+          console.warn('[mode-b] signed URL 재발급 실패', s.id, e);
         }
+        if (cancelled) return;
         seedTakeFromPersisted(s.id, {
           id: `persisted-${s.id}`,
           videoUrl: refreshed,
@@ -144,11 +153,46 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           hasEndFrame: false,
           createdAt: 0,
         });
-      }
-    })();
+        // 이미 seed 된 씬(재진입)이라도 갓 재발급한 URL 로 갈아끼워 만료본이 남지 않게 한다.
+        healTakeUrl(s.id, s.video_url!, refreshed);
+      }),
+    );
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenes.length, project?.id]);
+
+  // ── 대표 테이크 → scene.video_url 단일 진실원천 동기화 ──
+  //
+  // "대표" 뱃지가 붙은 테이크와 실제로 재생·다운로드·합치기에 쓰이는 scene.video_url 이
+  // 갈라지면 사용자는 대표로 지정돼 있는데 검은 화면을 보게 된다(테이크 썸네일만 정상).
+  // 렌더 시점에 항상 대표 테이크를 우선하고, 다르면 프로젝트에도 밀어넣어 zip 다운로드·
+  // 합치기까지 같은 URL 을 쓰게 만든다. 값이 같아지면 더 이상 set 하지 않으므로 수렴한다.
+  const resolveVideoUrl = useCallback((sceneId: string, fallback?: string | null): string => {
+    const list = takesMap[sceneId];
+    if (list && list.length > 0) {
+      const mainId = mainTakeIdMap[sceneId];
+      const take = (mainId ? list.find((t) => t.id === mainId) : undefined) ?? list[list.length - 1];
+      if (take?.videoUrl) return take.videoUrl;
+    }
+    return fallback ?? '';
+  }, [takesMap, mainTakeIdMap]);
+
+  useEffect(() => {
+    scenes.forEach((s) => {
+      const url = resolveVideoUrl(s.id, null);
+      if (url && url !== s.video_url) updateScene(s.id, { video_url: url });
+    });
+  }, [scenes, resolveVideoUrl, updateScene]);
+
+  /** <video> 가 만료 URL 로 실패해 스스로 재발급했을 때 — 테이크·씬 양쪽에 반영.
+   *  대표가 아닌 테이크가 복구된 경우엔 scene.video_url 을 건드리지 않는다. */
+  const handleHealed = useCallback((sceneId: string, freshUrl: string, staleUrl: string) => {
+    healTakeUrl(sceneId, staleUrl, freshUrl);
+    const current = useStore.getState().project?.scenes.find((s) => s.id === sceneId);
+    if (current?.video_url === staleUrl) {
+      updateScene(sceneId, { video_url: freshUrl });
+    }
+  }, [healTakeUrl, updateScene]);
 
   // ── 헬퍼 (스토어 래퍼) ──
   const getSettings = useCallback((sceneId: string): SceneSettings => {
@@ -406,7 +450,15 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       await Promise.all(
         targets.map(async (s) => {
           try {
-            const res = await fetch(s.video_url!);
+            let res = await fetch(s.video_url!);
+            if (!res.ok) {
+              // signed URL 만료(403) 가능성 → 1회 재발급 후 재시도
+              const fresh = await refreshVideoSignedUrl(s.video_url!);
+              if (fresh !== s.video_url) {
+                updateScene(s.id, { video_url: fresh });
+                res = await fetch(fresh);
+              }
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const blob = await res.blob();
             zip.file(sceneFilename(s), blob);
@@ -430,7 +482,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     } finally {
       setBatchDownloading(false);
     }
-  }, [selectedScenes, alert, project?.title]);
+  }, [selectedScenes, alert, project?.title, updateScene]);
 
   const runUpscaleSelected = useCallback(async () => {
     if (scenesNeedingUpscale.length === 0) return;
@@ -541,6 +593,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             <SceneRailChip
               key={s.id}
               scene={s}
+              videoUrl={resolveVideoUrl(s.id, s.video_url)}
+              onHealed={(fresh, stale) => handleHealed(s.id, fresh, stale)}
               index={idx}
               active={activeSceneId === s.id}
               selected={!!selected[s.id]}
@@ -569,6 +623,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           <SceneCard
             key={scene.id}
             scene={scene}
+            videoUrl={resolveVideoUrl(scene.id, scene.video_url)}
+            onHealed={(fresh, stale) => handleHealed(scene.id, fresh, stale)}
             index={idx}
             total={scenes.length}
             selected={!!selected[scene.id]}
@@ -660,6 +716,9 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
 // =============================================================
 interface SceneRailChipProps {
   scene: Scene;
+  /** 대표 테이크 기준으로 해석된 재생 URL (scene.video_url 은 폴백) */
+  videoUrl: string;
+  onHealed: (freshUrl: string, staleUrl: string) => void;
   index: number;
   active: boolean;
   /** 씬 선택 상태 (합치기 포함 여부) — 카드 dim 과 일관된 시각 동기화. */
@@ -668,8 +727,8 @@ interface SceneRailChipProps {
   generating: boolean;
   onClick: () => void;
 }
-const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, selected, upscaleStatus, generating, onClick }) => {
-  const done = !!scene.video_url;
+const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, videoUrl, onHealed, index, active, selected, upscaleStatus, generating, onClick }) => {
+  const done = !!videoUrl;
   const statusColor =
     generating ? 'bg-primary animate-pulse'
     : done ? 'bg-emerald-500'
@@ -693,8 +752,11 @@ const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, sel
       </span>
       <div className="w-full aspect-video rounded-md overflow-hidden bg-zinc-900 relative">
         {done ? (
-          <video
-            src={scene.video_url}
+          // poster 를 씬 이미지로 — 영상 로딩·재발급 중에도 검은 사각형 대신 스틸이 보인다.
+          <SelfHealingVideo
+            src={videoUrl}
+            poster={scene.image_url || undefined}
+            onHealed={onHealed}
             muted
             loop
             playsInline
@@ -721,6 +783,9 @@ const SceneRailChip: React.FC<SceneRailChipProps> = ({ scene, index, active, sel
 // =============================================================
 interface SceneCardProps {
   scene: Scene;
+  /** 대표 테이크 기준으로 해석된 재생 URL (scene.video_url 은 폴백) */
+  videoUrl: string;
+  onHealed: (freshUrl: string, staleUrl: string) => void;
   index: number;
   total: number;
   selected: boolean;
@@ -748,12 +813,12 @@ interface SceneCardProps {
 }
 
 const SceneCard: React.FC<SceneCardProps> = ({
-  scene, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
+  scene, videoUrl, onHealed, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
   job, nextSceneImage, language, displayPrompts, takes, mainTakeId, onSelectMainTake,
   onToggleSelect, onSetMode, onPatchSettings, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
   onPrev, onNext,
 }) => {
-  const done = !!scene.video_url;
+  const done = !!videoUrl;
   const generating = job?.status === 'generating';
   const failed = job?.status === 'failed';
   const upscaled = !!scene.upscale_level;
@@ -825,6 +890,8 @@ const SceneCard: React.FC<SceneCardProps> = ({
           // ─── (c) 완료 상태: 결과 영상이 주인공 (목업 그대로 · 그리드 분할) ───
           <SceneDoneView
             scene={scene}
+            videoUrl={videoUrl}
+            onHealed={onHealed}
             settings={settings}
             displayPrompts={displayPrompts}
             nextSceneImage={nextSceneImage}
@@ -883,6 +950,9 @@ const SceneCard: React.FC<SceneCardProps> = ({
 // =============================================================
 interface SceneDoneViewProps {
   scene: Scene;
+  /** 대표 테이크 기준으로 해석된 재생 URL (scene.video_url 은 폴백) */
+  videoUrl: string;
+  onHealed: (freshUrl: string, staleUrl: string) => void;
   settings: SceneSettings;
   displayPrompts: { image: string; video: string };
   nextSceneImage?: string;
@@ -891,7 +961,7 @@ interface SceneDoneViewProps {
   onSelectMainTake: (takeId: string) => void;
   onRegenerate: () => void;
 }
-const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayPrompts, nextSceneImage, takes, mainTakeId, onSelectMainTake, onRegenerate }) => {
+const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed, settings, displayPrompts, nextSceneImage, takes, mainTakeId, onSelectMainTake, onRegenerate }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const regenerateCost = videoStudioCreditCost({
     durationSec: settings.duration,
@@ -915,9 +985,11 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayP
       <div className="grid gap-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         {/* ── 결과 영상 ── */}
         <div className="relative rounded-2xl overflow-hidden bg-black">
-          <video
+          <SelfHealingVideo
             ref={videoRef}
-            src={scene.video_url}
+            src={videoUrl}
+            poster={scene.image_url || undefined}
+            onHealed={onHealed}
             controls
             loop
             playsInline
@@ -940,7 +1012,7 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayP
             <Play size={16} /> 전체화면 재생
           </button>
           <a
-            href={scene.video_url}
+            href={videoUrl}
             download={sceneFilename(scene)}
             className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 flex items-center justify-center gap-2"
           >
@@ -984,8 +1056,10 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, settings, displayP
                   title={isMain ? '대표 · 클릭해도 그대로' : '클릭하면 대표로 지정'}
                 >
                   <div className="relative w-full aspect-video bg-black">
-                    <video
+                    <SelfHealingVideo
                       src={t.videoUrl}
+                      poster={scene.image_url || undefined}
+                      onHealed={onHealed}
                       muted
                       loop
                       playsInline
