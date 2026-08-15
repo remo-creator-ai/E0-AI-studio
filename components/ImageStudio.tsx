@@ -626,12 +626,15 @@ export const ImageStudio: React.FC = () => {
           setHistory((prev) => prev.map((h) => h.id === hid ? { ...h, saved_asset_id: savedId } : h));
         }
       } else {
-        setSaveStatus({ kind: 'error', message: res.error ?? 'unknown' });
+        // 자산 저장 실패. 생성 실패는 아니지만 네트워크·인증 등 원인 분류는 동일하게 쓴다.
+        console.error('[ImageStudio] 자산 저장 실패:', res.error);
+        setSaveStatus({ kind: 'error', message: genErrorSummary(res.error, t) });
       }
     } catch (e) {
-      setSaveStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      console.error('[ImageStudio] 자산 저장 예외:', e);
+      setSaveStatus({ kind: 'error', message: genErrorSummary(e, t) });
     }
-  }, [saveDraft, user]);
+  }, [saveDraft, user, t]);
 
   const download = useCallback(() => {
     if (!image) return;

@@ -41,6 +41,7 @@ import { sceneImageToBlob } from '../services/imageUtils';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
+import { genErrorSummary } from '../lib/genErrorMessages';
 import JSZip from 'jszip';
 import Cropper from 'react-easy-crop';
 import { RefineFullStoryModal } from './RefineFullStoryModal';
@@ -248,12 +249,12 @@ export const AssemblyStep: React.FC = () => {
         await deduct(cost, `${targetSize} 업스케일 (CUT #${project.scenes.findIndex(s => s.id === editingScene.id) + 1})`);
         setEditingScene({ ...editingScene, image_url: result.dataUrl, upscale_level: targetSize });
       } else {
-        await alert(t('assembly.alerts.upscaleError', { message: result.message ?? 'unknown' }), { type: 'error' });
+        console.error('Upscale failed:', result.message);
+        await showGenError(result, 'upscale');
       }
     } catch (error: unknown) {
       console.error('Upscale error:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      await alert(t('assembly.alerts.upscaleError', { message }), { type: 'error' });
+      await showGenError(error, 'upscale');
     } finally {
       setIsLoading(false);
     }
@@ -301,12 +302,12 @@ export const AssemblyStep: React.FC = () => {
             updateScene(scene.id, { image_url: result.dataUrl, upscale_level: batchUpscaleSize });
             successCount++;
           } else {
-            failures.push({ order: scene.order, message: result.message ?? '빈 응답' });
+            console.error(`Upscale failed for scene ${scene.order}:`, result.message);
+            failures.push({ order: scene.order, message: genErrorSummary(result, t) });
           }
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
           console.error(`Upscale error for scene ${scene.order}:`, error);
-          failures.push({ order: scene.order, message });
+          failures.push({ order: scene.order, message: genErrorSummary(error, t) });
         }
       }
 

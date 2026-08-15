@@ -21,6 +21,8 @@ import {
   type TtsHistoryItem,
 } from '../services/ttsHistoryService';
 import { track } from '../lib/analytics';
+import { useTranslation } from 'react-i18next';
+import { genErrorSummary } from '../lib/genErrorMessages';
 
 const SAMPLE_SCRIPTS = [
   '안녕하세요, 소담 AI 스튜디오입니다. 지금부터 시작합니다.',
@@ -42,6 +44,7 @@ export const VoiceStudio: React.FC = () => {
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
 
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<GenerateTtsFailure | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -91,8 +94,11 @@ export const VoiceStudio: React.FC = () => {
     try {
       const result = await generateTts({ text, voiceId, speakingRate, pitch });
       if (!result.ok || !result.audioUrl) {
+        console.error('[VoiceStudio] 음성 생성 실패:', result.failure, result.message);
         setFailure(result.failure ?? 'error');
-        setErrorMsg(result.message ?? '생성 실패');
+        // no_api_key·too_long 은 아래 errorMessage 에서 TTS 전용 문구로 먼저 걸러진다.
+        // 여기 저장되는 값은 그 밖의 오류용 fallback 이라 공통 매퍼로 요약한다.
+        setErrorMsg(genErrorSummary(result, t));
         track('voice_generated', {
           success: false,
           failure: result.failure ?? 'error',
@@ -149,11 +155,13 @@ export const VoiceStudio: React.FC = () => {
           created_at: new Date().toISOString(),
         };
         setCurrent(tempItem);
-        setErrorMsg(`재생은 가능하지만 히스토리 저장에 실패했습니다: ${save.error ?? 'unknown'}`);
+        console.error('[VoiceStudio] 히스토리 저장 실패:', save.error);
+        setErrorMsg(`재생은 가능하지만 히스토리 저장에 실패했습니다. ${genErrorSummary(save.error, t)}`);
       }
     } catch (e) {
+      console.error('[VoiceStudio] 음성 생성 예외:', e);
       setFailure('error');
-      setErrorMsg(e instanceof Error ? e.message : String(e));
+      setErrorMsg(genErrorSummary(e, t));
     } finally {
       setBusy(false);
     }

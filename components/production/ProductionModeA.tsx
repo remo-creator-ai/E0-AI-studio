@@ -485,7 +485,8 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
         setSaveTarget(null);
         loadHistory();
       } else {
-        await alert(`저장 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+        console.error('[ModeA] 자산 저장 실패:', result.error);
+        await alert(`자산 보관함에 저장하지 못했습니다.\n${genErrorSummary(result.error, t)}`, { type: 'error' });
       }
     } finally {
       setSaving(false);

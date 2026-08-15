@@ -496,7 +496,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       a.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
-      await alert(`배치 다운로드 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
+      console.error('[ModeB] 배치 다운로드 실패:', e);
+      await alert(`배치 다운로드에 실패했습니다.\n${genErrorSummary(e, t)}`, { type: 'error' });
     } finally {
       setBatchDownloading(false);
     }

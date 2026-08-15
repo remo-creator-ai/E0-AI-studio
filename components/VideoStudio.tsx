@@ -560,7 +560,8 @@ export const VideoStudio: React.FC = () => {
         // 히스토리 저장 실패 시에도 Kling 원본 URL 로 결과는 보여준다 (24h 만료 안내는 UI 에서).
         updateJob(jobId, { status: 'done', videoUrl: result.videoUrl });
       } catch (e) {
-        updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
+        console.error('[VideoStudio] 생성 예외:', e);
+        updateJob(jobId, { status: 'failed', error: genErrorSummary(e, t) });
       }
     })();
   };
@@ -575,13 +576,15 @@ export const VideoStudio: React.FC = () => {
     try {
       const result = await suggestVideoPromptFromImage(startFrame, { language: 'ko' });
       if (!result.ok || !result.prompt) {
-        await alert(`추천 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+        console.error('[VideoStudio] 프롬프트 추천 실패:', result.error);
+        await alert(`프롬프트를 추천하지 못했습니다.\n${genErrorSummary(result.error, t)}`, { type: 'error' });
         return;
       }
       setPrompt(result.prompt);
       await deduct(SUGGEST_PROMPT_COST, '이미지에서 프롬프트 추천');
     } catch (e) {
-      await alert(`추천 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
+      console.error('[VideoStudio] 프롬프트 추천 예외:', e);
+      await alert(`프롬프트를 추천하지 못했습니다.\n${genErrorSummary(e, t)}`, { type: 'error' });
     } finally {
       setSuggesting(false);
     }
@@ -627,7 +630,8 @@ export const VideoStudio: React.FC = () => {
         setSaveTarget(null);
         loadHistory();
       } else {
-        await alert(`저장 실패: ${result.error ?? 'unknown'}`, { type: 'error' });
+        console.error('[VideoStudio] 자산 저장 실패:', result.error);
+        await alert(`자산 보관함에 저장하지 못했습니다.\n${genErrorSummary(result.error, t)}`, { type: 'error' });
       }
     } finally {
       setSaving(false);
