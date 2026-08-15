@@ -251,8 +251,9 @@ After:
 - 경로·캐시버스터 규칙은 `services/storageService.ts` 와 동일하게 맞춤 (`{project_id}/scenes/{scene_id}.png`, `{project_id}/grid/{idx}.png`)
 - 결과: `scenes+grid_images` **143MB → 88kB**, `projects` 테이블 **197MB → 592kB** (VACUUM FULL)
 - `updated_at` 자동 갱신 트리거 때문에 대시보드 정렬이 흐트러지므로, 트리거를 잠시 끄고 원래 시각으로 복원 (mismatched 0 확인)
-- **롤백용 백업 테이블**: `public.projects_image_backup_20260809` (id · user_id · scenes · grid_images · orig_updated_at, RLS 켜짐/정책 없음, 148MB).
-  이상 없음이 확인되면 `DROP TABLE public.projects_image_backup_20260809;` 로 정리할 것.
+- 롤백용 백업 테이블 `public.projects_image_backup_20260809` (148MB) 을 먼저 떠두고 진행 → 검증 후 **DROP 완료**.
+  검증 내용: 참조 169건 전부 `storage.objects` 에 존재(누락 0) · base64 잔여 0 · 백필 이후 새로 만든 프로젝트 6개도
+  `scene-images` 에 정상 업로드(=버킷 수정이 실사용에서 작동). 최종 DB 크기 **14MB**.
 - 썸네일(`projects.thumbnail`)은 base64 그대로 두었음 — 15개 합쳐 366kB로 미미하고 앱도 업로드 대상에 넣지 않음.
 
 ## 미해결 / 다음 작업 (소담 트랙)
