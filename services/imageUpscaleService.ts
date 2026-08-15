@@ -18,10 +18,19 @@
 import { MOCK_MODE } from '../lib/mockAuth';
 import { proxyClient } from '../lib/aiProxy';
 import { normalizeImageInput } from './imageUtils';
+import { DEFAULT_IMAGE_MODEL, UPSCALE_CREDIT_COST } from '../types';
+
+// ---------- 해상도 ----------
+export type UpscaleTargetSize = '2K' | '4K';
 
 // ---------- 크레딧 ----------
-// 씬당 3cr. 배치(예: 6씬) 는 서비스 레이어가 아닌 호출부에서 반복 호출.
-export const IMAGE_UPSCALE_COST = 3;
+// 2K 3cr / 4K 5cr (docs/CREDIT_PRICING_SPEC.md §3-2 확정값).
+// 배치는 서비스 레이어가 아닌 호출부에서 반복 호출.
+export function imageUpscaleCost(targetSize: UpscaleTargetSize = '2K'): number {
+  return UPSCALE_CREDIT_COST[targetSize] ?? UPSCALE_CREDIT_COST['2K'];
+}
+/** @deprecated imageUpscaleCost(targetSize) 를 쓸 것. 2K 단가와 같다. */
+export const IMAGE_UPSCALE_COST = UPSCALE_CREDIT_COST['2K'];
 
 // ---------- 종횡비 힌트 ----------
 export type UpscaleAspect = '16:9' | '9:16' | '1:1';
@@ -31,8 +40,10 @@ const ASPECT_TARGET_SIZE: Record<UpscaleAspect, string> = {
   '1:1':  '1024x1024 square (1:1)',
 };
 
-// Gemini 3.1 Flash Image Preview 를 사용 (imageStudioService 와 동일).
-const UPSCALE_MODEL = 'gemini-3.1-flash-image-preview';
+// 기본 모델은 types.DEFAULT_IMAGE_MODEL 단일 정의를 따른다. 호출부가 프로젝트에
+// 기억된 모델(project.image_model)을 넘기면 그 모델로 업스케일한다 — 생성과 업스케일이
+// 다른 모델이면 같은 컷인데 그림체가 미묘하게 갈린다.
+const UPSCALE_MODEL = DEFAULT_IMAGE_MODEL;
 
 export type UpscaleFailure =
   | 'no_api_key'
@@ -49,7 +60,14 @@ export interface UpscaleResult {
 
 export interface UpscaleInput {
   imageUrl: string;
+  /** ⚠️ 프로젝트 비율이 아니라 **원본 이미지에서 감지한** 비율을 넘길 것.
+   *  프로젝트 값을 넘기면 원본과 다를 때 그림이 잘리거나 늘어난다
+   *  (videoStudioService.detectAspectFromImage 사용). */
   aspect: UpscaleAspect;
+  /** 기본 2K. 4K 는 5cr. */
+  targetSize?: UpscaleTargetSize;
+  /** 기본 DEFAULT_IMAGE_MODEL. 보통 project.image_model 을 넘긴다. */
+  model?: string;
 }
 
 /**
@@ -65,8 +83,8 @@ export interface UpscaleInput {
  * 실전 팁: 아래 문구를 한국어로 번역해 넣지 말 것. Gemini 는 영어 인스트럭션에
  *          더 안정적으로 반응한다.
  */
-function buildUpscalePrompt(aspect: UpscaleAspect): string {
-  const targetSize = ASPECT_TARGET_SIZE[aspect];
+function buildUpscalePrompt(aspect: UpscaleAspect, size: UpscaleTargetSize): string {
+  const targetSize = `${ASPECT_TARGET_SIZE[aspect]} at ${size} resolution`;
   return `CRITICAL TASK: Perform a LOSSLESS UPSCALE of the reference image.
 This is NOT a redraw, NOT a reinterpretation, NOT a stylistic remake.
 The output must be visually identical to the reference — same photograph/artwork, just at higher resolution.
@@ -114,19 +132,20 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
   if (!ai) return { ok: false, failure: 'no_api_key', message: 'no_session' };
 
   const { mimeType, base64 } = await normalizeImageInput(input.imageUrl);
+  const targetSize: UpscaleTargetSize = input.targetSize ?? '2K';
 
   try {
     const response = await ai.models.generateContent({
-      model: UPSCALE_MODEL,
+      model: input.model || UPSCALE_MODEL,
       contents: {
         parts: [
           { inlineData: { mimeType, data: base64 } },
-          { text: buildUpscalePrompt(input.aspect) },
+          { text: buildUpscalePrompt(input.aspect, targetSize) },
         ],
       },
       config: {
         responseModalities: ['Image'],
-        imageConfig: { aspectRatio: input.aspect },
+        imageConfig: { aspectRatio: input.aspect, imageSize: targetSize },
       },
     });
 

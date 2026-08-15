@@ -27,6 +27,7 @@ import { useCreditStore, CREDIT_COSTS } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useModal } from './ui/ModalProvider';
 import { AdDuration, VisualStyle, Scene, ProjectStep, StoryboardLayout, AspectRatio, SceneCount, SCENE_DURATION_MAP } from '../types';
+import { getSceneGridUnits } from '../lib/sceneGrid';
 import { generateAdScript, translateText } from '../services/geminiService';
 import { parseStoryboardJSON } from '../services/storyboardImporter';
 import { RefreshCw } from 'lucide-react';
@@ -129,13 +130,9 @@ export const PlanningStep: React.FC = () => {
           }))
         );
 
-        // Portrait 8-cut: 2x2 grid per unit (4 scenes), so 2 units
-        const isPortraitGrid = aspectRatio === '9:16';
-        const scenesPerUnit = (sceneCount === 8 && isPortraitGrid) ? 4
-          : (sceneCount === 4) ? 4
-          : Math.min(sceneCount, 9);
-        const totalUnits = Math.ceil(sceneCount / scenesPerUnit);
-        const grid_images = new Array(totalUnits).fill(null);
+        // 격자·유닛 수는 lib/sceneGrid.ts 단일 정의를 따른다.
+        // (예전엔 여기서 따로 계산해 VisualizingStep 과 어긋날 여지가 있었다)
+        const grid_images = new Array(getSceneGridUnits(sceneCount)).fill(null);
 
         await deduct(CREDIT_COSTS.SCRIPT, '스크립트 생성');
         setProject({
@@ -339,6 +336,7 @@ export const PlanningStep: React.FC = () => {
                     <option value={8}>{t('planning.sceneOption', { count: 8, seconds: SCENE_DURATION_MAP[SceneCount.CUTS_8] })}</option>
                     <option value={9}>{t('planning.sceneOption', { count: 9, seconds: SCENE_DURATION_MAP[SceneCount.CUTS_9] })}</option>
                     <option value={18}>{t('planning.sceneOption', { count: 18, seconds: SCENE_DURATION_MAP[SceneCount.CUTS_18] })}</option>
+                    <option value={27}>{t('planning.sceneOption', { count: 27, seconds: SCENE_DURATION_MAP[SceneCount.CUTS_27] })}</option>
                   </select>
                   <Clock className="absolute right-4 top-3.5 text-zinc-400 pointer-events-none" size={16} />
                 </div>

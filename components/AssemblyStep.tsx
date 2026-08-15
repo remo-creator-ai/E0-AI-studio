@@ -31,8 +31,12 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useModal } from './ui/ModalProvider';
-import { StoryboardLayout, Scene, Project, VisualStyle, AdDuration, UPSCALE_CREDIT_COST, ImageModel } from '../types';
-import { translateText, generateSingleImage, upscaleImage, refineSceneFromImage, refineFullStory } from '../services/geminiService';
+import { StoryboardLayout, Scene, Project, VisualStyle, AdDuration, UPSCALE_CREDIT_COST, ImageModel, IMAGE_MODEL_INFO, DEFAULT_IMAGE_MODEL } from '../types';
+import { translateText, generateSingleImage, refineSceneFromImage, refineFullStory } from '../services/geminiService';
+import { upscaleSceneImage, type UpscaleTargetSize } from '../services/imageUpscaleService';
+import { detectAspectFromImage } from '../services/videoStudioService';
+import { STYLE_PROMPT_GUIDES } from '../constants';
+import { scenePromptForImage } from '../lib/scenePrompt';
 import { sceneImageToBlob } from '../services/imageUtils';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -68,6 +72,35 @@ export const AssemblyStep: React.FC = () => {
   const [localRefImages, setLocalRefImages] = useState<string[]>([]);
   const [editInstruction, setEditInstruction] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  // 편집 중인 컷의 실제 종횡비 — 프로젝트 비율과 어긋나면 경고를 띄운다.
+  // (예전 8컷 가로 격자로 만들어진 컷, 업로드로 교체한 컷이 여기 걸린다)
+  const [editImageRatio, setEditImageRatio] = useState<number | null>(null);
+  useEffect(() => {
+    const url = editingScene?.image_url;
+    if (!url) { setEditImageRatio(null); return; }
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => { if (!cancelled) setEditImageRatio((img.naturalWidth || 1) / (img.naturalHeight || 1)); };
+    img.onerror = () => { if (!cancelled) setEditImageRatio(null); };
+    img.src = url;
+    return () => { cancelled = true; };
+  }, [editingScene?.image_url]);
+
+  const projectRatio = project?.aspect_ratio === '9:16' ? 9 / 16 : 16 / 9;
+  // 로그 스케일 5% 이상 차이나면 "다른 비율" 로 본다 (모델 출력의 1~2px 오차는 무시).
+  const ratioMismatch = editImageRatio !== null
+    && Math.abs(Math.log(editImageRatio) - Math.log(projectRatio)) > 0.05;
+
+  // 이미지 모델 — 스토리보드 만들기에서 고른 값을 프로젝트가 기억하고 여기서 이어받는다.
+  // 예전엔 편집기가 3.1 flash, 업스케일이 3-pro 를 각각 하드코딩해서 같은 컷인데도
+  // 단계마다 그림체가 갈렸다.
+  const activeImageModel = project?.image_model ?? DEFAULT_IMAGE_MODEL;
+  const setActiveImageModel = useCallback((model: ImageModel) => {
+    updateProjectSettings({ image_model: model });
+  }, [updateProjectSettings]);
+  const regenerateCost = IMAGE_MODEL_INFO[activeImageModel].creditCost;
+
   const modalFileRef = useRef<HTMLInputElement>(null);
   const modalRefUploadRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +108,7 @@ export const AssemblyStep: React.FC = () => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CroppedArea | null>(null);
-  const [batchUpscaleSize, setBatchUpscaleSize] = useState<'2K' | '4K'>('2K');
+  const [batchUpscaleSize, setBatchUpscaleSize] = useState<UpscaleTargetSize>('2K');
   const [upscaleProgress, setUpscaleProgress] = useState<{current: number, total: number} | null>(null);
   const [refineResults, setRefineResults] = useState<{
     originalScenes: import('../types').Scene[];
@@ -179,7 +212,12 @@ export const AssemblyStep: React.FC = () => {
     }
   };
 
-  const handleUpscaleScene = async (targetSize: '2K' | '4K') => {
+  /** 편집기에서 이 컷 하나만 업스케일.
+   *
+   *  비율은 project.aspect_ratio 가 아니라 **원본 이미지에서 감지한 값**을 쓴다.
+   *  업로드로 교체했거나 예전 격자(8컷 가로 2x4)로 만들어진 컷은 프로젝트 비율과
+   *  다를 수 있고, 그때 프로젝트 비율을 강제하면 그림이 잘리거나 늘어난다. */
+  const handleUpscaleScene = async (targetSize: UpscaleTargetSize) => {
     if (!editingScene?.image_url || !project) return;
     const cost = UPSCALE_CREDIT_COST[targetSize];
     if (!hasEnough(cost)) {
@@ -191,10 +229,18 @@ export const AssemblyStep: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const upscaled = await upscaleImage(editingScene.image_url, editingScene.image_prompt_en, targetSize, project.aspect_ratio);
-      if (upscaled) {
+      const aspect = await detectAspectFromImage(editingScene.image_url);
+      const result = await upscaleSceneImage({
+        imageUrl: editingScene.image_url,
+        aspect,
+        targetSize,
+        model: activeImageModel,
+      });
+      if (result.ok && result.dataUrl) {
         await deduct(cost, `${targetSize} 업스케일 (CUT #${project.scenes.findIndex(s => s.id === editingScene.id) + 1})`);
-        setEditingScene({ ...editingScene, image_url: upscaled, upscale_level: targetSize });
+        setEditingScene({ ...editingScene, image_url: result.dataUrl, upscale_level: targetSize });
+      } else {
+        await alert(t('assembly.alerts.upscaleError', { message: result.message ?? 'unknown' }), { type: 'error' });
       }
     } catch (error: unknown) {
       console.error('Upscale error:', error);
@@ -234,13 +280,20 @@ export const AssemblyStep: React.FC = () => {
         if (i > 0) await new Promise(resolve => setTimeout(resolve, 3000));
 
         try {
-          const upscaled = await upscaleImage(scene.image_url!, scene.image_prompt_en, batchUpscaleSize, project.aspect_ratio);
-          if (upscaled) {
+          // 컷마다 실제 비율을 감지 — 업로드 교체본이나 예전 격자 컷이 섞여 있을 수 있다.
+          const aspect = await detectAspectFromImage(scene.image_url!);
+          const result = await upscaleSceneImage({
+            imageUrl: scene.image_url!,
+            aspect,
+            targetSize: batchUpscaleSize,
+            model: activeImageModel,
+          });
+          if (result.ok && result.dataUrl) {
             await deduct(cost, `${batchUpscaleSize} 업스케일 (CUT #${scene.order})`);
-            updateScene(scene.id, { image_url: upscaled, upscale_level: batchUpscaleSize });
+            updateScene(scene.id, { image_url: result.dataUrl, upscale_level: batchUpscaleSize });
             successCount++;
           } else {
-            failures.push({ order: scene.order, message: '빈 응답' });
+            failures.push({ order: scene.order, message: result.message ?? '빈 응답' });
           }
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
@@ -606,35 +659,58 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     }
   };
 
+  /** 컷 이미지 재생성 / 편집.
+   *
+   *  두 모드로 갈린다.
+   *   · "기존 레퍼런스 스타일 사용" ON + 수정 지시 있음 → **편집 모드**.
+   *     현재 이미지를 베이스로 두고 지시한 것만 바꾼다.
+   *   · 그 외 → 생성 모드. 프롬프트로 새로 그린다.
+   *
+   *  토글이 OFF 면 앞뒤 씬 이미지도 넣지 않는다. 예전에는 토글과 무관하게 앞뒤 씬을
+   *  항상 밀어넣어서, 토글을 꺼도 이웃 컷 스타일이 계속 끌려왔다. */
   const handleGenerateLocalImage = async () => {
     if (!editingScene || !project) return;
+    if (!hasEnough(regenerateCost)) {
+      await alert(t('assembly.alerts.regenerateInsufficientCredits', { cost: regenerateCost, balance }), { type: 'warning' });
+      return;
+    }
+
+    const instruction = editInstruction.trim();
+    const baseImage = useExistingAsRef ? editingScene.image_url : undefined;
+    const isEdit = !!instruction && !!baseImage;
+
     setIsLoading(true);
     try {
-      const refs = [...localRefImages];
-      if (useExistingAsRef && editingScene.image_url) {
-        refs.unshift(editingScene.image_url);
-      }
-      // Add adjacent scene images for style consistency
-      const sceneIdx = project.scenes.findIndex(s => s.id === editingScene.id);
-      const prevScene = project.scenes[sceneIdx - 1];
-      const nextScene = project.scenes[sceneIdx + 1];
-      if (prevScene?.image_url && !refs.includes(prevScene.image_url)) {
-        refs.push(prevScene.image_url);
-      }
-      if (nextScene?.image_url && !refs.includes(nextScene.image_url)) {
-        refs.push(nextScene.image_url);
+      const refs: string[] = [];
+      // [0] 은 편집 대상 원본이어야 한다 (서비스가 IMAGE 1 을 베이스로 취급).
+      if (baseImage) refs.push(baseImage);
+      refs.push(...localRefImages.filter((r) => r !== baseImage));
+      // 앞뒤 씬은 "새로 그릴 때" 스타일을 잡아주는 용도다. 편집 모드에서는 베이스
+      // 이미지가 이미 스타일의 기준이므로 넣지 않는다 — 이웃 컷이 섞이면 그것대로
+      // 원본에서 멀어진다.
+      if (useExistingAsRef && !isEdit) {
+        const sceneIdx = project.scenes.findIndex(s => s.id === editingScene.id);
+        for (const neighbor of [project.scenes[sceneIdx - 1], project.scenes[sceneIdx + 1]]) {
+          if (neighbor?.image_url && !refs.includes(neighbor.image_url)) refs.push(neighbor.image_url);
+        }
       }
 
-      const finalPrompt = editInstruction.trim()
-        ? `${editingScene.image_prompt_en}. EDIT INSTRUCTION: ${editInstruction.trim()}`
-        : editingScene.image_prompt_en;
-      const imageUrl = await generateSingleImage(
-        finalPrompt,
-        refs.length > 0 ? refs : undefined,
-        project?.aspect_ratio,
-        ImageModel.GEMINI_3_1_FLASH
-      );
+      // 비율은 원본이 있으면 원본에서 감지 (업로드 교체본·구 격자 컷 대응).
+      const aspect = baseImage
+        ? await detectAspectFromImage(baseImage)
+        : (project.aspect_ratio || '16:9');
+
+      const imageUrl = await generateSingleImage({
+        prompt: scenePromptForImage(editingScene),
+        references: refs.length > 0 ? refs : undefined,
+        aspectRatio: aspect,
+        model: activeImageModel,
+        styleGuide: STYLE_PROMPT_GUIDES[project.style as VisualStyle],
+        editInstruction: isEdit ? instruction : undefined,
+        baseImageIsFirstReference: isEdit,
+      });
       if (imageUrl) {
+        await deduct(regenerateCost, `컷 이미지 ${isEdit ? '편집' : '재생성'} (${IMAGE_MODEL_INFO[activeImageModel].label})`);
         setPreviewImage(imageUrl);
       }
     } catch (error: unknown) {
@@ -1249,13 +1325,31 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Type size={12} /> {t('planning.editModal.visualContentEn')}</label>
                       <textarea value={editingScene.content_en || ''} onChange={(e) => setEditingScene({...editingScene, content_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900" />
                     </div>
+                    {/* 이미지 프롬프트 — 한국어가 1급. 생성에 실제로 쓰이는 값이다.
+                        (Korean-only 전환: 비어 있으면 아래 영문으로 폴백) */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center justify-between">
-                         <span className="flex items-center gap-2"><Type size={12} /> {t('planning.editModal.imagePromptEn')}</span>
-                         <button type="button" onClick={() => handleTranslate('visual')} className="text-primary hover:text-primary/80 flex items-center gap-1"><RefreshCw size={10} /> Auto-Sync</button>
+                         <span className="flex items-center gap-2"><Type size={12} /> {t('planning.editModal.imagePromptKr')}</span>
+                         <span className="text-[9px] font-bold text-primary normal-case tracking-normal">{t('assembly.editor.promptPrimary')}</span>
                       </label>
-                      <textarea value={editingScene.image_prompt_en} onChange={(e) => setEditingScene({...editingScene, image_prompt_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900 font-mono" />
+                      <textarea
+                        value={editingScene.image_prompt_kr ?? ''}
+                        onChange={(e) => setEditingScene({...editingScene, image_prompt_kr: e.target.value})}
+                        placeholder={editingScene.image_prompt_en || t('assembly.editor.imagePromptKrPlaceholder')}
+                        className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900 placeholder:text-zinc-300"
+                      />
                     </div>
+                    <details className="rounded-[1.2rem] border border-zinc-200 bg-zinc-50/70 overflow-hidden">
+                      <summary className="px-4 py-2.5 text-[10px] font-black text-zinc-500 uppercase tracking-widest cursor-pointer hover:bg-zinc-100">
+                        {t('planning.editModal.imagePromptEn')} ({t('assembly.editor.promptFallback')})
+                      </summary>
+                      <div className="px-4 pb-4 space-y-2">
+                        <div className="flex justify-end">
+                          <button type="button" onClick={() => handleTranslate('visual')} className="text-[10px] text-primary hover:text-primary/80 flex items-center gap-1 font-bold"><RefreshCw size={10} /> Auto-Sync</button>
+                        </div>
+                        <textarea value={editingScene.image_prompt_en} onChange={(e) => setEditingScene({...editingScene, image_prompt_en: e.target.value})} className="w-full h-20 bg-white border border-zinc-200 rounded-[1.2rem] p-4 text-sm focus:border-primary focus:outline-none resize-none transition-all text-zinc-900 font-mono" />
+                      </div>
+                    </details>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Layers size={12} /> {t('planning.editModal.audioScriptKr')}</label>
@@ -1279,6 +1373,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                   </div>
                   
                   <div className="pt-6 border-t border-zinc-100 space-y-5">
+                    {/* 컷 비율이 프로젝트 비율과 어긋날 때 — 예전 8컷 가로 격자나 업로드 교체본 */}
+                    {ratioMismatch && (
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                        <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
+                          {t('assembly.editor.ratioMismatch', {
+                            target: project.aspect_ratio || '16:9',
+                            actual: editImageRatio ? editImageRatio.toFixed(2) : '?',
+                          })}
+                        </p>
+                      </div>
+                    )}
+
                     {/* Reference Toggle */}
                     <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-200">
                       <button
@@ -1329,7 +1435,31 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       <input type="file" ref={modalRefUploadRef} className="hidden" accept="image/*" onChange={handleModalRefUpload} />
                     </div>
 
-                    {/* AI Regenerate */}
+                    {/* 이미지 모델 — 프로젝트에 기억되어 스토리보드 만들기와 공유된다 */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('assembly.editor.imageModel')}</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(Object.values(ImageModel) as ImageModel[]).map((model) => {
+                          const info = IMAGE_MODEL_INFO[model];
+                          const isSelected = activeImageModel === model;
+                          return (
+                            <button
+                              key={model}
+                              type="button"
+                              onClick={() => setActiveImageModel(model)}
+                              className={`p-2.5 rounded-xl border-2 text-left transition-all ${
+                                isSelected ? 'border-primary bg-[#EEF3FC]' : 'border-zinc-200 hover:border-zinc-300'
+                              }`}
+                            >
+                              <div className={`text-[11px] font-black ${isSelected ? 'text-primary' : 'text-zinc-700'}`}>{info.label}</div>
+                              <div className="text-[9px] text-zinc-400 font-bold">{info.creditCost}cr</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 재생성 / 편집 — 라벨과 동작을 일치시킨다 (예전엔 "2K 변환" 이라 써 놓고 재생성만 했다) */}
                     <button
                       type="button"
                       onClick={handleGenerateLocalImage}
@@ -1338,9 +1468,33 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                     >
                       {isLoading
                         ? <><RefreshCw size={18} className="animate-spin" /> <span className="text-sm">{t('assembly.editor.processing')}</span></>
-                        : <><Sparkles size={18} /> <span className="text-sm">{t('assembly.editor.aiRegenerateUpscale')}</span></>
+                        : <><Sparkles size={18} /> <span className="text-sm">
+                            {editInstruction.trim() && useExistingAsRef
+                              ? t('assembly.editor.applyEdit', { cost: regenerateCost })
+                              : t('assembly.editor.regenerate', { cost: regenerateCost })}
+                          </span></>
                       }
                     </button>
+
+                    {/* 업스케일 — 재생성과 완전히 다른 동작이라 버튼을 분리했다 */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('assembly.editor.upscaleThisCut')}</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['2K', '4K'] as UpscaleTargetSize[]).map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleUpscaleScene(size)}
+                            disabled={isLoading || !editingScene.image_url}
+                            className="py-3 rounded-xl border-2 border-zinc-200 hover:border-primary hover:text-primary font-black text-xs text-zinc-600 transition-all disabled:opacity-40"
+                          >
+                            {size} · {UPSCALE_CREDIT_COST[size]}cr
+                            {editingScene.upscale_level === size && <span className="ml-1 text-emerald-600">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-zinc-400 leading-relaxed">{t('assembly.editor.upscaleHint')}</p>
+                    </div>
 
                     <button type="submit" className="w-full py-5 bg-primary rounded-full text-sm font-black shadow-[0_8px_20px_rgba(0,80,191,0.25)] flex items-center justify-center gap-3 hover:bg-[#003E99] transition-all text-white uppercase mt-2">
                       <Save size={18} /> {t('assembly.editor.updateStoryboard')}

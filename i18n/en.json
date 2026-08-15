@@ -386,7 +386,8 @@
       "motionEnPlaceholder": "e.g. SLOW ZOOM IN",
       "promptPlaceholder": "AI Generation Prompt",
       "saveChanges": "Save Changes",
-      "syncPrompt": "Sync to Prompt"
+      "syncPrompt": "Sync to Prompt",
+      "imagePromptKr": "AI Image Prompt (KR)"
     },
     "accordion": {
       "enPrompts": "Show English Prompts",
@@ -496,7 +497,6 @@
     "upscale2KBtn": "Upscale 2K",
     "editor": {
       "aiRegenerate": "AI High-Res Regenerate",
-      "aiRegenerateUpscale": "AI High-Res Regenerate (2K / 3C)",
       "processing": "Processing...",
       "updateStoryboard": "Update Storyboard Asset",
       "editInstruction": "Edit Instruction",
@@ -513,7 +513,16 @@
       "previewDiscard": "Discard",
       "trimArtifacts": "Trim Artifacts",
       "swapImage": "Swap Image",
-      "downloadImage": "Download"
+      "downloadImage": "Download",
+      "regenerate": "Regenerate Image · {{cost}}cr",
+      "applyEdit": "Apply Edit · {{cost}}cr",
+      "imageModel": "Image Model",
+      "upscaleThisCut": "Upscale This Cut",
+      "upscaleHint": "Upscaling raises resolution without changing the artwork. Use Regenerate above to change composition or subject.",
+      "promptPrimary": "used for generation",
+      "promptFallback": "used only when Korean is empty",
+      "imagePromptKrPlaceholder": "e.g. A bakery owner in an apron smiling in warm afternoon light",
+      "ratioMismatch": "This cut ({{actual}}) does not match the project aspect ratio ({{target}}). Use \"Crop Image\" below to align it. Regenerate and Upscale preserve the current cut ratio."
     },
     "editModal": {
       "visualContent": "Visual Content",
@@ -543,7 +552,8 @@
       "maxRefs": "Maximum 5 reference images allowed.",
       "refineFullStoryConfirm": "AI has refined the full story. Apply changes?",
       "refineFullStoryError": "An error occurred while refining the story.",
-      "refineFullStoryNoImages": "No scenes with images found."
+      "refineFullStoryNoImages": "No scenes with images found.",
+      "regenerateInsufficientCredits": "Not enough credits. Regeneration needs {{cost}}cr (balance {{balance}}cr)."
     },
     "existingRefStyle": "Use existing reference style",
     "additionalRefs": "Additional References ({{count}}/5)",

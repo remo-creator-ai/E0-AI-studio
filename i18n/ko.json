@@ -397,7 +397,8 @@
       "motionEnPlaceholder": "e.g. SLOW ZOOM IN",
       "promptPlaceholder": "AI Generation Prompt",
       "saveChanges": "변경사항 저장",
-      "syncPrompt": "프롬프트 동기화"
+      "syncPrompt": "프롬프트 동기화",
+      "imagePromptKr": "AI 이미지 프롬프트 (한글)"
     },
     "accordion": {
       "enPrompts": "영어 프롬프트 보기",
@@ -507,7 +508,6 @@
     "upscale2KBtn": "2K 업스케일",
     "editor": {
       "aiRegenerate": "AI 고화질 이미지 재생성",
-      "aiRegenerateUpscale": "AI 고화질 이미지 재생성(2K 변환 / 3C)",
       "processing": "처리 중...",
       "updateStoryboard": "스토리보드에 업데이트",
       "editInstruction": "이미지 수정 지시",
@@ -524,7 +524,16 @@
       "previewDiscard": "취소",
       "trimArtifacts": "이미지 정리",
       "swapImage": "이미지 교체",
-      "downloadImage": "다운로드"
+      "downloadImage": "다운로드",
+      "regenerate": "이미지 재생성 · {{cost}}cr",
+      "applyEdit": "수정 지시 적용 · {{cost}}cr",
+      "imageModel": "이미지 모델",
+      "upscaleThisCut": "이 컷 업스케일",
+      "upscaleHint": "업스케일은 그림을 바꾸지 않고 해상도만 올립니다. 구도·인물을 바꾸려면 위의 재생성을 쓰세요.",
+      "promptPrimary": "생성에 사용됨",
+      "promptFallback": "한글이 비었을 때만 사용",
+      "imagePromptKrPlaceholder": "예: 따뜻한 오후 햇살이 드는 빵집 앞, 앞치마를 두른 사장님이 미소짓는 모습",
+      "ratioMismatch": "이 컷의 비율({{actual}})이 프로젝트 비율({{target}})과 다릅니다. 아래 \"이미지 정리\"로 맞추면 영상 생성까지 일관됩니다. 재생성·업스케일은 현재 컷 비율을 그대로 유지합니다."
     },
     "editModal": {
       "visualContent": "Visual Content",
@@ -554,7 +563,8 @@
       "maxRefs": "레퍼런스 이미지는 최대 5개까지 등록 가능합니다.",
       "refineFullStoryConfirm": "AI가 전체 스토리를 보정했습니다. 적용하시겠습니까?",
       "refineFullStoryError": "전체 스토리 보정 중 오류가 발생했습니다.",
-      "refineFullStoryNoImages": "이미지가 있는 씬이 없습니다."
+      "refineFullStoryNoImages": "이미지가 있는 씬이 없습니다.",
+      "regenerateInsufficientCredits": "크레딧이 부족합니다. 재생성에 {{cost}}cr 이 필요합니다. (잔액 {{balance}}cr)"
     },
     "existingRefStyle": "기존 레퍼런스 스타일 사용",
     "additionalRefs": "추가 레퍼런스 ({{count}}/5)",

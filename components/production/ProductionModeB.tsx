@@ -264,7 +264,14 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
 
     try {
       const aspect = await detectAspectFromImage(scene.image_url);
-      const result = await upscaleSceneImage({ imageUrl: scene.image_url, aspect });
+      // 모델은 프로젝트가 기억하는 값을 따른다 — 스토리보드 생성과 다른 모델로 올리면
+      // 같은 컷인데 그림체가 미묘하게 갈린다.
+      const result = await upscaleSceneImage({
+        imageUrl: scene.image_url,
+        aspect,
+        targetSize: '2K',
+        model: project?.image_model,
+      });
       window.clearInterval(progressTimer);
       if (!result.ok || !result.dataUrl) {
         setUpscaleJobStore(scene.id, 'failed');
@@ -280,7 +287,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       setUpscaleJobStore(scene.id, 'failed');
       await alert(`업스케일 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
     }
-  }, [alert, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore]);
+  }, [alert, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore, project?.image_model]);
 
   // ── 씬 영상 생성 실행 (fire-and-forget) ──
   const runGenerate = useCallback(async (scene: Scene, options?: { skipConfirm?: boolean }) => {

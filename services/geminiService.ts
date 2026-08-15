@@ -218,13 +218,113 @@ function isImageSizeRejection(e: unknown): boolean {
   return looksLikeBadRequest && (msg.includes('imagesize') || msg.includes('image_size') || msg.includes('resolution') || msg.includes('size'));
 }
 
-export async function generateSingleImage(prompt: string, referenceImagesBase64?: string[], aspectRatio?: string, imageModel?: string) {
+/** generateSingleImage 의 텍스트 파트를 만든다 (Gemini·OpenAI 공용). */
+function buildSingleImageInstruction(args: {
+  prompt: string;
+  styleGuide?: string;
+  hasRefs: boolean;
+  refCount: number;
+  editInstruction?: string;
+}): string {
+  const { prompt, styleGuide, hasRefs, refCount, editInstruction } = args;
+
+  if (editInstruction) {
+    // 편집 모드 — IMAGE 1 이 원본. 바꿔도 되는 축을 지시문 하나로 좁힌다.
+    const extraRefs = refCount > 1
+      ? `\nIMAGE 2${refCount > 2 ? `-${refCount}` : ''}: style references ONLY. Do not copy their content, subjects, or composition.`
+      : '';
+    return `IMAGE EDIT TASK — this is an edit of an existing image, NOT a new illustration.
+
+IMAGE 1 is the BASE image. Reproduce IMAGE 1 and change ONLY what the edit instruction below asks for.${extraRefs}
+
+═══ EDIT INSTRUCTION (the only thing you may change) ═══
+${editInstruction}
+
+═══ MUST PRESERVE from IMAGE 1 ═══
+• The same specific person/subject — face, features, age, hair, body, clothing (unless the edit says otherwise)
+• Framing, crop, camera angle, perspective, and subject placement
+• Lighting direction, intensity, and color temperature
+• Color palette and white balance
+• Background elements and their positions
+• Rendering style and medium (photo vs illustration vs 3D)
+
+═══ FORBIDDEN ═══
+✗ Do NOT redraw the scene from scratch
+✗ Do NOT reframe, re-crop, or change the aspect of the composition
+✗ Do NOT add text, watermarks, captions, or signatures
+
+Scene context (background information only — do not use it to redraw): ${prompt}
+
+Return only the edited image.`;
+  }
+
+  if (hasRefs) {
+    // 생성 모드 + 레퍼런스 — 레퍼런스가 스타일의 진실원천. 스타일 가이드는 붙이지 않는다.
+    return `REFERENCE INSTRUCTION: Use the attached reference images as the source of truth for visual style, atmosphere, character appearance, lighting, and color palette. Match them closely.
+
+PROMPT: ${prompt}
+
+Return only the image, with no text overlays.`;
+  }
+
+  // 생성 모드 + 레퍼런스 없음 — 프로젝트 스타일 가이드를 붙인다.
+  const style = styleGuide?.trim() ? `\n\nSTYLE: ${styleGuide.trim()}` : '';
+  return `PROMPT: ${prompt}${style}
+
+Return only the image, with no text overlays.`;
+}
+
+export interface GenerateSingleImageInput {
+  /** 씬 프롬프트. 한국어여도 된다 (모델이 충분히 소화). */
+  prompt: string;
+  /** 레퍼런스 이미지들. editInstruction 이 있으면 [0] 이 베이스 이미지다. */
+  references?: string[];
+  aspectRatio?: string;
+  model?: string;
+  /** 프로젝트 비주얼 스타일 가이드 (constants.STYLE_PROMPT_GUIDES 값).
+   *  레퍼런스가 없을 때만 붙인다 — 레퍼런스가 있으면 그쪽이 스타일의 진실원천이다. */
+  styleGuide?: string;
+  /** 있으면 "처음부터 다시 그리기" 가 아니라 "베이스 이미지 편집" 으로 동작한다. */
+  editInstruction?: string;
+  /** editInstruction 과 함께 쓸 때 references[0] 이 편집 대상 원본인지 여부. */
+  baseImageIsFirstReference?: boolean;
+}
+
+/**
+ * 씬 이미지 1장 생성 / 편집.
+ *
+ * 두 가지 모드가 있고, 이 구분이 핵심이다.
+ *
+ *  1) 생성 모드 (editInstruction 없음)
+ *     프롬프트로 새로 그린다. 레퍼런스는 스타일 참조.
+ *
+ *  2) 편집 모드 (editInstruction 있음 + baseImageIsFirstReference)
+ *     IMAGE 1 을 그대로 두고 지시된 것만 바꾼다. 예전에는 이 구분이 없어서
+ *     "배경만 어둡게" 같은 사소한 수정에도 원본 프롬프트로 전체를 다시 그렸고,
+ *     그래서 인물·구도가 통째로 바뀌어 "레퍼런스를 못 따라간다" 는 피드백이 나왔다.
+ *
+ * 하드코딩 스타일 접미사("Cinematic, professional photography, 4k")는 제거했다.
+ * 프로젝트 스타일이 일러스트·3D·애니인데도 사진 스타일을 강요해 레퍼런스와 싸웠다.
+ */
+export async function generateSingleImage(input: GenerateSingleImageInput) {
+  const { prompt, references, aspectRatio, model: imageModel, styleGuide, editInstruction } = input;
+  const hasRefs = !!references && references.length > 0;
+  const isEdit = !!editInstruction?.trim() && !!input.baseImageIsFirstReference && hasRefs;
+
+  const instruction = buildSingleImageInstruction({
+    prompt,
+    styleGuide,
+    hasRefs,
+    refCount: references?.length ?? 0,
+    editInstruction: isEdit ? editInstruction!.trim() : undefined,
+  });
+
   if (isOpenAIImageModel(imageModel)) {
-    return generateSingleImageOpenAI(prompt, referenceImagesBase64, aspectRatio);
+    return generateSingleImageOpenAI(instruction, references, aspectRatio);
   }
 
   const ai = await getAI();
-  const imageParts = await Promise.all((referenceImagesBase64 || []).map(async (imgBase64) => {
+  const imageParts = await Promise.all((references || []).map(async (imgBase64) => {
     const { mimeType, base64: base64Data } = await normalizeImageInput(imgBase64);
     return {
       inlineData: {
@@ -234,17 +334,13 @@ export async function generateSingleImage(prompt: string, referenceImagesBase64?
     };
   }));
 
-  const styleInstruction = (referenceImagesBase64 && referenceImagesBase64.length > 0)
-    ? "REFERENCE INSTRUCTION: Strictly match the visual style, atmosphere, characters, and specific artistic details from the attached reference images."
-    : "";
-
   return withRetry(async () => {
     const response = await ai.models.generateContent({
       model: imageModel || 'gemini-3-pro-image-preview',
       contents: {
         parts: [
           ...imageParts,
-          { text: `${styleInstruction}\n\nPROMPT: ${prompt}. Cinematic, high-quality, professional photography, 4k, detailed.` }
+          { text: instruction }
         ]
       },
       config: {
@@ -272,53 +368,12 @@ export async function generateSingleImage(prompt: string, referenceImagesBase64?
   });
 }
 
-export async function upscaleImage(
-  imageBase64: string,
-  imagePrompt: string,
-  targetSize: '2K' | '4K',
-  aspectRatio?: string
-): Promise<string> {
-  const ai = await getAI();
-  const { mimeType, base64: base64Data } = await normalizeImageInput(imageBase64);
-
-  return withRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType,
-              data: base64Data,
-            },
-          },
-          {
-            text: `UPSCALE INSTRUCTION: Reproduce this EXACT image at maximum fidelity ${targetSize} resolution. Preserve ALL details, textures, composition, lighting, and colors EXACTLY as they are. Do NOT add, remove, or modify any elements. This is a pure quality enhancement. Original scene context: ${imagePrompt}. Output: Ultra high resolution ${targetSize}, sharp details, no artifacts.`,
-          },
-        ],
-      },
-      config: {
-        responseModalities: ['Image'],
-        imageConfig: {
-          aspectRatio: (aspectRatio || '16:9') as '16:9' | '9:16',
-          imageSize: targetSize,
-        },
-      },
-    });
-
-    const candidate = response.candidates?.[0];
-    if (!candidate) throw new Error('Upscale failed: No candidates returned.');
-    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-      throw new Error(`Upscale blocked. Reason: ${candidate.finishReason}`);
-    }
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
-      }
-    }
-    throw new Error('No image data found in upscale response.');
-  });
-}
+// upscaleImage 는 services/imageUpscaleService.upscaleSceneImage 로 통합됐다.
+//
+// 이 파일에 있던 구현은 프롬프트가 3줄뿐이라 인물·구도가 미묘하게 재해석됐고,
+// aspectRatio 를 "프로젝트 값" 으로 강제해 원본 비율과 다르면 그림이 잘렸다.
+// imageUpscaleService 쪽은 정체성·구도·조명·색·텍스트를 축별로 잠그는 프롬프트를
+// 쓰고, 호출부가 detectAspectFromImage 로 감지한 실제 비율을 넘긴다.
 
 /**
  * 이미지를 분석하여 씬의 대사/설명을 보정합니다.

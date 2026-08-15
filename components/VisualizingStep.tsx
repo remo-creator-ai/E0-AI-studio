@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Layers,
@@ -42,24 +42,16 @@ import { generateThumbnail } from '../services/thumbnailService';
 import { supabase } from '../lib/supabase';
 import { GRID_ANGLES, STYLE_PROMPT_GUIDES } from '../constants';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
-import { Project, Scene, AdDuration, VisualStyle, StoryboardLayout, SCENE_DURATION_MAP, SceneCount, ImageModel, IMAGE_MODEL_INFO, CategorizedRefImage, ReferenceCategory, REFERENCE_CATEGORY_INFO } from '../types';
+import { Project, Scene, AdDuration, VisualStyle, StoryboardLayout, SCENE_DURATION_MAP, SceneCount, ImageModel, IMAGE_MODEL_INFO, DEFAULT_IMAGE_MODEL, CategorizedRefImage, ReferenceCategory, REFERENCE_CATEGORY_INFO } from '../types';
+import { getSceneGridLayout } from '../lib/sceneGrid';
+import { scenePromptForImage } from '../lib/scenePrompt';
 
-function getGridLayout(sceneCount: number, aspectRatio?: string): { rows: number; cols: number; scenesPerUnit: number } {
-  const isPortrait = aspectRatio === '9:16';
-  switch (sceneCount) {
-    case 4: return { rows: 2, cols: 2, scenesPerUnit: 4 };
-    case 8: return isPortrait
-      ? { rows: 2, cols: 2, scenesPerUnit: 4 }  // 9:16: 2x2 grid x 2 units
-      : { rows: 2, cols: 4, scenesPerUnit: 8 };
-    case 18: return { rows: 3, cols: 3, scenesPerUnit: 9 };
-    case 9:
-    default: return { rows: 3, cols: 3, scenesPerUnit: 9 };
-  }
-}
+// 격자 규칙은 lib/sceneGrid.ts 단일 정의를 쓴다 (PlanningStep 과 공유).
+const getGridLayout = (sceneCount: number) => getSceneGridLayout(sceneCount);
 
 export const VisualizingStep: React.FC = () => {
   const { t } = useTranslation();
-  const { project, setProject, setIsLoading, isLoading } = useStore();
+  const { project, setProject, setIsLoading, isLoading, updateProjectSettings } = useStore();
   const { deduct, hasEnough, balance } = useCreditStore();
   const { alert, confirm } = useModal();
   const [currentUnitIdx, setCurrentUnitIdx] = useState(0);
@@ -69,7 +61,15 @@ export const VisualizingStep: React.FC = () => {
   const [isLibraryPickerOpen, setIsLibraryPickerOpen] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<{current: number, total: number} | null>(null);
   const [isPromptAutoSet, setIsPromptAutoSet] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<ImageModel>(ImageModel.GEMINI_3_1_FLASH);
+  // 프로젝트가 기억하는 모델이 있으면 그걸로 시작. 바꾸면 프로젝트에 다시 기억시켜
+  // 다듬기 단계의 편집기·업스케일이 같은 모델을 이어서 쓴다.
+  const [selectedModel, setSelectedModelState] = useState<ImageModel>(
+    () => project?.image_model ?? DEFAULT_IMAGE_MODEL,
+  );
+  const setSelectedModel = useCallback((model: ImageModel) => {
+    setSelectedModelState(model);
+    updateProjectSettings({ image_model: model });
+  }, [updateProjectSettings]);
   const [isStylePopupOpen, setIsStylePopupOpen] = useState(false);
   // 사용자 커스텀 스타일 (설정 페이지에서 편집). ImageStudio 와 동일한 소스.
   const [customStyles, setCustomStyles] = useState<CustomStyle[]>([]);
@@ -217,7 +217,7 @@ export const VisualizingStep: React.FC = () => {
     );
   }
 
-  const gridLayout = getGridLayout(project.scene_count || 9, project.aspect_ratio);
+  const gridLayout = getGridLayout(project.scene_count || 9);
   const totalUnits = Math.ceil((project.scene_count || 9) / gridLayout.scenesPerUnit);
 
   // Ensure grid_images array matches totalUnits (handles legacy projects)
@@ -275,8 +275,10 @@ export const VisualizingStep: React.FC = () => {
       return `the same outfit/accessories defined in REFERENCE IMAGE ${r.index}`;
     });
     const panelSuffix = perPanelParts.length > 0 ? ` — must feature ${perPanelParts.join(', ')} exactly as anchored above.` : '';
+    // 패널 프롬프트는 한국어 우선(image_prompt_kr), 없으면 영문 폴백.
+    // Korean-only 전환: 다듬기 단계에서 한국어로 고친 프롬프트가 시트 재생성에도 반영된다.
     const sceneDescriptions = unitScenes
-      .map((s, i) => `Panel ${i + 1}: ${s.image_prompt_en}${panelSuffix}`)
+      .map((s, i) => `Panel ${i + 1}: ${scenePromptForImage(s)}${panelSuffix}`)
       .join('\n');
 
     // (A) 최종 리마인더 — CRITICAL RULES 아래에 별도 블록으로 배치해 가장 마지막으로 모델이 읽게 한다.
@@ -487,7 +489,11 @@ CRITICAL RULES:
                   );
                   updatedScenes[sceneIdx] = {
                     ...updatedScenes[sceneIdx],
-                    image_url: canvas.toDataURL('image/png')
+                    image_url: canvas.toDataURL('image/png'),
+                    // 시트를 새로 뽑으면 컷은 다시 저해상도다. upscale_level 을 남겨두면
+                    // 영상제작 단계가 "업스케일 완료" 로 오인해 저해상도 컷을 Kling 에
+                    // 넘기고 "Image pixel is invalid" 로 실패한다.
+                    upscale_level: null,
                   };
                 }
               }
@@ -543,7 +549,9 @@ CRITICAL RULES:
             );
             updatedScenes[sceneIdx] = {
               ...updatedScenes[sceneIdx],
-              image_url: canvas.toDataURL('image/png')
+              image_url: canvas.toDataURL('image/png'),
+              // 위와 동일 — 새 시트에서 자른 컷은 업스케일 이력을 잇지 않는다.
+              upscale_level: null,
             };
           }
         }

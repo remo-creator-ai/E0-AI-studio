@@ -197,6 +197,8 @@ export const Dashboard: React.FC = () => {
         thumbnail: data.thumbnail ?? null,
         aspect_ratio: ((data as Record<string, unknown>).aspect_ratio as AspectRatio) || AspectRatio.LANDSCAPE,
         scene_count: ((data as Record<string, unknown>).scene_count as unknown as SceneCount) || SceneCount.CUTS_9,
+        image_model: ((data as Record<string, unknown>).image_model as Project['image_model']) || undefined,
+        generation_language: ((data as Record<string, unknown>).generation_language as Project['generation_language']) || undefined,
       };
 
       setProject(project);
@@ -608,8 +610,8 @@ export const Dashboard: React.FC = () => {
                 {/* Scene Count */}
                 <div className="space-y-3">
                   <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('dashboard.modal.sceneCount')}</label>
-                  <div className="grid grid-cols-4 gap-3">
-                    {([SceneCount.CUTS_4, SceneCount.CUTS_8, SceneCount.CUTS_9, SceneCount.CUTS_18] as SceneCount[]).map((count) => (
+                  <div className="grid grid-cols-5 gap-2">
+                    {([SceneCount.CUTS_4, SceneCount.CUTS_8, SceneCount.CUTS_9, SceneCount.CUTS_18, SceneCount.CUTS_27] as SceneCount[]).map((count) => (
                       <button
                         key={count}
                         onClick={() => setSelectedSceneCount(count)}

@@ -256,6 +256,34 @@ After:
   `scene-images` 에 정상 업로드(=버킷 수정이 실사용에서 작동). 최종 DB 크기 **14MB**.
 - 썸네일(`projects.thumbnail`)은 base64 그대로 두었음 — 15개 합쳐 366kB로 미미하고 앱도 업로드 대상에 넣지 않음.
 
+### 2026-08-15 (세션) — 이미지 업스케일·격자·프롬프트 정리
+
+사용자 신고: "다듬기 단계 편집기에서 업스케일하면 비율이 달라지고, 기존 레퍼런스를 못 따라간다."
+원인이 서로 다른 4가지였다.
+
+#### P0 — 잘못 동작하던 것
+| # | 발견 | 해결 |
+|---|------|------|
+| 1 | 편집기의 `"AI 고화질 이미지 재생성(2K 변환 / 3C)"` 버튼이 실제로는 **업스케일이 아니라 전체 재생성**. `handleUpscaleScene`(2K/4K·크레딧·확인창)은 구현돼 있으나 **어디서도 호출 안 되는 dead code**였고, 재생성은 "3C" 라고 써 놓고 **크레딧을 안 뺐다** | 버튼을 `재생성/수정 적용` 과 `2K·4K 업스케일` 로 분리. 라벨에 실제 단가 표시, 재생성도 정직하게 차감 |
+| 2 | **8컷 가로 = 2행x4열** 격자라 셀 종횡비가 `(16/9)x(2/4) = 8:9` 세로였다. 그 컷에 16:9 크롭 박스를 씌우고 재생성·업스케일이 16:9 를 강제 → 비율이 바뀜 | `lib/sceneGrid.ts` 단일 정의 신설, **rows === cols 불변식**. 8컷 가로도 2x2 x2유닛. PlanningStep·VisualizingStep·constants 가 같은 정의를 공유 |
+| 3 | 업스케일이 `project.aspect_ratio` 를 강제 | 호출부가 `detectAspectFromImage` 로 **원본에서 감지한 비율**을 넘김. 어긋나면 편집기에 경고 배너 |
+| 4 | 업스케일 구현이 두 벌 (`geminiService.upscaleImage` 3줄 프롬프트 / `imageUpscaleService` 30줄) | `imageUpscaleService` 로 통일, 2K/4K·모델 파라미터 추가. 단가는 2K 3cr · 4K 5cr (CREDIT_PRICING_SPEC §3-2) |
+
+#### P1 — 품질
+- **편집 시맨틱 도입**: 토글 ON + 수정 지시가 있으면 image-edit 모드로 전환. `IMAGE 1 을 그대로 두고 지시한 것만 변경` + 정체성·구도·조명·팔레트 보존 지시. 편집 모드에서는 앞뒤 씬 레퍼런스를 넣지 않는다 (원본에서 멀어짐)
+- **하드코딩 스타일 접미사 제거**: `. Cinematic, high-quality, professional photography, 4k` (geminiService) 와 `. High quality, detailed, professional photography.` (openaiImageService) 가 일러스트·3D 프로젝트와 싸웠다 → `project.style` 기반 `STYLE_PROMPT_GUIDES` 로 교체, 레퍼런스가 있으면 접미사 미부착
+- **모델 단일화**: `types.DEFAULT_IMAGE_MODEL` 신설(Nano Banana 2 · 3cr). `project.image_model`(migration 042)에 기억시켜 만들기·다듬기·영상제작이 같은 모델을 쓴다. 편집기에도 모델 피커 추가
+- **27컷 추가**: 3x3 x3유닛 · 90초 (`SceneCount.CUTS_27`, `AdDuration.S90`)
+- **시트 재생성 시 `upscale_level` 초기화**: 새로 자른 컷은 다시 저해상도인데 업스케일 이력이 남아 영상제작이 "완료" 로 오인, Kling 이 `Image pixel is invalid` 로 거부하던 문제
+
+#### P2 — Korean-only 전환 1단계
+- `Scene.image_prompt_kr` 추가. 읽기는 `lib/scenePrompt.ts` 의 `scenePromptForImage()` 로 **kr → en 폴백** 이라 기존 프로젝트는 무변화
+- 편집기 입력창을 한국어 1급으로 (영문은 접힘 블록 · Auto-Sync 유지), 시스템 인스트럭션도 `image_prompt_kr` 을 주력으로 생성하도록 변경
+- `projects.generation_language` 는 타입·코드에만 있고 **컬럼이 없어 저장이 안 되고 있었다** → migration 042 에서 컬럼 신설
+
+#### 마이그레이션
+- `042_projects_image_model_and_language.sql` — `projects.image_model`, `projects.generation_language` (적용 완료)
+
 ## 미해결 / 다음 작업 (소담 트랙)
 | 우선도 | 작업 | 비고 |
 |--------|------|------|

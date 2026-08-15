@@ -1,4 +1,5 @@
-import { VisualStyle } from './types';
+import { VisualStyle, SCENE_DURATION_MAP, SceneCount } from './types';
+import { getSceneGridLayout, getSceneGridUnits } from './lib/sceneGrid';
 
 export const COLORS = {
   PRIMARY: '#0057FF',
@@ -47,13 +48,13 @@ export const SYSTEM_INSTRUCTION = `
 `;
 
 export function getSystemInstruction(sceneCount: number, aspectRatio: string, language: 'ko' | 'en' = 'ko'): string {
-  // Calculate units: each unit has up to 9 scenes
-  const scenesPerUnit = Math.min(sceneCount, 9);
-  const totalUnits = Math.ceil(sceneCount / 9);
+  // 유닛 구조는 실제 시트 격자(lib/sceneGrid)와 같아야 한다. 예전에는 여기서
+  // "유닛당 최대 9컷" 으로 따로 계산해, 8컷(실제 2x2 x2유닛)을 1유닛 8컷으로 설명했다.
+  const { scenesPerUnit } = getSceneGridLayout(sceneCount);
+  const totalUnits = getSceneGridUnits(sceneCount);
 
-  // Duration mapping
-  const durationMap: Record<number, number> = { 4: 15, 8: 30, 9: 30, 18: 60 };
-  const totalDuration = durationMap[sceneCount] || 30;
+  // 길이도 SCENE_DURATION_MAP 단일 정의를 따른다 (27컷=90초 같은 신규 값 누락 방지)
+  const totalDuration = SCENE_DURATION_MAP[sceneCount as SceneCount] ?? 30;
   const unitDuration = Math.round(totalDuration / totalUnits);
 
   // Build unit/section structure description
@@ -91,7 +92,8 @@ ${unitStructure}
 * content_kr: Write Korean translation of the scene description
 * script_en: Write English dialogue/subtitle (primary)
 * script_kr: Write Korean translation of the dialogue
-* image_prompt_en: Always in English - detailed visual prompt for AI image generation
+* image_prompt_kr: Korean visual prompt — this is the PRIMARY prompt actually sent to the image model
+* image_prompt_en: English mirror of image_prompt_kr (kept as fallback)
 * video_motion_en: Always in English - camera motion instructions
 * video_motion_kr: Korean translation of camera motion
 
@@ -108,6 +110,7 @@ Respond ONLY with the JSON below. Do not include any other text.
           "content_en": "Detailed scene description in English",
           "script_kr": "한국어 대사/자막",
           "script_en": "English dialogue/subtitle",
+          "image_prompt_kr": "이미지 생성용 상세 시각 묘사 (한국어), ${framingGuide}, 구체적인 조명",
           "image_prompt_en": "Detailed visual description for image generation, ${framingGuide}, 4k, specific lighting",
           "video_motion_en": "Camera motion (Pan, Tilt, Zoom, etc)",
           "video_motion_kr": "카메라 모션 한국어"
@@ -115,7 +118,7 @@ Respond ONLY with the JSON below. Do not include any other text.
       ]
     }
   ],
-  "global_grid_prompt": "A cinematic grid sheet showing [Subject] in [Location], ${sceneCount <= 9 ? sceneCount : 9} different camera angles, ${isPortrait ? '9:16 vertical portrait' : '16:9 widescreen cinematic'} style, consistent look, no text, no borders."
+  "global_grid_prompt": "A cinematic grid sheet showing [Subject] in [Location], ${scenesPerUnit} different camera angles, ${isPortrait ? '9:16 vertical portrait' : '16:9 widescreen cinematic'} style, consistent look, no text, no borders."
 }
 `;
   }
@@ -138,7 +141,8 @@ ${unitStructure}
 * content_en: 영어로 씬 설명 번역 작성
 * script_kr: 한국어 대사/자막 작성 (주력)
 * script_en: 영어 대사 번역
-* image_prompt_en: 항상 영어 - AI 이미지 생성용 시각 프롬프트
+* image_prompt_kr: 한국어 이미지 프롬프트 — **실제로 이미지 모델에 전달되는 주력 프롬프트**
+* image_prompt_en: image_prompt_kr 의 영어판 (폴백용으로만 유지)
 * video_motion_en: 항상 영어 - 카메라 모션
 * video_motion_kr: 카메라 모션 한국어 번역
 
@@ -155,6 +159,7 @@ ${unitStructure}
           "content_en": "Scene description in English",
           "script_kr": "한국어 대사/자막",
           "script_en": "English Script",
+          "image_prompt_kr": "이미지 생성용 상세 시각 묘사 (한국어), ${framingGuide}, 구체적인 조명",
           "image_prompt_en": "Detailed visual description for image generation, ${framingGuide}, 4k, specific lighting",
           "video_motion_en": "Camera motion (Pan, Tilt, Zoom, etc)",
           "video_motion_kr": "카메라 모션 한국어 (예: 천천히 줌인, 좌로 패닝, 위에서 아래로 틸트 등)"
@@ -162,7 +167,7 @@ ${unitStructure}
       ]
     }
   ],
-  "global_grid_prompt": "A cinematic grid sheet showing [Subject] in [Location], ${sceneCount <= 9 ? sceneCount : 9} different camera angles, ${isPortrait ? '9:16 vertical portrait' : '16:9 widescreen cinematic'} style, consistent look, no text, no borders."
+  "global_grid_prompt": "A cinematic grid sheet showing [Subject] in [Location], ${scenesPerUnit} different camera angles, ${isPortrait ? '9:16 vertical portrait' : '16:9 widescreen cinematic'} style, consistent look, no text, no borders."
 }
 `;
 }

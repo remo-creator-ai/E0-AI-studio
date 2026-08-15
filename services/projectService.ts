@@ -41,6 +41,9 @@ export async function saveProject(
     original_creator_id: project.original_creator_id || userId,
     aspect_ratio: project.aspect_ratio || AspectRatio.LANDSCAPE,
     scene_count: project.scene_count || SceneCount.CUTS_9,
+    // migration 042. NULL 이면 각각 DEFAULT_IMAGE_MODEL / 'ko' 로 해석된다.
+    image_model: project.image_model || null,
+    generation_language: project.generation_language || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -103,6 +106,8 @@ export async function loadProject(projectId: string): Promise<Project | null> {
     creator_avatar_url: creatorAvatar,
     aspect_ratio: ((data as Record<string, unknown>).aspect_ratio as AspectRatio) || AspectRatio.LANDSCAPE,
     scene_count: ((data as Record<string, unknown>).scene_count as unknown as SceneCount) || SceneCount.CUTS_9,
+    image_model: ((data as Record<string, unknown>).image_model as Project['image_model']) || undefined,
+    generation_language: ((data as Record<string, unknown>).generation_language as Project['generation_language']) || undefined,
   } as Project;
 }
 

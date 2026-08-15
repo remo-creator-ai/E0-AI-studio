@@ -175,14 +175,18 @@ export async function generateGridImageOpenAI(
     : generate(full, aspectRatio, 'sheet');
 }
 
-/** 단건 이미지 생성. geminiService.generateSingleImage 대응판. */
+/** 단건 이미지 생성. geminiService.generateSingleImage 대응판.
+ *
+ *  ⚠️ 여기서 스타일 접미사를 붙이지 않는다. 호출부(geminiService.buildSingleImageInstruction)
+ *  가 생성/편집 모드와 프로젝트 스타일까지 반영한 완성된 지시문을 넘긴다. 예전에는
+ *  ". High quality, detailed, professional photography." 를 무조건 덧붙여서, 일러스트·3D
+ *  프로젝트인데도 사진 스타일이 끼어들고 편집 모드 지시문과도 충돌했다. */
 export async function generateSingleImageOpenAI(
-  prompt: string,
+  instruction: string,
   referenceImages?: string[],
   aspectRatio?: string,
 ): Promise<string> {
-  const full = `${prompt}. High quality, detailed, professional photography.`;
   return referenceImages && referenceImages.length > 0
-    ? generateWithRefs(full, referenceImages, aspectRatio, 'single')
-    : generate(full, aspectRatio, 'single');
+    ? generateWithRefs(instruction, referenceImages, aspectRatio, 'single')
+    : generate(instruction, aspectRatio, 'single');
 }
