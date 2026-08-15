@@ -43,6 +43,8 @@ import { useStore } from '../store';
 import { useAuthStore } from '../store/authStore';
 import { useCreditStore, CREDIT_COSTS } from '../store/creditStore';
 import { useModal } from './ui/ModalProvider';
+import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
+import { classifyGenError, genErrorSummary } from '../lib/genErrorMessages';
 import { generateSceneVideo } from '../services/geminiService';
 import { proxyHealth } from '../lib/aiProxy';
 import { sceneImageToBlob } from '../services/imageUtils';
@@ -58,6 +60,7 @@ export const ProductionStep: React.FC = () => {
   const { deduct, hasEnough, balance } = useCreditStore();
   const { alert, confirm } = useModal();
   const { t } = useTranslation();
+  const showGenError = useGenErrorAlert();
   const LOADING_MESSAGES = [
     t('production.loadingMessages.msg1'),
     t('production.loadingMessages.msg2'),
@@ -226,14 +229,11 @@ export const ProductionStep: React.FC = () => {
         updateScene(sceneId, { video_url: videoUrl });
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message === "API_KEY_EXPIRED") {
-        await alert(t('production.alerts.invalidKey'), { type: 'error' });
-        setHasKey(false);
-      } else {
-        console.error(error);
-        await alert(t('production.alerts.generateError'), { type: 'error' });
-      }
+      console.error(error);
+      // 키 만료는 hasKey 상태까지 되돌려야 하므로 별도 분기를 유지한다.
+      // 나머지는 "오류가 발생했습니다" 로 뭉개지 말고 원인별 안내를 준다.
+      if (classifyGenError(error) === 'auth') setHasKey(false);
+      await showGenError(error, 'video');
     } finally {
       setRenderingSceneId(null);
       setIsLoading(false);
@@ -338,13 +338,15 @@ export const ProductionStep: React.FC = () => {
           updateScene(item.sceneId, { video_url: videoUrl });
           updateItem(item.sceneId, { status: 'completed' });
         } else {
-          updateItem(item.sceneId, { status: 'failed', error: 'No video URL returned' });
+          updateItem(item.sceneId, { status: 'failed', error: genErrorSummary('no_video_url', t) });
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        updateItem(item.sceneId, { status: 'failed', error: message });
+        console.error('[batch] 영상 생성 실패:', error);
+        // 대시보드 행에 한 줄로 들어가므로 원문 대신 요약 문구를 저장한다.
+        updateItem(item.sceneId, { status: 'failed', error: genErrorSummary(error, t) });
 
-        if (message === 'API_KEY_EXPIRED') {
+        // 키 문제면 남은 씬도 전부 같은 이유로 실패하므로 배치를 즉시 중단한다.
+        if (classifyGenError(error) === 'auth') {
           batchAbortRef.current = true;
           await alert(t('production.alerts.batchKeyError'), { type: 'error' });
           setHasKey(false);

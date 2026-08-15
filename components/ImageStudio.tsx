@@ -34,6 +34,7 @@ import {
 } from '../services/imageStudioService';
 import { createAsset, type Asset, type AssetType, ASSET_TYPES } from '../services/assetService';
 import { track } from '../lib/analytics';
+import { genErrorSummary } from '../lib/genErrorMessages';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
 import {
@@ -187,7 +188,9 @@ export const ImageStudio: React.FC = () => {
   const [imagePrompt, setImagePrompt] = useState('');
   // 히스토리에 기록된 현재 이미지의 id — '보관함 저장' 후 saved_asset_id 를 채워줄 근거.
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
-  const [failure, setFailure] = useState<GenerateFailure | null>(null);
+  // failure 코드만 들고 있으면 'blocked' 안에서 정책 위반/안전 필터/저작물을 구분할 수
+  // 없다. 공통 매퍼가 세부 사유를 읽을 수 있도록 message 까지 함께 보관한다.
+  const [failure, setFailure] = useState<{ failure: GenerateFailure; message?: string } | null>(null);
   const [apiReady, setApiReady] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>({ kind: 'idle' });
   // 보관함 저장 다이얼로그 — 사용자가 캐릭터/제품/로고/이미지 중 분류를 고르고 이름을 확인한다.
@@ -438,7 +441,8 @@ export const ImageStudio: React.FC = () => {
         }
       }
     } else {
-      setFailure(res.failure ?? 'error');
+      console.error('[ImageStudio] 생성 실패:', res.failure, res.message);
+      setFailure({ failure: res.failure ?? 'error', message: res.message });
       track('image_generated', { success: false, failure: res.failure ?? 'error', model, mode, aspect });
     }
     setBusy(false);
@@ -479,11 +483,13 @@ export const ImageStudio: React.FC = () => {
         ? { ...s, status: 'done', imageUrl, historyId, saveState: { kind: 'idle' } }
         : s));
     } else {
+      // 샷 셀에 한 줄로 들어가므로 원문 대신 요약 문구를 저장한다.
+      console.error('[ImageStudio] 멀티샷 실패:', res.failure, res.message);
       setMultishotShots((prev) => prev.map((s, i) => i === idx
-        ? { ...s, status: 'error', errorMessage: res.message ?? res.failure ?? 'error' }
+        ? { ...s, status: 'error', errorMessage: genErrorSummary(res, t) }
         : s));
     }
-  }, [style, aspect, refs, deduct, user]);
+  }, [style, aspect, refs, deduct, user, t]);
 
   const runMultishot = useCallback(async () => {
     if (!canGenerate) return;
@@ -541,7 +547,8 @@ export const ImageStudio: React.FC = () => {
           }
         }
       } else {
-        setFailure(res.failure ?? 'error');
+        console.error('[ImageStudio] 시트 생성 실패:', res.failure, res.message);
+        setFailure({ failure: res.failure ?? 'error', message: res.message });
       }
       setBusy(false);
       return;
@@ -651,13 +658,10 @@ export const ImageStudio: React.FC = () => {
     ? t('imageStudio.error.notEnoughCredits', { cost, balance })
     : needsRef
       ? t('imageStudio.error.needReference')
-      : failure === 'no_api_key'
-        ? t('imageStudio.error.noApiKey')
-        : failure === 'blocked'
-          ? t('imageStudio.error.blocked')
-          : failure
-            ? t('imageStudio.error.failed')
-            : null;
+      : failure
+        // 공통 매퍼로 위임 — 'blocked' 를 정책 위반/안전 필터/저작물로 세분한다.
+        ? genErrorSummary(failure, t)
+        : null;
 
   // ---- 히스토리 스트립: xl+ 인라인, 그 미만은 서랍(drawer)에 같은 내용을 재사용 ----
   const historyStripContent = (

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X, ChevronDown } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -12,6 +12,14 @@ interface ModalOptions {
   type?: ModalType;
   confirmText?: string;
   cancelText?: string;
+  /** 굵은 한 줄 제목. 무엇이 실패/완료됐는지. 없으면 message 만 보여준다. */
+  title?: string;
+  /** 다음에 뭘 하면 되는지. 본문 아래 강조 박스로 붙는다. */
+  hint?: string;
+  /** 문의용 짧은 식별자 (예: "오류 코드: PROHIBITED_CONTENT"). */
+  code?: string;
+  /** 영어 원문 등 기술 정보. 기본 접힘 — 일반 사용자에게 노출되지 않는다. */
+  detail?: string;
 }
 
 interface ModalState {
@@ -20,6 +28,10 @@ interface ModalState {
   type: ModalType;
   confirmText: string;
   cancelText: string;
+  title?: string;
+  hint?: string;
+  code?: string;
+  detail?: string;
   resolve: (value: boolean) => void;
 }
 
@@ -59,11 +71,14 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { t } = useTranslation();
   const [modal, setModal] = useState<ModalState | null>(null);
   const [visible, setVisible] = useState(false);
+  // 기술 정보 펼침 상태. 모달이 바뀔 때마다 접힌 상태로 되돌린다.
+  const [detailOpen, setDetailOpen] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
 
   // Animate in when modal mounts
   useEffect(() => {
     if (modal) {
+      setDetailOpen(false);
       // rAF so the initial render has opacity-0, then we flip to opacity-100
       requestAnimationFrame(() => setVisible(true));
     }
@@ -100,6 +115,10 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         type: options?.type ?? 'info',
         confirmText: options?.confirmText ?? t('common.confirm'),
         cancelText: '',
+        title: options?.title,
+        hint: options?.hint,
+        code: options?.code,
+        detail: options?.detail,
         resolve,
       });
     }).then(() => undefined);
@@ -156,10 +175,56 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 </div>
               )}
 
-              {/* Message */}
-              <p className="text-center text-base text-zinc-900 leading-relaxed whitespace-pre-line font-medium">
-                {modal.message}
-              </p>
+              {/* Title + Message */}
+              <div className="space-y-2.5">
+                {modal.title && (
+                  <p className="text-center text-lg font-black text-zinc-900 leading-snug">
+                    {modal.title}
+                  </p>
+                )}
+                <p className={`text-center leading-relaxed whitespace-pre-line ${
+                  modal.title
+                    ? 'text-sm text-zinc-600 font-medium'
+                    : 'text-base text-zinc-900 font-medium'
+                }`}>
+                  {modal.message}
+                </p>
+              </div>
+
+              {/* 다음 행동 안내 — 원인만 알려주고 끝내지 않는다 */}
+              {modal.hint && (
+                <div className="rounded-2xl bg-[#EEF3FC] border border-[#C0D4F0] px-4 py-3">
+                  <p className="text-[13px] text-[#0050BF] font-bold leading-relaxed text-center whitespace-pre-line">
+                    {modal.hint}
+                  </p>
+                </div>
+              )}
+
+              {/* 문의용 코드 + 접힌 원문 (기술 정보는 기본적으로 숨긴다) */}
+              {(modal.code || modal.detail) && (
+                <div className="space-y-2">
+                  {modal.code && (
+                    <p className="text-center text-[11px] text-zinc-400 tabular-nums">{modal.code}</p>
+                  )}
+                  {modal.detail && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setDetailOpen((v) => !v)}
+                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 transition-colors"
+                      >
+                        <ChevronDown size={12} className={`transition-transform ${detailOpen ? 'rotate-180' : ''}`} />
+                        {t('errors.gen.detailToggle')}
+                      </button>
+                      {detailOpen && (
+                        <pre className="mt-2 max-h-32 overflow-auto rounded-xl bg-zinc-50 border border-zinc-200 p-3 text-left text-[10px] leading-relaxed text-zinc-500 whitespace-pre-wrap break-all">
+                          {modal.detail}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Buttons */}

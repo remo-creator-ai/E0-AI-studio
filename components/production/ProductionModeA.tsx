@@ -22,6 +22,8 @@ import { useStore } from '../../store';
 import { useCreditStore } from '../../store/creditStore';
 import { useAuthStore } from '../../store/authStore';
 import { useModal } from '../ui/ModalProvider';
+import { useTranslation } from 'react-i18next';
+import { genErrorSummary } from '../../lib/genErrorMessages';
 import {
   generateStudioVideo, videoStudioCreditCost, KLING_PROMPT_MAX, VIDEO_STUDIO_MODEL,
   VIDEO_RESOLUTIONS, DEFAULT_VIDEO_RESOLUTION,
@@ -204,6 +206,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
   const hasEnough = useCreditStore((s) => s.hasEnough);
   const user = useAuthStore((s) => s.user);
   const { alert, confirm } = useModal();
+  const { t } = useTranslation();
 
   const [duration, setDuration] = useState<5 | 10>(10);
   const [resolution, setResolution] = useState<VideoResolution>(DEFAULT_VIDEO_RESOLUTION);
@@ -425,7 +428,9 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
           startImage: startImageSnapshot,
         });
         if (!result.ok || !result.videoUrl) {
-          updateJob(jobId, { status: 'failed', error: result.message ?? '생성 실패' });
+          // 결과 카드에 한 줄로 들어가므로 원문 대신 요약 문구를 저장한다.
+          console.error('[ModeA] 통합 영상 생성 실패:', result.failure, result.message);
+          updateJob(jobId, { status: 'failed', error: genErrorSummary(result, t) });
           return;
         }
         await deduct(cost, `통합 영상 (${durationSnapshot}s)`);
@@ -453,7 +458,8 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
         }
         updateJob(jobId, { status: 'done', videoUrl: result.videoUrl });
       } catch (e) {
-        updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
+        console.error('[ModeA] 통합 영상 생성 예외:', e);
+        updateJob(jobId, { status: 'failed', error: genErrorSummary(e, t) });
       }
     })();
   };
@@ -846,7 +852,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                   <div className="bg-red-50 aspect-video flex items-center justify-center">
                     <div className="text-center space-y-2 px-6">
                       <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
-                      <p className="text-red-700 text-sm font-bold">{job.error ?? '생성 실패'}</p>
+                      <p className="text-red-700 text-sm font-bold leading-relaxed">{job.error ?? '알 수 없는 오류가 발생했습니다. 다시 시도해 주세요.'}</p>
                     </div>
                   </div>
                 )}

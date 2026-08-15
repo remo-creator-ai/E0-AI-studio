@@ -30,6 +30,9 @@ import { useAuthStore } from '../../store/authStore';
 import { useCreditStore } from '../../store/creditStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useModal } from '../ui/ModalProvider';
+import { useTranslation } from 'react-i18next';
+import { genErrorSummary } from '../../lib/genErrorMessages';
+import { useGenErrorAlert } from '../../hooks/useGenErrorAlert';
 import {
   generateStudioVideo, videoStudioCreditCost, detectAspectFromImage,
   VIDEO_STUDIO_MODEL, KLING_PROMPT_MAX, clampKlingPrompt,
@@ -90,6 +93,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const user = useAuthStore((s) => s.user);
   const language = useSettingsStore((s) => s.defaultLanguage);
   const { alert, confirm } = useModal();
+  const { t } = useTranslation();
+  const showGenError = useGenErrorAlert();
 
   const scenes = project?.scenes ?? [];
   const projectTag = project ? `mode-b:${project.id}` : '';
@@ -275,7 +280,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       window.clearInterval(progressTimer);
       if (!result.ok || !result.dataUrl) {
         setUpscaleJobStore(scene.id, 'failed');
-        await alert(`업스케일 실패: ${result.message ?? 'unknown'}`, { type: 'error' });
+        console.error('[ModeB] 업스케일 실패:', result.message);
+        await showGenError(result, 'upscale');
         return;
       }
       await deduct(IMAGE_UPSCALE_COST, `업스케일 (씬 ${scene.order})`);
@@ -285,9 +291,10 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     } catch (e) {
       window.clearInterval(progressTimer);
       setUpscaleJobStore(scene.id, 'failed');
-      await alert(`업스케일 실패: ${e instanceof Error ? e.message : String(e)}`, { type: 'error' });
+      console.error('[ModeB] 업스케일 예외:', e);
+      await showGenError(e, 'upscale');
     }
-  }, [alert, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore, project?.image_model]);
+  }, [alert, showGenError, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore, project?.image_model]);
 
   // ── 씬 영상 생성 실행 (fire-and-forget) ──
   const runGenerate = useCallback(async (scene: Scene, options?: { skipConfirm?: boolean }) => {
@@ -346,7 +353,10 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           endImage,
         });
         if (!result.ok || !result.videoUrl) {
-          updateJob(jobId, { status: 'failed', error: result.message ?? '생성 실패' });
+          // 씬 카드에 한 줄로 들어가므로 원문 대신 요약 문구를 저장한다.
+          // (원문은 아래 console.error 로만 남긴다)
+          console.error('[ModeB] 씬 영상 생성 실패:', result.failure, result.message);
+          updateJob(jobId, { status: 'failed', error: genErrorSummary(result, t) });
           return;
         }
         await deduct(cost, `씬 영상 (${scene.order})`);
@@ -386,10 +396,11 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         // 완료 후 편집기 자동 접기 → done 뷰로 자동 전환
         setCardModeStore(scene.id, 'idle');
       } catch (e) {
-        updateJob(jobId, { status: 'failed', error: e instanceof Error ? e.message : String(e) });
+        console.error('[ModeB] 씬 영상 생성 예외:', e);
+        updateJob(jobId, { status: 'failed', error: genErrorSummary(e, t) });
       }
     })();
-  }, [addJob, alert, balance, buildKlingPrompt, confirm, deduct, getSettings, hasEnough, project?.title, projectTag, updateJob, updateScene, user?.id, addTakeStore, setCardModeStore]);
+  }, [addJob, alert, balance, buildKlingPrompt, confirm, deduct, getSettings, hasEnough, project?.title, projectTag, updateJob, updateScene, user?.id, addTakeStore, setCardModeStore, t]);
 
   // ── 네비게이션: 씬 스크롤 이동 ──
   const scrollToScene = useCallback((sceneId: string) => {
@@ -1622,7 +1633,7 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
 
       {job?.status === 'failed' && (
         <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
-          생성 실패: {job.error ?? 'unknown'}
+          생성 실패: {job.error ?? '알 수 없는 오류가 발생했습니다. 다시 시도해 주세요.'}
         </div>
       )}
     </div>

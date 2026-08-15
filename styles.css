@@ -180,6 +180,16 @@ h1 span, h2 span, h3 span {
     border-radius: 1.5rem;
 }
 
+/* ─── 스토리보드 시트 (화면 미리보기) ───
+   A4 가로 = 297mm ≒ 1122px @96dpi. 화면에서도 이 폭을 고정해야
+   AssemblyStep 의 zoom 계산(containerWidth / 1122)이 실제와 맞는다.
+   폭이 없으면 시트가 내용 크기로 줄어들어, 넓은 화면에서 좌우에 빈 여백이 남는다.
+   인쇄 시에는 아래 @media print 가 297mm 로 덮어쓴다. */
+.storyboard-page {
+  width: 1122px;
+  flex: none;
+}
+
 /* Print: Force A4 Landscape (must be outside @media print for some CSS processors) */
 @page {
   size: A4 landscape;
@@ -244,9 +254,10 @@ h1 span, h2 span, h3 span {
     gap: 0 !important;
   }
 
-  /* Reset storyboard wrapper - remove scale transform and gap */
+  /* Reset storyboard wrapper - remove screen zoom/scale and gap */
   .storyboard-print-wrapper {
     transform: none !important;
+    zoom: 1 !important;
     gap: 0 !important;
   }
 

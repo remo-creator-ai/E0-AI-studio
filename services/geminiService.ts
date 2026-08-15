@@ -324,6 +324,7 @@ export async function generateSingleImage(input: GenerateSingleImageInput) {
   }
 
   const ai = await getAI();
+  const model = imageModel || 'gemini-3-pro-image-preview';
   const imageParts = await Promise.all((references || []).map(async (imgBase64) => {
     const { mimeType, base64: base64Data } = await normalizeImageInput(imgBase64);
     return {
@@ -335,36 +336,54 @@ export async function generateSingleImage(input: GenerateSingleImageInput) {
   }));
 
   return withRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: imageModel || 'gemini-3-pro-image-preview',
-      contents: {
-        parts: [
-          ...imageParts,
-          { text: instruction }
-        ]
-      },
-      config: {
-        responseModalities: ["Image"],
-        imageConfig: {
-          aspectRatio: (aspectRatio || "16:9") as "16:9" | "9:16",
+    // imageSize 를 생략하면 기본 1K 라서, 재생성한 컷만 시트에서 자른 컷(2K/4K 시트
+    // 기준)보다 흐릿해지고 Kling 시작 프레임 품질까지 떨어졌다. 그래서 별도로
+    // 업스케일을 한 번 더 돌려야 했는데(=크레딧 2배), 애초에 목표 해상도로 뽑으면
+    // 호출 1회로 끝난다. 모델이 거부하면 시트와 같은 방식으로 한 단계씩 낮춘다.
+    let lastError: unknown;
+
+    for (const imageSize of IMAGE_SIZE_LADDER[model] ?? DEFAULT_IMAGE_SIZE_LADDER) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: {
+            parts: [
+              ...imageParts,
+              { text: instruction }
+            ]
+          },
+          config: {
+            responseModalities: ["Image"],
+            imageConfig: {
+              aspectRatio: (aspectRatio || "16:9") as "16:9" | "9:16",
+              imageSize,
+            }
+          }
+        });
+
+        const candidate = response.candidates?.[0];
+        if (!candidate) {
+           throw new Error("Generation failed: No candidates returned.");
         }
-      }
-    });
+        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+           throw new Error(`Generation blocked by safety settings. Reason: ${candidate.finishReason}`);
+        }
 
-    const candidate = response.candidates?.[0];
-    if (!candidate) {
-       throw new Error("Generation failed: No candidates returned.");
-    }
-    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-       throw new Error(`Generation blocked by safety settings. Reason: ${candidate.finishReason}`);
-    }
-
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:image/png;base64,${part.inlineData.data}`;
+        for (const part of candidate.content?.parts || []) {
+          if (part.inlineData) {
+            return `data:image/png;base64,${part.inlineData.data}`;
+          }
+        }
+        throw new Error("No image data found in response.");
+      } catch (e) {
+        lastError = e;
+        // 해상도 거부일 때만 낮춰 재시도. 안전성 차단·쿼터는 낮춰도 같으므로 즉시 던진다.
+        if (!isImageSizeRejection(e)) throw e;
+        console.warn(`[single] imageSize=${imageSize} 거부됨 (${model}). 한 단계 낮춰 재시도합니다.`);
       }
     }
-    throw new Error("No image data found in response.");
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   });
 }
 

@@ -41,6 +41,7 @@ import { saveVideoAsAsset } from '../services/videoLibraryService';
 import { AssetLibraryPicker } from './AssetLibraryPicker';
 import { useVideoGenStore, type VideoJob } from '../store/videoGenStore';
 import { track } from '../lib/analytics';
+import { genErrorSummary } from '../lib/genErrorMessages';
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -204,7 +205,7 @@ const FocusView: React.FC<FocusViewProps> = ({
         <div className="bg-red-50 aspect-video flex items-center justify-center">
           <div className="text-center space-y-2 px-6">
             <AlertCircle className="w-8 h-8 text-red-500 mx-auto" />
-            <p className="text-red-700 text-sm font-bold">{source.error ?? '생성 실패'}</p>
+            <p className="text-red-700 text-sm font-bold leading-relaxed">{source.error ?? '알 수 없는 오류가 발생했습니다. 다시 시도해 주세요.'}</p>
           </div>
         </div>
       )}
@@ -522,13 +523,9 @@ export const VideoStudio: React.FC = () => {
           endImage: endImageSnapshot,
         });
         if (!result.ok || !result.videoUrl) {
-          updateJob(jobId, {
-            status: 'failed',
-            error: result.failure === 'blocked' ? '콘텐츠 정책에 의해 차단되었습니다.'
-              : result.failure === 'timeout' ? '생성이 시간 초과되었습니다.'
-              : result.failure === 'no_api_key' ? 'API 키가 설정되지 않았습니다. 관리자에게 문의하세요.'
-              : (result.message ?? '생성 실패'),
-          });
+          console.error('[VideoStudio] 생성 실패:', result.failure, result.message);
+          // 인라인 매핑을 공통 매퍼로 위임 — 'blocked' 세부 사유와 원문 fallback 을 함께 처리한다.
+          updateJob(jobId, { status: 'failed', error: genErrorSummary(result, t) });
           track('video_generated', { success: false, failure: result.failure ?? 'error', duration, resolution, aspect: resolvedAspect });
           return;
         }

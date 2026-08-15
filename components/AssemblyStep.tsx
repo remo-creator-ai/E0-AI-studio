@@ -40,6 +40,7 @@ import { scenePromptForImage } from '../lib/scenePrompt';
 import { sceneImageToBlob } from '../services/imageUtils';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
 import JSZip from 'jszip';
 import Cropper from 'react-easy-crop';
 import { RefineFullStoryModal } from './RefineFullStoryModal';
@@ -54,6 +55,7 @@ interface CroppedArea {
 export const AssemblyStep: React.FC = () => {
   const { project, setProject, updateScene, reorderScenes, updateProjectSettings, setIsLoading, isLoading } = useStore();
   const { alert, confirm } = useModal();
+  const showGenError = useGenErrorAlert();
   const { deduct, hasEnough, balance } = useCreditStore();
   const { defaultLanguage } = useSettingsStore();
   const { t } = useTranslation();
@@ -72,21 +74,26 @@ export const AssemblyStep: React.FC = () => {
   const [localRefImages, setLocalRefImages] = useState<string[]>([]);
   const [editInstruction, setEditInstruction] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  /** 미리보기 이미지의 실제 픽셀 크기 (적용 전 해상도 비교용) */
+  const [previewSize, setPreviewSize] = useState<{ w: number; h: number } | null>(null);
 
-  // 편집 중인 컷의 실제 종횡비 — 프로젝트 비율과 어긋나면 경고를 띄운다.
-  // (예전 8컷 가로 격자로 만들어진 컷, 업로드로 교체한 컷이 여기 걸린다)
-  const [editImageRatio, setEditImageRatio] = useState<number | null>(null);
+  // 편집 중인 컷의 실제 픽셀 크기.
+  //  · 프로젝트 비율과 어긋나면 경고를 띄우고 (예전 8컷 가로 격자, 업로드 교체본)
+  //  · 편집기 상단에 해상도 뱃지를 띄운다. 썸네일에만 있고 편집기엔 없어서
+  //    "지금 이 컷이 업스케일된 상태인가?" 를 편집기 안에서 알 수 없었다.
+  const [editImageSize, setEditImageSize] = useState<{ w: number; h: number } | null>(null);
   useEffect(() => {
     const url = editingScene?.image_url;
-    if (!url) { setEditImageRatio(null); return; }
+    if (!url) { setEditImageSize(null); return; }
     let cancelled = false;
     const img = new Image();
-    img.onload = () => { if (!cancelled) setEditImageRatio((img.naturalWidth || 1) / (img.naturalHeight || 1)); };
-    img.onerror = () => { if (!cancelled) setEditImageRatio(null); };
+    img.onload = () => { if (!cancelled) setEditImageSize({ w: img.naturalWidth || 0, h: img.naturalHeight || 0 }); };
+    img.onerror = () => { if (!cancelled) setEditImageSize(null); };
     img.src = url;
     return () => { cancelled = true; };
   }, [editingScene?.image_url]);
 
+  const editImageRatio = editImageSize && editImageSize.h > 0 ? editImageSize.w / editImageSize.h : null;
   const projectRatio = project?.aspect_ratio === '9:16' ? 9 / 16 : 16 / 9;
   // 로그 스케일 5% 이상 차이나면 "다른 비율" 로 본다 (모델 출력의 1~2px 오차는 무시).
   const ratioMismatch = editImageRatio !== null
@@ -129,16 +136,17 @@ export const AssemblyStep: React.FC = () => {
     }
   }
 
+  // A4 시트를 컨테이너 폭에 맞춘다.
+  //
+  // 예전에는 1.0 에서 잘라서, 컨테이너가 시트보다 넓으면 시트가 1122px 에 머물고
+  // 좌우에 빈 여백이 남았다(넓은 모니터에서 "작게 보인다" 의 원인). 이제 위로도
+  // 확대한다. 상한 1.8 은 4K 모니터에서 글자가 흐려질 만큼 과확대되는 것을 막는다.
   useEffect(() => {
     const handleResize = () => {
       if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth - 32;
+        const containerWidth = containerRef.current.offsetWidth - 32; // p-4 좌우 패딩
         const storyboardWidth = 1122; // 297mm in pixels at 96dpi
-        if (containerWidth < storyboardWidth) {
-          setZoomScale(containerWidth / storyboardWidth);
-        } else {
-          setZoomScale(1.0);
-        }
+        setZoomScale(Math.min(1.8, Math.max(0.3, containerWidth / storyboardWidth)));
       }
     };
     handleResize();
@@ -711,25 +719,49 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       });
       if (imageUrl) {
         await deduct(regenerateCost, `컷 이미지 ${isEdit ? '편집' : '재생성'} (${IMAGE_MODEL_INFO[activeImageModel].label})`);
+        setPreviewSize(null); // 새 미리보기의 크기는 <img onLoad> 가 다시 채운다
         setPreviewImage(imageUrl);
       }
     } catch (error: unknown) {
       console.error('AI regenerate error:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      await alert(`이미지 재생성 실패: ${message}`, { type: 'error' });
+      await showGenError(error, 'image');
     } finally {
       setIsLoading(false);
     }
   };
 
+  /** 결과 이미지의 실제 픽셀 폭으로 업스케일 등급을 판정한다.
+   *
+   *  재생성은 이제 처음부터 2K(모델에 따라 4K)로 뽑으므로 대개 별도 업스케일이
+   *  필요 없다. 다만 모델이 해상도를 거부해 1K 로 내려간 경우도 있어, 등급을
+   *  "요청값" 이 아니라 **실제 결과** 로 매긴다. 여기서 거짓말을 하면 영상제작
+   *  단계의 업스케일 게이트가 통과돼 저해상도 컷이 Kling 으로 넘어간다. */
+  const gradeFromWidth = (width: number): Scene['upscale_level'] => {
+    if (width >= 3000) return '4K';
+    if (width >= 1800) return '2K';
+    return null;
+  };
+
   const handleApplyPreview = () => {
     if (!previewImage || !editingScene) return;
-    setEditingScene({ ...editingScene, image_url: previewImage, upscale_level: undefined });
+    const applied = previewImage;
+    const scene = editingScene;
+    if (previewSize) {
+      // 미리보기 <img> 가 이미 로드돼 실제 크기를 알고 있다.
+      setEditingScene({ ...scene, image_url: applied, upscale_level: gradeFromWidth(previewSize.w) });
+    } else {
+      const img = new Image();
+      img.onload = () => setEditingScene({ ...scene, image_url: applied, upscale_level: gradeFromWidth(img.naturalWidth || 0) });
+      img.onerror = () => setEditingScene({ ...scene, image_url: applied, upscale_level: null });
+      img.src = applied;
+    }
     setPreviewImage(null);
+    setPreviewSize(null);
   };
 
   const handleDiscardPreview = () => {
     setPreviewImage(null);
+    setPreviewSize(null);
   };
 
   const handleRefineStory = async () => {
@@ -953,7 +985,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
         ref={containerRef}
         className="storyboard-pages-container flex flex-col gap-10 items-center bg-zinc-50 p-4 rounded-[3rem] border border-zinc-100"
       >
-        <div style={{ transform: `scale(${zoomScale})`, transformOrigin: 'top center' }} className="storyboard-print-wrapper flex flex-col gap-10">
+        {/* transform: scale 은 레이아웃 박스를 그대로 두기 때문에 축소하면 아래에,
+            확대하면 밖으로 빈 공간이 생긴다. zoom 은 리플로우돼서 여백이 남지 않는다.
+            (print 에서는 styles.css 가 zoom 을 1 로 되돌린다) */}
+        <div style={{ zoom: zoomScale }} className="storyboard-print-wrapper flex flex-col gap-10">
           {pages.map((pageScenes, pageIdx) => (
             <div key={pageIdx} className="storyboard-page">
               {/* Header */}
@@ -1214,6 +1249,25 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                       <p className="text-xs font-bold uppercase">No Image to Edit</p>
                     </div>
                   )}
+                  {/* 해상도 뱃지 — 썸네일과 같은 정보를 편집기 안에서도 보여준다.
+                      등급은 저장된 upscale_level 이 아니라 지금 화면에 있는 이미지의
+                      실제 픽셀에서 계산한다 (재생성 직후 아직 저장 전일 수 있다). */}
+                  {editingScene.image_url && editImageSize && (
+                    <div className="absolute top-3 left-3 z-[100] flex items-center gap-1.5">
+                      {gradeFromWidth(editImageSize.w) ? (
+                        <span className="px-2 py-1 bg-[#E5EDFA] border border-[#C0D4F0] rounded-md text-[10px] font-black text-[#003E99]">
+                          {gradeFromWidth(editImageSize.w)}
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-zinc-800/80 border border-white/10 rounded-md text-[10px] font-black text-zinc-300 backdrop-blur">
+                          {t('assembly.editor.notUpscaled')}
+                        </span>
+                      )}
+                      <span className="px-2 py-1 bg-black/60 rounded-md text-[10px] font-bold text-white/80 backdrop-blur">
+                        {editImageSize.w} × {editImageSize.h}
+                      </span>
+                    </div>
+                  )}
                   {isLoading && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[101] flex items-center justify-center">
                       <RefreshCw size={32} className="text-primary animate-spin" />
@@ -1223,9 +1277,32 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                   {previewImage && (
                     <div className="absolute inset-0 z-[102] flex flex-col bg-black">
                       <div className="flex-1 relative">
-                        <img src={previewImage} className="w-full h-full object-contain" alt="Preview" />
-                        <div className="absolute top-4 left-4 px-3 py-1.5 bg-primary/90 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                          {t('assembly.editor.previewNew')}
+                        <img
+                          src={previewImage}
+                          className="w-full h-full object-contain"
+                          alt="Preview"
+                          onLoad={(e) => {
+                            const el = e.currentTarget;
+                            setPreviewSize({ w: el.naturalWidth || 0, h: el.naturalHeight || 0 });
+                          }}
+                        />
+                        <div className="absolute top-4 left-4 flex items-center gap-1.5">
+                          <span className="px-3 py-1.5 bg-primary/90 rounded-lg text-[10px] font-black uppercase tracking-wider text-white">
+                            {t('assembly.editor.previewNew')}
+                          </span>
+                          {/* 적용 전에 해상도를 보여줘서 지금 것과 비교할 수 있게 한다 */}
+                          {previewSize && (
+                            <>
+                              {gradeFromWidth(previewSize.w) && (
+                                <span className="px-2 py-1.5 bg-[#E5EDFA] border border-[#C0D4F0] rounded-lg text-[10px] font-black text-[#003E99]">
+                                  {gradeFromWidth(previewSize.w)}
+                                </span>
+                              )}
+                              <span className="px-2 py-1.5 bg-black/60 rounded-lg text-[10px] font-bold text-white/80 backdrop-blur">
+                                {previewSize.w} × {previewSize.h}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-4 bg-white backdrop-blur-xl border-t border-zinc-100">

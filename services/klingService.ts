@@ -114,7 +114,12 @@ export async function generateKlingVideo(
     }
 
     if (pollData.data.task_status === 'failed') {
-      throw new Error(`Kling video generation failed: ${pollData.data.task_status_msg || 'Unknown error'}`);
+      const msg = pollData.data.task_status_msg || 'Unknown error';
+      // Kling 은 차단 사유를 자유 문장으로 돌려준다. 그대로 던지면 UI 매퍼가
+      // 'unknown' 으로 뭉개므로, videoStudioService 와 같은 규칙으로 판별해
+      // 'blocked' 신호를 메시지에 심는다.
+      const isBlocked = /block|policy|prohibit|content/i.test(msg);
+      throw new Error(`Kling video generation failed${isBlocked ? ' (blocked)' : ''}: ${msg}`);
     }
 
     // Still processing, continue polling

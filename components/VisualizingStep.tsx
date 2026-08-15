@@ -37,6 +37,7 @@ import type { Asset, AssetType } from '../services/assetService';
 import { useCreditStore } from '../store/creditStore';
 import { useAuthStore } from '../store/authStore';
 import { useModal } from './ui/ModalProvider';
+import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
 import { generate3x3GridImage } from '../services/geminiService';
 import { generateThumbnail } from '../services/thumbnailService';
 import { supabase } from '../lib/supabase';
@@ -54,6 +55,7 @@ export const VisualizingStep: React.FC = () => {
   const { project, setProject, setIsLoading, isLoading, updateProjectSettings } = useStore();
   const { deduct, hasEnough, balance } = useCreditStore();
   const { alert, confirm } = useModal();
+  const showGenError = useGenErrorAlert();
   const [currentUnitIdx, setCurrentUnitIdx] = useState(0);
   const [customStylePrompt, setCustomStylePrompt] = useState('');
   const [refImages, setRefImages] = useState<CategorizedRefImage[]>([]);
@@ -352,8 +354,7 @@ CRITICAL RULES:
       }
     } catch (error: unknown) {
       console.error("Grid generation error:", error);
-      const message = error instanceof Error ? error.message : "Unknown Error";
-      await alert(t('visualizing.alerts.generateError') + `: ${message}`, { type: 'error' });
+      await showGenError(error, 'image');
     } finally {
       setIsLoading(false);
     }
@@ -406,8 +407,7 @@ CRITICAL RULES:
       await alert(t('visualizing.alerts.batchComplete'), { type: 'success' });
     } catch (error: unknown) {
       console.error("Batch generation error:", error);
-      const message = error instanceof Error ? error.message : "Unknown Error";
-      await alert(t('visualizing.alerts.batchPartialError') + `: ${message}`, { type: 'error' });
+      await showGenError(error, 'image');
     } finally {
       setIsLoading(false);
       setGenerationProgress(null);
@@ -507,8 +507,7 @@ CRITICAL RULES:
       await alert(t('visualizing.alerts.batchComplete'), { type: 'success' });
     } catch (error: unknown) {
       console.error("Generate & Apply error:", error);
-      const message = error instanceof Error ? error.message : "Unknown Error";
-      await alert(t('visualizing.alerts.generateError') + `: ${message}`, { type: 'error' });
+      await showGenError(error, 'image');
     } finally {
       setIsLoading(false);
       setGenerationProgress(null);

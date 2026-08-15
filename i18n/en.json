@@ -518,11 +518,12 @@
       "applyEdit": "Apply Edit · {{cost}}cr",
       "imageModel": "Image Model",
       "upscaleThisCut": "Upscale This Cut",
-      "upscaleHint": "Upscaling raises resolution without changing the artwork. Use Regenerate above to change composition or subject.",
+      "upscaleHint": "Regeneration already outputs 2K at no extra credit. Use these only to raise a low-res cut sliced from a sheet, or when you need 4K. Upscaling raises resolution without changing the artwork.",
       "promptPrimary": "used for generation",
       "promptFallback": "used only when Korean is empty",
       "imagePromptKrPlaceholder": "e.g. A bakery owner in an apron smiling in warm afternoon light",
-      "ratioMismatch": "This cut ({{actual}}) does not match the project aspect ratio ({{target}}). Use \"Crop Image\" below to align it. Regenerate and Upscale preserve the current cut ratio."
+      "ratioMismatch": "This cut ({{actual}}) does not match the project aspect ratio ({{target}}). Use \"Crop Image\" below to align it. Regenerate and Upscale preserve the current cut ratio.",
+      "notUpscaled": "Original"
     },
     "editModal": {
       "visualContent": "Visual Content",
@@ -926,6 +927,68 @@
     "defaultMessage": "An unexpected error occurred.",
     "retry": "Try Again",
     "geminiApiKeyMissing": "Gemini API Key is not configured. Please contact the administrator."
+  },
+  "errors": {
+    "gen": {
+      "title": {
+        "image": "Couldn't create the image",
+        "video": "Couldn't create the video",
+        "upscale": "Couldn't upscale the image"
+      },
+      "codeLabel": "Error code: {{code}}",
+      "detailToggle": "Show technical details",
+      "noCharge": "No credits were charged.",
+      "blockedContent": {
+        "body": "Your request was blocked by the AI content safety policy.\nViolence, sexual content, real people, or well-known IP can trigger this.",
+        "hint": "Remove or soften those elements in your prompt and try again.",
+        "short": "Blocked by content policy. Please edit your prompt."
+      },
+      "blockedSafety": {
+        "body": "Your prompt contains wording the AI safety filter flagged.\nThis can be a false positive.",
+        "hint": "Try rephrasing with milder wording and run it again.",
+        "short": "Blocked by the safety filter. Try rewording."
+      },
+      "blockedRecitation": {
+        "body": "The request looked too close to existing copyrighted work or a blocked term.\nNaming specific works, brands, or people can cause this.",
+        "hint": "Drop the proper nouns and describe the look you want directly.",
+        "short": "Blocked for resembling existing work or a blocked term."
+      },
+      "rateLimit": {
+        "body": "The AI service momentarily hit its usage limit.\nNo credits were charged.",
+        "hint": "Please try again in a minute or two.",
+        "short": "Usage limit reached. Try again shortly."
+      },
+      "noApiKey": {
+        "body": "The API key required for generation is not registered.\nNo credits were charged.",
+        "hint": "Register the API key in the admin console, then try again.",
+        "short": "API key is not registered. Contact your administrator."
+      },
+      "auth": {
+        "body": "The API key has expired or is invalid.\nNo credits were charged.",
+        "hint": "Re-register the API key in the admin console. If your session expired, sign in again.",
+        "short": "API key expired. Contact your administrator."
+      },
+      "timeout": {
+        "body": "Generation ran past the time limit and was stopped.\nComplex scenes and higher length or resolution take longer.",
+        "hint": "Lower the length or resolution one step and try again.",
+        "short": "Timed out. Try a shorter length or lower resolution."
+      },
+      "noResult": {
+        "body": "The AI returned no result.\nThis is usually temporary.",
+        "hint": "Run it once more with the same settings.",
+        "short": "No result returned. Please try again."
+      },
+      "network": {
+        "body": "The request could not be completed because the network connection dropped.",
+        "hint": "Check your internet connection and try again.",
+        "short": "Check your network connection."
+      },
+      "unknown": {
+        "body": "An unexpected error occurred.\nNo credits were charged.",
+        "hint": "Try again. If it keeps happening, contact support with the error code below.",
+        "short": "Unexpected error. Please try again."
+      }
+    }
   },
   "onboarding": {
     "dashboard": {
