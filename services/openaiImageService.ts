@@ -64,6 +64,21 @@ function sizeFor(aspectRatio: string | undefined, tier: OpenAIImageTier): string
   return table[aspectRatio ?? '16:9'] ?? table['16:9'];
 }
 
+/**
+ * 업스케일 목표 해상도.
+ *
+ * 2K 는 단건 생성과, 4K 는 시트와 같은 크기를 재사용한다 — OpenAI 상한이
+ * 3840x2160 이라 그 위는 요청할 수 없고, 이 두 표가 이미 상한 안쪽의
+ * 16배수·1:3~3:1 조건을 만족하는 검증된 값이다.
+ *
+ * imageUpscaleService.UpscaleTargetSize 와 값이 같지만 타입을 import 하지는
+ * 않는다 — 그쪽이 이 파일을 import 하므로 순환 참조가 된다.
+ */
+const UPSCALE_SIZE_BY_ASPECT: Record<'2K' | '4K', Record<string, string>> = {
+  '2K': SINGLE_SIZE_BY_ASPECT,
+  '4K': SHEET_SIZE_BY_ASPECT,
+};
+
 async function authHeader(): Promise<string> {
   const token = await accessToken();
   if (!token) throw new Error('로그인이 필요합니다. 다시 로그인한 뒤 시도해 주세요.');
@@ -102,7 +117,7 @@ async function readImage(res: Response): Promise<string> {
  * quality 는 'high' 고정 — 스토리보드 시트는 9컷을 한 장에 담으므로
  * 컷당 디테일이 곧 결과 품질이다.
  */
-async function generate(prompt: string, aspectRatio: string | undefined, tier: OpenAIImageTier): Promise<string> {
+async function generate(prompt: string, size: string): Promise<string> {
   const res = await fetch(`${OPENAI_API_BASE}/v1/images/generations`, {
     method: 'POST',
     headers: {
@@ -112,7 +127,7 @@ async function generate(prompt: string, aspectRatio: string | undefined, tier: O
     body: JSON.stringify({
       model: GPT_IMAGE_MODEL,
       prompt,
-      size: sizeFor(aspectRatio, tier),
+      size,
       quality: 'high',
       n: 1,
       output_format: 'png',
@@ -132,13 +147,12 @@ async function generate(prompt: string, aspectRatio: string | undefined, tier: O
 async function generateWithRefs(
   prompt: string,
   refs: string[],
-  aspectRatio: string | undefined,
-  tier: OpenAIImageTier,
+  size: string,
 ): Promise<string> {
   const form = new FormData();
   form.append('model', GPT_IMAGE_MODEL);
   form.append('prompt', prompt);
-  form.append('size', sizeFor(aspectRatio, tier));
+  form.append('size', size);
   form.append('quality', 'high');
   form.append('n', '1');
   form.append('output_format', 'png');
@@ -170,9 +184,10 @@ export async function generateGridImageOpenAI(
   aspectRatio?: string,
 ): Promise<string> {
   const full = `${prompt}. High quality, detailed textures, natural lighting. No text or captions of any kind on the image.`;
+  const size = sizeFor(aspectRatio, 'sheet');
   return referenceImages && referenceImages.length > 0
-    ? generateWithRefs(full, referenceImages, aspectRatio, 'sheet')
-    : generate(full, aspectRatio, 'sheet');
+    ? generateWithRefs(full, referenceImages, size)
+    : generate(full, size);
 }
 
 /** 단건 이미지 생성. geminiService.generateSingleImage 대응판.
@@ -186,7 +201,29 @@ export async function generateSingleImageOpenAI(
   referenceImages?: string[],
   aspectRatio?: string,
 ): Promise<string> {
+  const size = sizeFor(aspectRatio, 'single');
   return referenceImages && referenceImages.length > 0
-    ? generateWithRefs(instruction, referenceImages, aspectRatio, 'single')
-    : generate(instruction, aspectRatio, 'single');
+    ? generateWithRefs(instruction, referenceImages, size)
+    : generate(instruction, size);
+}
+
+/**
+ * 업스케일. imageUpscaleService 가 GPT Image 2 프로젝트일 때 이리로 넘긴다.
+ *
+ * 예전에는 이 분기가 없어서 'gpt-image-2' 라는 모델명이 그대로 Gemini SDK 로
+ * 갔고, "models/gpt-image-2 is not found for API version v1beta" 404 가 났다.
+ *
+ * 원본을 참조 이미지로 넣고 목표 해상도만 키우는 /v1/images/edits 호출이다.
+ * 프롬프트는 호출부(imageUpscaleService.buildUpscalePrompt)가 만든 것을 그대로
+ * 쓴다 — 무엇을 보존하고 무엇만 개선할지는 모델과 무관한 지시다.
+ */
+export async function upscaleImageOpenAI(
+  imageUrl: string,
+  instruction: string,
+  aspect: string,
+  targetSize: '2K' | '4K',
+): Promise<string> {
+  const table = UPSCALE_SIZE_BY_ASPECT[targetSize] ?? SINGLE_SIZE_BY_ASPECT;
+  const size = table[aspect] ?? table['16:9'];
+  return generateWithRefs(instruction, [imageUrl], size);
 }

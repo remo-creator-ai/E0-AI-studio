@@ -19,6 +19,9 @@ import { MOCK_MODE } from '../lib/mockAuth';
 import { proxyClient } from '../lib/aiProxy';
 import { normalizeImageInput } from './imageUtils';
 import { DEFAULT_IMAGE_MODEL, UPSCALE_CREDIT_COST } from '../types';
+// 유일한 예외적 참조: 모델 라우팅. GPT Image 2 는 Google SDK 를 타지 않으므로
+// geminiService 가 생성 경로에서 하는 것과 같은 분기를 업스케일에도 둔다.
+import { isOpenAIImageModel, upscaleImageOpenAI } from './openaiImageService';
 
 // ---------- 해상도 ----------
 export type UpscaleTargetSize = '2K' | '4K';
@@ -128,15 +131,39 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
     return { ok: true, dataUrl: input.imageUrl };
   }
 
+  const targetSize: UpscaleTargetSize = input.targetSize ?? '2K';
+  const model = input.model || UPSCALE_MODEL;
+
+  // GPT Image 2 로 만든 프로젝트는 업스케일도 OpenAI 로 가야 한다.
+  // (이 분기가 없어서 'gpt-image-2' 가 Gemini 로 가 404 가 났다)
+  if (isOpenAIImageModel(model)) {
+    try {
+      const dataUrl = await upscaleImageOpenAI(
+        input.imageUrl,
+        buildUpscalePrompt(input.aspect, targetSize),
+        input.aspect,
+        targetSize,
+      );
+      return { ok: true, dataUrl };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('no_api_key')) return { ok: false, failure: 'no_api_key', message: msg };
+      // OpenAI 는 정책 차단을 moderation_blocked / content_policy 로 알려준다.
+      if (/moderation|content_policy|safety/i.test(msg)) {
+        return { ok: false, failure: 'blocked', message: msg };
+      }
+      return { ok: false, failure: 'error', message: msg };
+    }
+  }
+
   const ai = await proxyClient();
   if (!ai) return { ok: false, failure: 'no_api_key', message: 'no_session' };
 
   const { mimeType, base64 } = await normalizeImageInput(input.imageUrl);
-  const targetSize: UpscaleTargetSize = input.targetSize ?? '2K';
 
   try {
     const response = await ai.models.generateContent({
-      model: input.model || UPSCALE_MODEL,
+      model,
       contents: {
         parts: [
           { inlineData: { mimeType, data: base64 } },

@@ -21,10 +21,15 @@ import {
   type CreditRequestRow,
 } from '../services/masterService';
 import { MOCK_MODE } from '../lib/mockAuth';
+import { useStore } from '../store';
+import { useModal } from './ui/ModalProvider';
+import { parseExportedProject } from '../services/storyboardImporter';
+import { saveProject } from '../services/projectService';
+import { ProjectStep } from '../types';
 import {
   Shield, Key, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, Save,
   ClipboardList, LayoutDashboard, Users, History, CreditCard, Download, X,
-  Coins, ArrowRight,
+  Coins, ArrowRight, FolderPlus,
 } from 'lucide-react';
 
 /* ============================= API Keys config =============================
@@ -714,6 +719,11 @@ const RequestsTab: React.FC = () => {
   const [selected, setSelected] = useState<MasterRequest | null>(null);
   const [filter, setFilter] = useState<ReqFilter>('all');
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const { user } = useAuthStore();
+  const { alert, confirm } = useModal();
+  const setProject = useStore((s) => s.setProject);
+  const setStep = useStore((s) => s.setStep);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -725,6 +735,57 @@ const RequestsTab: React.FC = () => {
     await updateRequestStatus(r.id, status);
     setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, status } : x));
     setSelected((prev) => prev && prev.id === r.id ? { ...prev, status } : prev);
+  };
+
+  /**
+   * 의뢰에 첨부된 storyboard.json 을 내 계정의 프로젝트로 복제한다.
+   *
+   * 의뢰자의 원본은 건드리지 않는다 — 파싱 단계에서 프로젝트·씬 id 를 새로
+   * 발급하므로 저장은 언제나 새 행이 된다. 씬 이미지·영상은 공개 버킷 URL 을
+   * 그대로 참조하므로 다시 생성할 필요가 없다.
+   */
+  const importToMyProjects = async (r: MasterRequest) => {
+    if (!r.storyboard_url || importing) return;
+    if (!user) {
+      await alert('로그인 정보를 확인할 수 없습니다. 다시 로그인한 뒤 시도해 주세요.', { type: 'error' });
+      return;
+    }
+    const ok = await confirm(
+      `"${r.project_title}" 을(를) 내 프로젝트로 가져옵니다.\n\n` +
+      '의뢰자의 원본은 그대로 두고 내 계정에 사본이 생깁니다.\n' +
+      '이미지·영상은 의뢰자가 올린 파일을 그대로 참조합니다.',
+      { type: 'info', confirmText: '가져오기', cancelText: '취소' }
+    );
+    if (!ok) return;
+
+    setImporting(true);
+    try {
+      const res = await fetch(r.storyboard_url);
+      if (!res.ok) throw new Error(`첨부 파일을 내려받지 못했습니다 (HTTP ${res.status}).`);
+
+      const result = parseExportedProject(await res.text());
+      if (result.error || !result.project) {
+        throw new Error(result.error ?? '스토리보드를 해석하지 못했습니다.');
+      }
+
+      await saveProject(user.id, result.project);
+      setProject(result.project);
+
+      if (result.warnings.length > 0) {
+        await alert(
+          `내 프로젝트로 가져왔습니다 (경고 ${result.warnings.length}건):\n\n${result.warnings.join('\n')}`,
+          { type: 'warning' }
+        );
+      }
+
+      // 이미지가 이미 있으면 다듬기부터, 대본만 있으면 기획부터 이어서 작업한다.
+      setStep(result.project.scenes.some((s) => s.image_url) ? ProjectStep.ASSEMBLY : ProjectStep.PLANNING);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await alert(`가져오기 실패\n\n${msg}`, { type: 'error' });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const visible = filter === 'all' ? rows : rows.filter((r) => r.status === filter);
@@ -853,6 +914,20 @@ const RequestsTab: React.FC = () => {
               ))}
               {!selected.storyboard_url && !selected.assets_url && selected.attachments.length === 0 && (
                 <p className="text-xs text-zinc-400">첨부 파일 없음</p>
+              )}
+
+              {selected.storyboard_url && (
+                <button
+                  onClick={() => importToMyProjects(selected)}
+                  disabled={importing}
+                  className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-full bg-primary hover:bg-[#003E99] disabled:opacity-50 shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-black text-xs transition-colors"
+                >
+                  {importing ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 가져오는 중...</>
+                  ) : (
+                    <><FolderPlus className="w-3.5 h-3.5" /> 내 프로젝트로 가져오기</>
+                  )}
+                </button>
               )}
 
               <div className="grid grid-cols-2 gap-2 mt-4">
