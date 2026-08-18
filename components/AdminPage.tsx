@@ -11,6 +11,7 @@ import {
   updateRequestStatus,
   transactionsToCsv,
   listCreditRequests,
+  masterQuotaRemaining,
   approveCreditRequest,
   rejectCreditRequest,
   type MasterAccount,
@@ -49,6 +50,21 @@ const API_KEY_FIELDS: ApiKeyField[] = [
 ];
 
 type AdminTab = 'dashboard' | 'accounts' | 'credit-requests' | 'usage' | 'requests' | 'api-keys';
+
+/**
+ * 표에 들어갈 짧은 날짜.
+ *
+ * Supabase 가 돌려주는 원본은 '2026-08-18T09:55:06.133054+00:00' 라서 그대로
+ * 찍으면 두 줄로 접히고, 그 폭에 밀려 오른쪽 "관리" 열이 화면 밖으로 나갔다.
+ * 파싱에 실패하면 원본을 그대로 둔다 — 날짜를 조용히 지워버리지는 않는다.
+ */
+function formatDateTime(raw: string | null | undefined): string {
+  if (!raw) return '—';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }> = {
   pending: { label: '대기', cls: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]' },
@@ -341,12 +357,14 @@ const AccountsTab: React.FC<{ showToast: (m: string) => void }> = ({ showToast }
                   <td className="px-3 py-3 text-zinc-700 font-bold">{a.display_name}</td>
                   <td className={`px-3 py-3 text-right font-mono font-black ${a.balance > 0 ? 'text-zinc-900' : 'text-zinc-400'}`}>{a.balance}</td>
                   <td className="px-3 py-3 text-right font-mono text-zinc-500">{Math.max(0, a.max_credits - a.balance)}</td>
-                  <td className="px-3 py-3 text-zinc-400">{a.last_active ?? '—'}</td>
+                  <td className="px-3 py-3 text-zinc-400 whitespace-nowrap">{formatDateTime(a.last_active)}</td>
                   <td className="px-3 py-3">
+                    {/* 아이콘만 있던 버튼 — 표 맨 오른쪽이라 가로 스크롤에 묻히고,
+                        무엇을 하는 버튼인지도 알 수 없었다. 이름을 붙인다. */}
                     <div className="flex items-center gap-1.5 justify-end">
-                      <button onClick={() => setCreditFor(a)} title="크레딧 관리"
-                        className="w-8 h-8 rounded-lg border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:border-primary/40 flex items-center justify-center transition-all">
-                        <CreditCard className="w-3.5 h-3.5" />
+                      <button onClick={() => setCreditFor(a)} title="이 계정에 크레딧을 지급합니다"
+                        className="px-3 py-1.5 rounded-lg border border-primary/30 bg-white text-primary hover:bg-primary hover:text-white text-xs font-black flex items-center gap-1.5 whitespace-nowrap transition-all">
+                        <CreditCard className="w-3.5 h-3.5" /> 크레딧 지급
                       </button>
                     </div>
                   </td>
@@ -369,6 +387,10 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** 남은 부여 한도 — 넘겨서 지급하면 서버가 거절하므로 미리 보여준다 */
+  const [quota, setQuota] = useState<number | null>(null);
+
+  useEffect(() => { masterQuotaRemaining().then(setQuota); }, []);
 
   const submit = async () => {
     setError(null); setSaving(true);
@@ -384,16 +406,40 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
 
   return (
     <ModalShell eyebrow={`Credit · ${account.email}`} title="크레딧 관리" desc={account.display_name} onClose={onClose}>
-      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center mb-4">
-        <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">현재 잔액</div>
-        <div className="text-3xl font-black tracking-tighter text-zinc-900">{account.balance}</div>
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center">
+          <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">현재 잔액</div>
+          <div className="text-3xl font-black tracking-tighter text-zinc-900">{account.balance}</div>
+        </div>
+        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center">
+          <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">남은 부여 한도</div>
+          <div className={`text-3xl font-black tracking-tighter ${quota !== null && quota <= 0 ? 'text-red-600' : 'text-zinc-900'}`}>
+            {quota === null ? '—' : quota.toLocaleString()}
+          </div>
+        </div>
       </div>
-      <Field label="작업">
-        <div className="flex gap-2">{opBtn('add', '＋ 충전')}{opBtn('deduct', '－ 차감')}{opBtn('set', '＝ 설정')}</div>
-      </Field>
-      <Field label="수량">
-        <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={inputCls} />
-        <p className="text-[11px] text-zinc-400 mt-1.5">충전은 마스터 잔여 부여 한도 이내에서만 가능</p>
+      {quota !== null && quota <= 0 && (
+        <div className="mb-4 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-[11px] font-bold text-red-800">
+          부여 한도를 모두 소진했습니다. 지금은 어떤 계정에도 지급할 수 없습니다 — 운영사에 한도 상향을 요청하세요.
+        </div>
+      )}
+      {/* 실제 모드에서는 서버가 지급(add)만 허용한다(admin_grant_credit).
+          차감·설정 버튼을 그대로 두면 눌러봐야 "지급만 허용됩니다" 에러만 나므로
+          디자인(가계정) 모드에서만 노출한다. */}
+      {MOCK_MODE ? (
+        <Field label="작업">
+          <div className="flex gap-2">{opBtn('add', '＋ 충전')}{opBtn('deduct', '－ 차감')}{opBtn('set', '＝ 설정')}</div>
+        </Field>
+      ) : (
+        <div className="mb-4 px-3 py-2 rounded-xl bg-[#E5EDFA] border border-[#C0D4F0] text-[11px] font-bold text-[#003E99]">
+          지급(충전)만 가능합니다. 차감·강제 설정은 정책상 제거되었습니다.
+        </div>
+      )}
+      <Field label="지급 수량">
+        <input type="number" min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className={inputCls} />
+        <p className="text-[11px] text-zinc-400 mt-1.5">
+          충전은 마스터 잔여 부여 한도 이내에서만 가능 · 적용 후 잔액 {account.balance} → {account.balance + Math.max(0, amount)}
+        </p>
       </Field>
       <Field label="사유 (로그 기록)">
         <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="7월 정기 지급" className={inputCls} />

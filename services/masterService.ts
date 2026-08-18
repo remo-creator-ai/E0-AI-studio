@@ -193,6 +193,33 @@ export async function rejectCreditRequest(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+/**
+ * 남은 부여 한도. 지급 화면이 "얼마까지 줄 수 있는지" 를 미리 보여주는 데 쓴다.
+ * 이 값을 넘겨 지급하면 서버가 quota_exceeded 로 거절한다.
+ */
+export async function masterQuotaRemaining(): Promise<number | null> {
+  if (MOCK_MODE) return Math.max(0, MASTER_CREDIT_QUOTA - getMockDb().allocated);
+  const { data, error } = await supabase.rpc('master_quota_remaining');
+  if (error || typeof data !== 'number') return null;
+  return data;
+}
+
+/**
+ * admin_grant_credit 이 던지는 SQL 예외 문구를 사용자 문장으로 바꾼다.
+ * 원문(예: "quota_exceeded: remaining=0, requested=100")은 그대로 보여줘도
+ * 무슨 뜻인지 알 수 없고, 다음에 뭘 해야 하는지도 알려주지 못한다.
+ */
+function grantErrorMessage(raw: string): string {
+  if (raw.includes('quota_exceeded')) {
+    const m = raw.match(/remaining=(\d+)/);
+    const remain = m ? Number(m[1]).toLocaleString() : '0';
+    return `마스터 부여 한도를 초과했습니다. 남은 한도는 ${remain}cr 입니다. 그 이하로 지급하거나 운영사에 한도 상향을 요청하세요.`;
+  }
+  if (raw.includes('not_authorized')) return '마스터 권한이 없는 계정입니다. 다시 로그인한 뒤 시도해 주세요.';
+  if (raw.includes('invalid_amount')) return '지급 수량은 1 이상이어야 합니다.';
+  return raw;
+}
+
 // ---------------- 크레딧 조정 ----------------
 export async function adjustCredit(
   id: string,
@@ -241,7 +268,7 @@ export async function adjustCredit(
     p_amount: amount,
     p_note: reason,
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: grantErrorMessage(error.message) };
   const row = (data as Array<{ balance: number }> | null)?.[0];
   return { ok: true, balance: row?.balance };
 }
