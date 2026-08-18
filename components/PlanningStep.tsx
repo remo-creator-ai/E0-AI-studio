@@ -37,6 +37,8 @@ interface ApiScene {
   content_en: string;
   script_kr: string;
   script_en: string;
+  /** Korean-only 전환의 1급 필드. 응답 스키마에도 포함돼 있다. */
+  image_prompt_kr?: string;
   image_prompt_en: string;
   video_motion_en: string;
   video_motion_kr: string;
@@ -119,37 +121,42 @@ export const PlanningStep: React.FC = () => {
     setIsLoading(true);
     try {
       const result = await generateAdScript(idea, SCENE_DURATION_MAP[sceneCount] as AdDuration, sceneCount, aspectRatio, defaultLanguage);
-      if (result && result.units) {
-        let globalOrder = 0;
-        const scenes: Scene[] = result.units.flatMap((u: ApiUnit) =>
-          u.scenes.map((s: ApiScene) => ({
-            ...s,
-            content_en: s.content_en || '',
-            id: crypto.randomUUID(),
-            order: ++globalOrder
-          }))
-        );
 
-        // 격자·유닛 수는 lib/sceneGrid.ts 단일 정의를 따른다.
-        // (예전엔 여기서 따로 계산해 VisualizingStep 과 어긋날 여지가 있었다)
-        const grid_images = new Array(getSceneGridUnits(sceneCount)).fill(null);
-
-        await deduct(CREDIT_COSTS.SCRIPT, '스크립트 생성');
-        setProject({
-          id: crypto.randomUUID(),
-          title: idea.substring(0, 20) + (idea.length > 20 ? '...' : ''),
-          duration: SCENE_DURATION_MAP[sceneCount] as AdDuration,
-          style,
-          idea,
-          scenes,
-          grid_images,
-          layout: StoryboardLayout.GRID_2X5,
-          aspect_ratio: aspectRatio,
-          scene_count: sceneCount,
-          generation_language: defaultLanguage,
-        });
-        setNewProjectConfig(null);
+      // generateAdScript 는 실패 시 던진다. 여기 가드는 계약이 다시 바뀌더라도
+      // 예전처럼 "스피너만 꺼지고 아무 일도 안 일어나는" 화면으로 돌아가지 않게 하는 안전망이다.
+      if (!result?.units?.length) {
+        throw new Error(t('planning.alerts.emptyResult'));
       }
+
+      let globalOrder = 0;
+      const scenes: Scene[] = result.units.flatMap((u: ApiUnit) =>
+        u.scenes.map((s: ApiScene) => ({
+          ...s,
+          content_en: s.content_en || '',
+          id: crypto.randomUUID(),
+          order: ++globalOrder
+        }))
+      );
+
+      // 격자·유닛 수는 lib/sceneGrid.ts 단일 정의를 따른다.
+      // (예전엔 여기서 따로 계산해 VisualizingStep 과 어긋날 여지가 있었다)
+      const grid_images = new Array(getSceneGridUnits(sceneCount)).fill(null);
+
+      await deduct(CREDIT_COSTS.SCRIPT, '스크립트 생성');
+      setProject({
+        id: crypto.randomUUID(),
+        title: idea.substring(0, 20) + (idea.length > 20 ? '...' : ''),
+        duration: SCENE_DURATION_MAP[sceneCount] as AdDuration,
+        style,
+        idea,
+        scenes,
+        grid_images,
+        layout: StoryboardLayout.GRID_2X5,
+        aspect_ratio: aspectRatio,
+        scene_count: sceneCount,
+        generation_language: defaultLanguage,
+      });
+      setNewProjectConfig(null);
     } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : String(error);

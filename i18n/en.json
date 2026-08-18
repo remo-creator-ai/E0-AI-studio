@@ -401,6 +401,7 @@
     "alerts": {
       "insufficientCredits": "Insufficient credits. Script generation requires {{cost}} credits.",
       "generateError": "An error occurred during script generation.\n\n{{message}}",
+      "emptyResult": "No scenes were generated. Please describe your idea in more detail and try again.",
       "deleteSceneConfirm": "Are you sure you want to delete this scene?",
       "syncError": "An error occurred while syncing the prompt."
     }

@@ -1,5 +1,5 @@
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type, type Schema } from "@google/genai";
 import { SYSTEM_INSTRUCTION, getSystemInstruction } from "../constants";
 import { AdDuration, AspectRatio, SceneCount, CategorizedRefImage, REFERENCE_CATEGORY_INFO } from "../types";
 import { generateKlingVideo } from './klingService';
@@ -60,33 +60,145 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 20
   }
 }
 
-function parseScriptJson(raw: string) {
-  let text = raw || '{}';
-  // Strip markdown code fences if present
-  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch) {
-    text = jsonMatch[1].trim();
-  }
-  // Extract JSON object if extra text exists
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    text = text.substring(firstBrace, lastBrace + 1);
-  }
-  return JSON.parse(text);
+/**
+ * 모델 응답에서 JSON 본문만 떼어낸다.
+ *
+ * responseSchema 를 태우면 코드펜스가 붙을 일이 사실상 없지만,
+ * 스키마를 못 붙이는 경로(모델 교체 등)를 위해 방어선은 남겨둔다.
+ * 빈 응답을 예전처럼 '{}' 로 눙치지는 않는다 — 파싱에 "성공" 해 버려서
+ * units 없는 빈 객체가 조용히 흘러가는 게 더 나쁜 실패였다.
+ */
+function extractJson(raw: string, open: '{' | '[', close: '}' | ']'): string {
+  let text = (raw ?? '').trim();
+  if (!text) throw new Error('모델이 빈 응답을 반환했습니다.');
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) text = fenced[1].trim();
+  const first = text.indexOf(open);
+  const last = text.lastIndexOf(close);
+  if (first !== -1 && last > first) text = text.substring(first, last + 1);
+  return text;
 }
+
+function parseScriptJson(raw: string) {
+  return JSON.parse(extractJson(raw, '{', '}'));
+}
+
+/**
+ * 정상 종료(STOP)가 아닌 종료 사유를 돌려준다.
+ *
+ * MAX_TOKENS 로 잘린 응답은 JSON 이 반쪽이라 파싱이 반드시 실패하는데,
+ * 같은 요청을 재생성해도 길이는 그대로라 또 잘린다. 즉 재시도 대상이 아니라
+ * 진단 대상이다. 확률적 실패(이스케이프 깨짐)와 반드시 구분해야 한다.
+ */
+function abnormalFinishReason(response: { candidates?: Array<{ finishReason?: string }> }): string | undefined {
+  const reason = response.candidates?.[0]?.finishReason;
+  return reason && reason !== 'STOP' ? reason : undefined;
+}
+
+/** 종료 사유를 사용자가 다음 행동을 알 수 있는 한국어 문구로 바꾼다. */
+function finishReasonMessage(reason: string): string {
+  if (reason === 'MAX_TOKENS') {
+    return '대본이 너무 길어 응답이 중간에 잘렸습니다. 씬 수를 줄이거나 아이디어를 짧게 정리한 뒤 다시 시도해 주세요.';
+  }
+  return `대본 생성이 중단되었습니다 (사유: ${reason}). 아이디어에 민감한 표현이 있는지 확인한 뒤 다시 시도해 주세요.`;
+}
+
+/** 씬 하나의 스키마. 필드 이름은 constants.ts 의 [Output Format] 예시와 같아야 한다. */
+const SCENE_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    order: { type: Type.INTEGER, description: '씬 순번 (1부터)' },
+    content_kr: { type: Type.STRING },
+    content_en: { type: Type.STRING },
+    script_kr: { type: Type.STRING },
+    script_en: { type: Type.STRING },
+    image_prompt_kr: { type: Type.STRING },
+    image_prompt_en: { type: Type.STRING },
+    video_motion_en: { type: Type.STRING },
+    video_motion_kr: { type: Type.STRING },
+  },
+  required: [
+    'order', 'content_kr', 'content_en', 'script_kr', 'script_en',
+    'image_prompt_kr', 'image_prompt_en', 'video_motion_en', 'video_motion_kr',
+  ],
+  propertyOrdering: [
+    'order', 'content_kr', 'content_en', 'script_kr', 'script_en',
+    'image_prompt_kr', 'image_prompt_en', 'video_motion_en', 'video_motion_kr',
+  ],
+};
+
+/**
+ * 대본 응답 스키마.
+ *
+ * responseMimeType 만으로는 "JSON 처럼 써줘" 라는 힌트에 그친다. 그래서 대사 안에
+ * 따옴표가 섞이면 이스케이프가 깨진 문자열이 그대로 나왔고 파싱이 확률적으로 실패했다.
+ * responseSchema 를 함께 주면 디코딩 단계에서 문법이 강제되므로 이 실패 모드가
+ * 구조적으로 사라진다. 재시도는 일시 오류용 백스톱으로만 남긴다.
+ */
+const AD_SCRIPT_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    units: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          section: { type: Type.STRING, description: '예: 0-15s' },
+          scenes: { type: Type.ARRAY, items: SCENE_SCHEMA },
+        },
+        required: ['section', 'scenes'],
+        propertyOrdering: ['section', 'scenes'],
+      },
+    },
+    global_grid_prompt: { type: Type.STRING },
+  },
+  required: ['units', 'global_grid_prompt'],
+  propertyOrdering: ['units', 'global_grid_prompt'],
+};
+
+/**
+ * 대본 출력 상한.
+ *
+ * 36컷 × 9필드(한/영 병기 + 이미지 프롬프트)면 1만 토큰을 훌쩍 넘는다.
+ * 기본값에 기대면 어디서 잘리는지 알 수 없으므로 넉넉히 명시한다.
+ * (gemini-2.5-flash 의 출력 상한보다 충분히 낮게 잡아 값 자체가 거부되지 않게 한다)
+ */
+const MAX_SCRIPT_OUTPUT_TOKENS = 32768;
+
+/** 이미지 기반 씬 보정 응답 스키마. 네 필드 모두 문자열이다. */
+const REFINED_SCENE_SCHEMA: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    content_kr: { type: Type.STRING },
+    content_en: { type: Type.STRING },
+    script_kr: { type: Type.STRING },
+    script_en: { type: Type.STRING },
+  },
+  required: ['content_kr', 'content_en', 'script_kr', 'script_en'],
+  propertyOrdering: ['content_kr', 'content_en', 'script_kr', 'script_en'],
+};
+
+/** 전체 스토리 보정 응답 스키마. 씬 순서를 그대로 유지한 배열이다. */
+const REFINED_STORY_SCHEMA: Schema = {
+  type: Type.ARRAY,
+  items: REFINED_SCENE_SCHEMA,
+};
 
 export async function generateAdScript(idea: string, duration: AdDuration, sceneCount?: number, aspectRatio?: string, language: 'ko' | 'en' = 'ko') {
   const ai = await getAI();
   const prompt = `Idea: ${idea}\nDuration: ${duration} seconds. Generate the full script in JSON format according to the system instruction.`;
   const config = {
     systemInstruction: sceneCount && aspectRatio ? getSystemInstruction(sceneCount, aspectRatio, language) : SYSTEM_INSTRUCTION,
-    responseMimeType: "application/json"
+    responseMimeType: "application/json",
+    responseSchema: AD_SCRIPT_SCHEMA,
+    maxOutputTokens: MAX_SCRIPT_OUTPUT_TOKENS,
   };
 
-  // 모델이 가끔 이스케이프가 깨진 JSON(예: 대사 안의 따옴표)을 내놓는다.
-  // 파싱 실패는 확률적 실패이므로 한 번 더 생성하면 대부분 해소된다.
+  // 스키마로 문법이 강제되므로 파싱 실패는 이제 예외적이다.
+  // 그래도 일시 오류는 남으니 1회 재시도는 백스톱으로 유지한다.
   const MAX_ATTEMPTS = 2;
+  let lastError: unknown = null;
+
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -94,9 +206,16 @@ export async function generateAdScript(idea: string, duration: AdDuration, scene
       config,
     });
 
+    // 잘림·차단은 재생성해도 같은 결과다. 재시도하지 않고 바로 알린다.
+    const abnormal = abnormalFinishReason(response);
+    if (abnormal) throw new Error(finishReasonMessage(abnormal));
+
     try {
-      return parseScriptJson(response.text || '{}');
+      const parsed = parseScriptJson(response.text || '');
+      if (!parsed?.units?.length) throw new Error('units 가 비어 있습니다.');
+      return parsed;
     } catch (e) {
+      lastError = e;
       if (attempt < MAX_ATTEMPTS) {
         console.warn(`Failed to parse script JSON (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`, e);
       } else {
@@ -104,7 +223,11 @@ export async function generateAdScript(idea: string, duration: AdDuration, scene
       }
     }
   }
-  return null;
+
+  // 예전에는 null 을 돌려줬고 호출부가 그것을 조용히 무시해서
+  // "눌러도 아무 일이 없는" 화면이 됐다. 실패는 반드시 사용자에게 보이도록 던진다.
+  const detail = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`대본 응답을 해석하지 못했습니다. 잠시 후 다시 시도해 주세요. (${detail})`);
 }
 
 export async function generate3x3GridImage(prompt: string, referenceImagesBase64?: string[], aspectRatio?: string, imageModel?: string, categorizedRefs?: CategorizedRefImage[]) {
@@ -446,18 +569,16 @@ Respond ONLY with this JSON:
           { text: prompt }
         ]
       },
-      config: { responseMimeType: "application/json" }
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: REFINED_SCENE_SCHEMA,
+      }
     });
 
-    let text = response.text || '{}';
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) text = jsonMatch[1].trim();
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace > firstBrace) {
-      text = text.substring(firstBrace, lastBrace + 1);
-    }
-    return JSON.parse(text);
+    const abnormal = abnormalFinishReason(response);
+    if (abnormal) throw new Error(finishReasonMessage(abnormal));
+
+    return JSON.parse(extractJson(response.text || '', '{', '}'));
   } catch (e) {
     console.error("Failed to refine scene from image", e);
     return null;
@@ -498,18 +619,18 @@ export async function refineFullStory(
           { text: prompt }
         ]
       },
-      config: { responseMimeType: "application/json" }
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: REFINED_STORY_SCHEMA,
+        // 씬 수만큼 되돌려줘야 호출부가 결과를 매칭할 수 있다. 잘리면 개수가 어긋난다.
+        maxOutputTokens: MAX_SCRIPT_OUTPUT_TOKENS,
+      }
     });
 
-    let text = response.text || '[]';
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) text = jsonMatch[1].trim();
-    const firstBracket = text.indexOf('[');
-    const lastBracket = text.lastIndexOf(']');
-    if (firstBracket !== -1 && lastBracket > firstBracket) {
-      text = text.substring(firstBracket, lastBracket + 1);
-    }
-    return JSON.parse(text);
+    const abnormal = abnormalFinishReason(response);
+    if (abnormal) throw new Error(finishReasonMessage(abnormal));
+
+    return JSON.parse(extractJson(response.text || '', '[', ']'));
   } catch (e) {
     console.error("Failed to refine full story", e);
     return null;
