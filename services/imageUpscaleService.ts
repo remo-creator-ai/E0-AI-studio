@@ -19,9 +19,6 @@ import { MOCK_MODE } from '../lib/mockAuth';
 import { proxyClient } from '../lib/aiProxy';
 import { normalizeImageInput } from './imageUtils';
 import { DEFAULT_IMAGE_MODEL, UPSCALE_CREDIT_COST } from '../types';
-// 유일한 예외적 참조: 모델 라우팅. GPT Image 2 는 Google SDK 를 타지 않으므로
-// geminiService 가 생성 경로에서 하는 것과 같은 분기를 업스케일에도 둔다.
-import { isOpenAIImageModel, upscaleImageOpenAI } from './openaiImageService';
 import { ladderFrom, isImageSizeRejection } from './imageSizeLadder';
 
 // ---------- 해상도 ----------
@@ -44,9 +41,15 @@ const ASPECT_TARGET_SIZE: Record<UpscaleAspect, string> = {
   '1:1':  '1024x1024 square (1:1)',
 };
 
-// 기본 모델은 types.DEFAULT_IMAGE_MODEL 단일 정의를 따른다. 호출부가 프로젝트에
-// 기억된 모델(project.image_model)을 넘기면 그 모델로 업스케일한다 — 생성과 업스케일이
-// 다른 모델이면 같은 컷인데 그림체가 미묘하게 갈린다.
+/**
+ * 업스케일 모델은 프로젝트 설정과 무관하게 Nano Banana 2 로 고정한다.
+ *
+ * 예전에는 호출부가 project.image_model 을 넘겼다 — 생성과 업스케일의 그림체를
+ * 맞추려는 의도였다. 그런데 그 값이 gpt-image-2 면 Google SDK 로 가 404 가 났고,
+ * 모델마다 지원 해상도도 달라 같은 버튼이 프로젝트마다 다르게 동작했다.
+ * 업스케일은 "그림을 바꾸지 않고 해상도만 올리는" 작업이라 생성 모델과 맞출
+ * 실익이 크지 않다. 경로를 하나로 고정해 동작을 예측 가능하게 만든다.
+ */
 const UPSCALE_MODEL = DEFAULT_IMAGE_MODEL;
 
 export type UpscaleFailure =
@@ -77,8 +80,6 @@ export interface UpscaleInput {
   aspect: UpscaleAspect;
   /** 기본 2K. 4K 는 5cr. */
   targetSize?: UpscaleTargetSize;
-  /** 기본 DEFAULT_IMAGE_MODEL. 보통 project.image_model 을 넘긴다. */
-  model?: string;
 }
 
 /**
@@ -140,30 +141,8 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
   }
 
   const targetSize: UpscaleTargetSize = input.targetSize ?? '2K';
-  const model = input.model || UPSCALE_MODEL;
-
-  // GPT Image 2 로 만든 프로젝트는 업스케일도 OpenAI 로 가야 한다.
-  // (이 분기가 없어서 'gpt-image-2' 가 Gemini 로 가 404 가 났다)
-  if (isOpenAIImageModel(model)) {
-    try {
-      const dataUrl = await upscaleImageOpenAI(
-        input.imageUrl,
-        buildUpscalePrompt(input.aspect, targetSize),
-        input.aspect,
-        targetSize,
-      );
-      // OpenAI 는 픽셀 크기를 직접 지정하므로 요청 해상도가 곧 결과 해상도다.
-      return { ok: true, dataUrl, appliedSize: targetSize };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes('no_api_key')) return { ok: false, failure: 'no_api_key', message: msg };
-      // OpenAI 는 정책 차단을 moderation_blocked / content_policy 로 알려준다.
-      if (/moderation|content_policy|safety/i.test(msg)) {
-        return { ok: false, failure: 'blocked', message: msg };
-      }
-      return { ok: false, failure: 'error', message: msg };
-    }
-  }
+  // 프로젝트가 어떤 모델로 그림을 만들었든 업스케일은 이 모델 하나로 간다.
+  const model = UPSCALE_MODEL;
 
   const ai = await proxyClient();
   if (!ai) return { ok: false, failure: 'no_api_key', message: 'no_session' };

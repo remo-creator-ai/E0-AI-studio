@@ -239,11 +239,11 @@ export const AssemblyStep: React.FC = () => {
     setIsLoading(true);
     try {
       const aspect = await detectAspectFromImage(editingScene.image_url);
+      // 업스케일 모델은 서비스가 Nano Banana 2 로 고정한다 (프로젝트 이미지 모델과 무관).
       const result = await upscaleSceneImage({
         imageUrl: editingScene.image_url,
         aspect,
         targetSize,
-        model: activeImageModel,
       });
       if (result.ok && result.dataUrl) {
         // 모델이 4K 를 거부해 2K 로 내려갔을 수 있다. 요청값이 아니라
@@ -303,7 +303,6 @@ export const AssemblyStep: React.FC = () => {
             imageUrl: scene.image_url!,
             aspect,
             targetSize: batchUpscaleSize,
-            model: activeImageModel,
           });
           if (result.ok && result.dataUrl) {
             // 개별 업스케일과 같은 규칙 — 실제 적용된 해상도로 과금·기록한다.

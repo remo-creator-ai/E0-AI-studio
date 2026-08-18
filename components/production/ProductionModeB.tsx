@@ -280,13 +280,11 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
 
     try {
       const aspect = await detectAspectFromImage(scene.image_url);
-      // 모델은 프로젝트가 기억하는 값을 따른다 — 스토리보드 생성과 다른 모델로 올리면
-      // 같은 컷인데 그림체가 미묘하게 갈린다.
+      // 업스케일 모델은 서비스가 Nano Banana 2 로 고정한다 (프로젝트 이미지 모델과 무관).
       const result = await upscaleSceneImage({
         imageUrl: scene.image_url,
         aspect,
         targetSize: '2K',
-        model: project?.image_model,
       });
       window.clearInterval(progressTimer);
       if (!result.ok || !result.dataUrl) {
@@ -309,7 +307,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       await report(e);
       return false;
     }
-  }, [alert, showGenError, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore, project?.image_model]);
+  }, [alert, showGenError, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore]);
 
   // ── 씬 영상 생성 실행 (fire-and-forget) ──
   const runGenerate = useCallback(async (scene: Scene, options?: { skipConfirm?: boolean }) => {
