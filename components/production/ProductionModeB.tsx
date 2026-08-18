@@ -219,14 +219,35 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     return { image: s.image_prompt_en, video: s.video_motion_en };
   };
 
-  // Kling 으로 실제 보낼 프롬프트 — 사용자 편집이 있으면 그 값, 없으면 항상 영문 video_motion_en
-  // 한국어 프롬프트 지원은 Korean-only 전환 리팩터에서 정리 예정.
+  // Kling 으로 실제 보낼 프롬프트.
+  //
+  // 폴백을 getDisplayPrompts 와 같은 규칙으로 맞춘다. 예전에는 화면에는
+  // video_motion_kr 을 보여주면서 실제로는 항상 video_motion_en 을 보냈다 —
+  // "이 내용 그대로 전송" 이라고 써 놓고 다른 걸 보내고 있었던 셈이다.
   const buildKlingPrompt = (s: Scene, sceneSettings: SceneSettings): string => {
-    const raw = sceneSettings.prompt !== null && sceneSettings.prompt.trim()
+    const edited = sceneSettings.prompt !== null && sceneSettings.prompt.trim()
       ? sceneSettings.prompt
-      : (s.video_motion_en ?? '').trim();
-    return clampKlingPrompt(raw);
+      : '';
+    const raw = edited || getDisplayPrompts(s).video || (s.video_motion_en ?? '');
+    return clampKlingPrompt(raw.trim());
   };
+
+  /** 지금 언어에 대응하는 씬의 모션 필드 */
+  const motionField = language === 'ko' ? 'video_motion_kr' : 'video_motion_en';
+
+  /**
+   * 모션 프롬프트 변경을 두 곳에 반영한다.
+   *
+   *  1) SceneSettings.prompt — 이번 세션에서 실제로 전송될 값
+   *  2) Scene.video_motion_* — 프로젝트 JSON. 자동저장을 타고 스토리보드에 남는다
+   *
+   * 예전에는 (1)만 갱신했다. 세션 상태라 새로고침하면 사라졌고, 1cr 주고 얻은
+   * AI 상상 결과도 스토리보드에는 흔적조차 남지 않았다.
+   */
+  const setVideoMotion = useCallback((sceneId: string, text: string) => {
+    patchSettings(sceneId, { prompt: text });
+    updateScene(sceneId, { [motionField]: text } as Partial<Scene>);
+  }, [patchSettings, updateScene, motionField]);
 
   // ── 비디오 생성 큐 (전역, 이탈해도 지속) ──
   const jobs = useVideoGenStore((s) => s.jobs);
@@ -449,14 +470,16 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         return;
       }
       await deduct(SUGGEST_PROMPT_COST, `영상 프롬프트 상상 (씬 ${scene.order})`);
-      patchSettings(scene.id, { prompt: clampKlingPrompt(result.prompt) });
+      // 스토리보드(JSON)에도 함께 반영한다 — 새로고침해도 남고, 스토리보드
+      // 화면에서도 같은 모션 문구를 보게 된다.
+      setVideoMotion(scene.id, clampKlingPrompt(result.prompt));
     } catch (e) {
       console.error('[ModeB] 프롬프트 상상 실패:', e);
       await showGenError(e, 'video');
     } finally {
       setSuggestingFor(null);
     }
-  }, [alert, showGenError, balance, deduct, hasEnough, getSettings, patchSettings, language]);
+  }, [alert, showGenError, balance, deduct, hasEnough, getSettings, setVideoMotion, language]);
 
   // ── 네비게이션: 씬 스크롤 이동 ──
   const scrollToScene = useCallback((sceneId: string) => {
@@ -722,6 +745,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             onToggleSelect={() => toggleSelect(scene.id)}
             onSetMode={(m) => setCardModeStore(scene.id, m)}
             onPatchSettings={(patch) => patchSettings(scene.id, patch)}
+            onPromptChange={(text) => setVideoMotion(scene.id, text)}
             onPatchScene={(patch) => updateScene(scene.id, patch)}
             takes={takesMap[scene.id] ?? []}
             mainTakeId={mainTakeIdMap[scene.id]}
@@ -896,6 +920,8 @@ interface SceneCardProps {
   onToggleSelect: () => void;
   onSetMode: (m: CardMode) => void;
   onPatchSettings: (patch: Partial<SceneSettings>) => void;
+  /** 모션 프롬프트 전용 — 세션 설정과 스토리보드 JSON 양쪽에 반영한다 */
+  onPromptChange: (text: string) => void;
   onPatchScene: (patch: Partial<Scene>) => void;
   takes: SceneTake[];
   mainTakeId?: string;
@@ -915,7 +941,7 @@ interface SceneCardProps {
 const SceneCard: React.FC<SceneCardProps> = ({
   scene, videoUrl, onHealed, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
   job, nextSceneImage, language, displayPrompts, takes, mainTakeId, onSelectMainTake,
-  onToggleSelect, onSetMode, onPatchSettings, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
+  onToggleSelect, onSetMode, onPatchSettings, onPromptChange, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
   suggesting, onSuggestPrompt, onPrev, onNext,
 }) => {
   const done = !!videoUrl;
@@ -1002,6 +1028,7 @@ const SceneCard: React.FC<SceneCardProps> = ({
             modelLabel={modelLabel}
             cost={cost}
             isRetake={done}
+            onPromptChange={onPromptChange}
             suggesting={suggesting}
             onSuggestPrompt={onSuggestPrompt}
             onBack={() => onSetMode('idle')}
@@ -1037,7 +1064,7 @@ const SceneCard: React.FC<SceneCardProps> = ({
             fallbackVideoPrompt={displayPrompts.video}
             suggesting={suggesting}
             onSuggestPrompt={onSuggestPrompt}
-            onPatchSettings={onPatchSettings}
+            onPromptChange={onPromptChange}
             onUpscale={onUpscale}
             onOpenEditor={() => onSetMode('editor')}
             onPatchScene={onPatchScene}
@@ -1325,15 +1352,17 @@ const VideoPromptEditor: React.FC<VideoPromptEditorProps> = ({
           className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm leading-relaxed resize-y"
         />
         <p className={`text-[11px] font-bold leading-relaxed flex items-start gap-1 ${usingDefault ? 'text-amber-800' : 'text-emerald-700'}`}>
+          {/* 세션 안에서 손댔는지로만 구분한다. 새로고침하면 편집 여부는 잊히고
+              문구만 스토리보드에 남으므로, 그때도 틀리지 않을 표현을 쓴다. */}
           {usingDefault ? (
             <>
               <AlertCircle size={12} className="shrink-0 mt-0.5" />
-              <span>스토리보드 모션 문구 그대로입니다. 이대로 생성하면 의도한 움직임이 안 나올 수 있어요 — 고쳐 쓰거나 AI에게 맡기세요.</span>
+              <span>아직 이 화면에서 손대지 않은 문구입니다. 기획 단계의 모션 문구라면 그대로는 의도한 움직임이 안 나올 수 있어요 — 확인하고 필요하면 고치거나 AI에게 맡기세요.</span>
             </>
           ) : (
             <>
               <CheckCircle2 size={12} className="shrink-0 mt-0.5" />
-              <span>이 내용 그대로 영상 생성에 전달됩니다.</span>
+              <span>이 내용 그대로 영상 생성에 전달되고, 스토리보드에도 저장됩니다.</span>
             </>
           )}
         </p>
@@ -1490,7 +1519,8 @@ interface SceneActionPickerProps {
   fallbackVideoPrompt: string;
   suggesting: boolean;
   onSuggestPrompt: () => void;
-  onPatchSettings: (patch: Partial<SceneSettings>) => void;
+  /** 모션 프롬프트 전용 — 세션 설정과 스토리보드 JSON 양쪽에 반영한다 */
+  onPromptChange: (text: string) => void;
   onUpscale: () => void;
   onOpenEditor: () => void;
   /** 이미지 프롬프트 편집 반영 (image_prompt_en 또는 content_kr 필드) */
@@ -1498,7 +1528,7 @@ interface SceneActionPickerProps {
 }
 const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
   scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError,
-  settings, fallbackVideoPrompt, suggesting, onSuggestPrompt, onPatchSettings,
+  settings, fallbackVideoPrompt, suggesting, onSuggestPrompt, onPromptChange,
   onUpscale, onOpenEditor, onPatchScene,
 }) => {
   return (
@@ -1548,7 +1578,7 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
           hasImage={!!scene.image_url}
           suggesting={suggesting}
           disabled={generating}
-          onChange={(next) => onPatchSettings({ prompt: next })}
+          onChange={onPromptChange}
           onSuggest={onSuggestPrompt}
         />
       </div>
@@ -1685,6 +1715,8 @@ interface SceneEditorProps {
   cost: number;
   /** 이미 결과 영상이 있는 씬을 다시 만드는 중인지 */
   isRetake: boolean;
+  /** 모션 프롬프트 전용 — 세션 설정과 스토리보드 JSON 양쪽에 반영한다 */
+  onPromptChange: (text: string) => void;
   suggesting: boolean;
   onSuggestPrompt: () => void;
   onBack: () => void;
@@ -1694,7 +1726,7 @@ interface SceneEditorProps {
 }
 const SceneEditor: React.FC<SceneEditorProps> = ({
   scene, settings, upscaleStatus, job, nextSceneImage, language, displayPrompts,
-  modelLabel, cost, isRetake, suggesting, onSuggestPrompt, onBack, onPatch, onGenerate, onOpenLibrary,
+  modelLabel, cost, isRetake, onPromptChange, suggesting, onSuggestPrompt, onBack, onPatch, onGenerate, onOpenLibrary,
 }) => {
   const generating = job?.status === 'generating';
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1855,7 +1887,7 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
         <textarea
           ref={promptRef}
           value={promptValue}
-          onChange={(e) => onPatch({ prompt: e.target.value })}
+          onChange={(e) => onPromptChange(e.target.value)}
           rows={5}
           disabled={generating}
           placeholder="예) 카메라가 인물의 눈높이에서 천천히 밀려들어가고, 창밖 햇빛이 얼굴을 스치며 표정이 미소로 풀린다"
@@ -1866,11 +1898,11 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
           {usingStoryboardDefault ? (
             <span className="font-bold text-amber-700 flex items-center gap-1">
               <AlertCircle size={12} className="shrink-0" />
-              스토리보드 모션 문구를 그대로 씁니다 — 씬이 의도대로 안 나올 수 있어요
+              아직 손대지 않은 문구입니다 — 확인하고 필요하면 고치세요
             </span>
           ) : (
             <span className="font-bold text-emerald-700 flex items-center gap-1">
-              <CheckCircle2 size={12} className="shrink-0" /> 편집됨 · 위 내용 그대로 전송
+              <CheckCircle2 size={12} className="shrink-0" /> 위 내용 그대로 전송 · 스토리보드에도 저장됨
             </span>
           )}
           <span className={`shrink-0 ${promptValue.length > KLING_PROMPT_MAX ? 'text-red-600 font-black' : 'text-zinc-400'}`}>
