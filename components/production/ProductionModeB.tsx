@@ -1254,6 +1254,12 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
                 {settings.prompt !== null && settings.prompt.trim() ? settings.prompt : displayPrompts.video || <span className="text-zinc-400 italic">비어있음</span>}
               </div>
             </div>
+            <div className="md:col-span-2">
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1.5">대사 · 자막</div>
+              <div className="px-3 py-2 rounded-lg bg-white border border-zinc-200 text-xs text-zinc-700 leading-relaxed min-h-[3em]">
+                {scene.script_kr || scene.script_en || <span className="text-zinc-400 italic">비어있음</span>}
+              </div>
+            </div>
           </div>
         </div>
       </details>
@@ -1268,7 +1274,7 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
 //  프롬프트는 보이지도, 고칠 수도 없었고 — "AI로 상상" 을 눌러도 결과가 어디에
 //  들어갔는지 화면에 나타나지 않았다. 여기서 바로 보고 고칠 수 있게 한다.
 //
-//  이미지 프롬프트(ImagePromptEditor)는 Scene 필드를 저장/되돌리기로 다루지만,
+//  이미지 프롬프트·대사(SceneTextEditor)는 Scene 필드라 저장/되돌리기로 다루지만,
 //  이쪽은 SceneSettings.prompt(세션 상태)라 입력 즉시 반영한다.
 // =============================================================
 interface VideoPromptEditorProps {
@@ -1337,44 +1343,55 @@ const VideoPromptEditor: React.FC<VideoPromptEditorProps> = ({
 };
 
 // =============================================================
-//  이미지 프롬프트 편집기 (한글/영문 토글)
+//  씬 텍스트 필드 편집기 (한글/영문 토글)
 //
-//  Scene 필드 매핑:
-//    - image_prompt_en: 이미지 생성용 영문 프롬프트 (Gemini/Imagen 이 실제로 씀)
-//    - content_kr: 씬 콘텐츠 설명 (한국어 · 사용자 이해용)
+//  같은 모양의 블록을 두 군데서 쓴다:
+//    · 이미지 프롬프트 — content_kr / image_prompt_en
+//    · 대사 · 자막    — script_kr / script_en
 //
-//  두 필드가 semantic 이 완벽히 같지 않지만, 사용자 관점에서는
-//  "이 씬의 프롬프트" 를 한/영 두 언어로 보고 편집하는 게 자연스럽다.
+//  이미지 프롬프트 쪽은 두 필드의 semantic 이 완벽히 같지 않지만, 사용자
+//  관점에서는 "이 씬의 프롬프트" 를 한/영 두 언어로 보고 편집하는 게 자연스럽다.
 //  Korean-only 리팩터에서 이 이중구조는 재정리 예정 (메모리 참조).
 // =============================================================
-interface ImagePromptEditorProps {
+interface SceneTextEditorProps {
   scene: Scene;
+  title: string;
+  koField: 'content_kr' | 'script_kr';
+  enField: 'image_prompt_en' | 'script_en';
+  placeholderKo: string;
+  placeholderEn: string;
+  /** 펼쳤을 때 하단에 붙는 안내. 저장 상태 문구를 대체한다. */
+  savedHint: string;
+  /** 대사처럼 길이가 곧 영상 길이 판단으로 이어지는 필드에서 켠다 */
+  showReadingTime?: boolean;
   onPatch: (patch: Partial<Scene>) => void;
 }
-const ImagePromptEditor: React.FC<ImagePromptEditorProps> = ({ scene, onPatch }) => {
+const SceneTextEditor: React.FC<SceneTextEditorProps> = ({
+  scene, title, koField, enField, placeholderKo, placeholderEn, savedHint, showReadingTime, onPatch,
+}) => {
   const [lang, setLang] = useState<'ko' | 'en'>('ko');
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState<string>('');
   const [dirty, setDirty] = useState(false);
 
+  const field = lang === 'ko' ? koField : enField;
+  const current = (scene[field] ?? '') as string;
+
   // scene 이 바뀌면 draft 리셋
   useEffect(() => {
-    setDraft(lang === 'ko' ? (scene.content_kr ?? '') : (scene.image_prompt_en ?? ''));
+    setDraft(current);
     setDirty(false);
-  }, [scene.id, scene.content_kr, scene.image_prompt_en, lang]);
+  }, [scene.id, current]);
 
   const save = () => {
-    const patch: Partial<Scene> = lang === 'ko'
-      ? { content_kr: draft.trim() }
-      : { image_prompt_en: draft.trim() };
-    onPatch(patch);
+    onPatch({ [field]: draft.trim() } as Partial<Scene>);
     setDirty(false);
   };
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
       <div className="px-3 py-2 flex items-center gap-2 border-b border-zinc-100 bg-zinc-50">
-        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">이미지 프롬프트</span>
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{title}</span>
         {/* 언어 토글 */}
         <div className="flex gap-0.5 p-0.5 bg-white rounded-lg border border-zinc-200 ml-1">
           {(['ko', 'en'] as const).map((l) => (
@@ -1389,9 +1406,7 @@ const ImagePromptEditor: React.FC<ImagePromptEditorProps> = ({ scene, onPatch })
             </button>
           ))}
         </div>
-        <span className="text-[10px] text-zinc-400 ml-auto">
-          {lang === 'ko' ? 'content_kr' : 'image_prompt_en'}
-        </span>
+        <span className="text-[10px] text-zinc-400 ml-auto">{field}</span>
         <button
           onClick={() => setExpanded((v) => !v)}
           className="text-[11px] text-primary font-bold hover:underline"
@@ -1405,19 +1420,19 @@ const ImagePromptEditor: React.FC<ImagePromptEditorProps> = ({ scene, onPatch })
             value={draft}
             onChange={(e) => { setDraft(e.target.value); setDirty(true); }}
             rows={4}
-            placeholder={lang === 'ko' ? '이 씬의 한국어 설명' : '이미지 생성용 영문 프롬프트'}
+            placeholder={lang === 'ko' ? placeholderKo : placeholderEn}
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
           />
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] text-zinc-400">
-              {dirty ? '⚠️ 저장 필요' : '저장됨 · 스토리보드 재생성 시 이 프롬프트 사용'}
+              {dirty ? '⚠️ 저장 필요' : savedHint}
+              {showReadingTime && draft.trim() && (
+                <span className="ml-1.5 text-zinc-500 font-bold">· {readingHint(draft)}</span>
+              )}
             </span>
             <div className="flex gap-1">
               <button
-                onClick={() => {
-                  setDraft(lang === 'ko' ? (scene.content_kr ?? '') : (scene.image_prompt_en ?? ''));
-                  setDirty(false);
-                }}
+                onClick={() => { setDraft(current); setDirty(false); }}
                 disabled={!dirty}
                 className="px-2.5 py-1 rounded-md bg-white border border-zinc-200 hover:bg-zinc-50 text-[11px] font-bold text-zinc-700 disabled:opacity-40"
               >
@@ -1434,13 +1449,30 @@ const ImagePromptEditor: React.FC<ImagePromptEditorProps> = ({ scene, onPatch })
           </div>
         </div>
       ) : (
-        <p className="p-3 text-xs text-zinc-600 leading-relaxed line-clamp-3">
-          {(lang === 'ko' ? scene.content_kr : scene.image_prompt_en) || <span className="text-zinc-400 italic">비어있음</span>}
-        </p>
+        <div className="p-3">
+          <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3">
+            {current || <span className="text-zinc-400 italic">비어있음</span>}
+          </p>
+          {showReadingTime && current.trim() && (
+            <p className="mt-1.5 text-[10px] font-bold text-zinc-400">{readingHint(current)}</p>
+          )}
+        </div>
       )}
     </div>
   );
 };
+
+/**
+ * 대사 길이 → 어림 낭독 시간.
+ *
+ * 5초/10초 중 무엇을 고를지 판단하는 데만 쓰는 값이라 정밀도는 필요 없다.
+ * 한국어 나레이션 기준 초당 5자 안팎으로 잡는다. 어림치임을 문구로 못박는다.
+ */
+function readingHint(text: string): string {
+  const chars = text.trim().length;
+  const seconds = Math.max(1, Math.round(chars / 5));
+  return `${chars}자 · 낭독 약 ${seconds}초(어림)`;
+}
 
 // =============================================================
 //  씬 카드 (a) 액션 선택 상태
@@ -1484,7 +1516,30 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
             </div>
           )}
         </div>
-        <ImagePromptEditor scene={scene} onPatch={onPatchScene} />
+        <SceneTextEditor
+          scene={scene}
+          title="이미지 프롬프트"
+          koField="content_kr"
+          enField="image_prompt_en"
+          placeholderKo="이 씬의 한국어 설명"
+          placeholderEn="이미지 생성용 영문 프롬프트"
+          savedHint="저장됨 · 스토리보드 재생성 시 이 프롬프트 사용"
+          onPatch={onPatchScene}
+        />
+        {/* 대사 — 영상 길이(5초/10초)와 자막·더빙의 기준이라 여기서도 보여야 한다.
+            예전에는 정밀 제작 화면 어디에도 대사가 없어서, 대사를 확인하려면
+            스토리보드 단계로 되돌아가야 했다. */}
+        <SceneTextEditor
+          scene={scene}
+          title="대사 · 자막"
+          koField="script_kr"
+          enField="script_en"
+          placeholderKo="이 씬에서 나올 대사 또는 자막"
+          placeholderEn="Dialogue or subtitle for this scene"
+          savedHint="저장됨 · 자막·더빙에 이 대사를 씁니다"
+          showReadingTime
+          onPatch={onPatchScene}
+        />
         {/* 이미지 프롬프트와 나란히 — 영상 결과를 가르는 건 이쪽이다 */}
         <VideoPromptEditor
           value={settings.prompt}
@@ -1785,6 +1840,17 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
             ? 'END 프레임이 있으므로 두 프레임 사이의 움직임을 쓰는 게 좋습니다. AI 상상은 두 장을 같이 보고 전환을 서술합니다.'
             : '카메라 움직임 · 피사체 동작 · 분위기 변화를 적을수록 결과가 의도에 가까워집니다.'}
         </p>
+
+        {/* 이 씬의 대사 — 길이(5초/10초)와 인물 동작을 정하는 근거라 옆에 둔다.
+            읽기 전용이다. 대사 수정은 액션 화면(대사 · 자막)에서 한다. */}
+        {(scene.script_kr || scene.script_en) && (
+          <div className="mt-2 px-3 py-2 rounded-lg bg-white/70 border border-zinc-200">
+            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">이 씬의 대사</div>
+            <p className="mt-0.5 text-xs text-zinc-700 leading-relaxed">
+              {(language === 'ko' ? scene.script_kr : scene.script_en) || scene.script_kr || scene.script_en}
+            </p>
+          </div>
+        )}
 
         <textarea
           ref={promptRef}
