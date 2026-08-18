@@ -60,37 +60,51 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 20
   }
 }
 
+function parseScriptJson(raw: string) {
+  let text = raw || '{}';
+  // Strip markdown code fences if present
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    text = jsonMatch[1].trim();
+  }
+  // Extract JSON object if extra text exists
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    text = text.substring(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(text);
+}
+
 export async function generateAdScript(idea: string, duration: AdDuration, sceneCount?: number, aspectRatio?: string, language: 'ko' | 'en' = 'ko') {
   const ai = await getAI();
   const prompt = `Idea: ${idea}\nDuration: ${duration} seconds. Generate the full script in JSON format according to the system instruction.`;
+  const config = {
+    systemInstruction: sceneCount && aspectRatio ? getSystemInstruction(sceneCount, aspectRatio, language) : SYSTEM_INSTRUCTION,
+    responseMimeType: "application/json"
+  };
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      systemInstruction: sceneCount && aspectRatio ? getSystemInstruction(sceneCount, aspectRatio, language) : SYSTEM_INSTRUCTION,
-      responseMimeType: "application/json"
-    },
-  });
+  // 모델이 가끔 이스케이프가 깨진 JSON(예: 대사 안의 따옴표)을 내놓는다.
+  // 파싱 실패는 확률적 실패이므로 한 번 더 생성하면 대부분 해소된다.
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config,
+    });
 
-  try {
-    let text = response.text || '{}';
-    // Strip markdown code fences if present
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      text = jsonMatch[1].trim();
+    try {
+      return parseScriptJson(response.text || '{}');
+    } catch (e) {
+      if (attempt < MAX_ATTEMPTS) {
+        console.warn(`Failed to parse script JSON (attempt ${attempt}/${MAX_ATTEMPTS}), retrying...`, e);
+      } else {
+        console.error("Failed to parse script JSON", e);
+      }
     }
-    // Extract JSON object if extra text exists
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      text = text.substring(firstBrace, lastBrace + 1);
-    }
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("Failed to parse script JSON", e);
-    return null;
   }
+  return null;
 }
 
 export async function generate3x3GridImage(prompt: string, referenceImagesBase64?: string[], aspectRatio?: string, imageModel?: string, categorizedRefs?: CategorizedRefImage[]) {
