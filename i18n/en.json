@@ -500,6 +500,8 @@
       "aiRegenerate": "AI High-Res Regenerate",
       "processing": "Processing...",
       "updateStoryboard": "Update Storyboard Asset",
+      "pendingPreviewConfirm": "You have a new image that hasn't been applied yet.\n\nApply it and save?\nCancel to go back and apply or discard it yourself.",
+      "pendingPreviewApply": "Apply and save",
       "editInstruction": "Edit Instruction",
       "editInstructionPlaceholder": "e.g. Make background darker, brighten facial expression, change outfit to red...",
       "upscaleLabel": "Upscale",

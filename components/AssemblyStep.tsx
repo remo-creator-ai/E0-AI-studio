@@ -605,13 +605,33 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     reorderScenes([...project.scenes, newScene]);
   };
 
-  const handleSaveSceneEdit = (e: React.FormEvent) => {
+  const handleSaveSceneEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingScene) {
-      updateScene(editingScene.id, editingScene);
-      setEditingScene(null);
-      setLocalRefImages([]);
+    if (!editingScene) return;
+
+    // 적용하지 않은 미리보기가 떠 있으면 조용히 버리지 않는다.
+    // 예전에는 그대로 저장돼서, 새 이미지를 뽑고 "스토리보드에 업데이트" 를 누른
+    // 사용자에게는 "저장이 안 먹는다" 로 보였다 (실제로는 옛 이미지가 저장됨).
+    let scene = editingScene;
+    if (previewImage) {
+      const applyIt = await confirm(
+        t('assembly.editor.pendingPreviewConfirm'),
+        {
+          type: 'info',
+          confirmText: t('assembly.editor.pendingPreviewApply'),
+          cancelText: t('common.cancel'),
+        }
+      );
+      // 취소하면 편집기를 닫지 않는다 — 적용할지 폐기할지 사용자가 직접 고른다.
+      if (!applyIt) return;
+      scene = sceneWithPreview(editingScene, previewImage, previewSize ?? await measureImage(previewImage));
+      setPreviewImage(null);
+      setPreviewSize(null);
     }
+
+    updateScene(scene.id, scene);
+    setEditingScene(null);
+    setLocalRefImages([]);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -743,18 +763,28 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     return null;
   };
 
+  /** 이미지의 실제 픽셀 크기. 미리보기 <img> 가 아직 로드 전일 때만 쓴다. */
+  const measureImage = (src: string): Promise<{ w: number; h: number } | null> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth || 0, h: img.naturalHeight || 0 });
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+
+  /** 미리보기를 반영한 씬. 등급은 요청값이 아니라 실제 픽셀에서 매긴다. */
+  const sceneWithPreview = (scene: Scene, image: string, size: { w: number; h: number } | null): Scene =>
+    ({ ...scene, image_url: image, upscale_level: size ? gradeFromWidth(size.w) : null });
+
   const handleApplyPreview = () => {
     if (!previewImage || !editingScene) return;
     const applied = previewImage;
     const scene = editingScene;
     if (previewSize) {
       // 미리보기 <img> 가 이미 로드돼 실제 크기를 알고 있다.
-      setEditingScene({ ...scene, image_url: applied, upscale_level: gradeFromWidth(previewSize.w) });
+      setEditingScene(sceneWithPreview(scene, applied, previewSize));
     } else {
-      const img = new Image();
-      img.onload = () => setEditingScene({ ...scene, image_url: applied, upscale_level: gradeFromWidth(img.naturalWidth || 0) });
-      img.onerror = () => setEditingScene({ ...scene, image_url: applied, upscale_level: null });
-      img.src = applied;
+      measureImage(applied).then((size) => setEditingScene(sceneWithPreview(scene, applied, size)));
     }
     setPreviewImage(null);
     setPreviewSize(null);
@@ -1229,10 +1259,12 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               <button onClick={() => setEditingScene(null)} className="p-3 hover:bg-zinc-100 rounded-full transition-colors"><X size={24} /></button>
             </div>
             
-            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+            {/* min-h-0 이 없으면 flex 아이템의 기본 min-height:auto 가 내용 높이를
+                하한으로 잡아, 안쪽 이미지가 모달 밖으로 밀려나온다 (아래 미리보기 참고) */}
+            <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
               {/* Center: Image Editor (Cropper) */}
-              <div className="flex-[1.5] bg-zinc-50 relative flex flex-col border-r border-zinc-100">
-                <div className="relative flex-1 bg-black">
+              <div className="flex-[1.5] min-w-0 min-h-0 bg-zinc-50 relative flex flex-col border-r border-zinc-100">
+                <div className="relative flex-1 min-h-0 bg-black">
                   {editingScene.image_url ? (
                     <Cropper
                       key={editingScene.id}
@@ -1277,10 +1309,15 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                   {/* Preview Comparison Overlay */}
                   {previewImage && (
                     <div className="absolute inset-0 z-[102] flex flex-col bg-black">
-                      <div className="flex-1 relative">
+                      {/* min-h-0 + 절대배치 이미지.
+                          예전에는 flex-1 컨테이너에 h-full 이미지를 넣었는데, 컨테이너
+                          높이가 내용(=이미지)에 의존하는 순환이 생겨 h-full 이 auto 로
+                          풀렸다. 그래서 세로로 긴 업스케일 결과(예: 1536×2752)가 폭에
+                          맞춰 늘어나 모달을 뚫고, 적용/폐기 버튼이 화면 밖으로 밀렸다. */}
+                      <div className="flex-1 min-h-0 relative">
                         <img
                           src={previewImage}
-                          className="w-full h-full object-contain"
+                          className="absolute inset-0 w-full h-full object-contain"
                           alt="Preview"
                           onLoad={(e) => {
                             const el = e.currentTarget;
@@ -1306,7 +1343,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-4 bg-white backdrop-blur-xl border-t border-zinc-100">
+                      <div className="shrink-0 flex items-center gap-3 p-4 bg-white backdrop-blur-xl border-t border-zinc-100">
                         <button
                           type="button"
                           onClick={handleDiscardPreview}
@@ -1392,7 +1429,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               </div>
 
               {/* Right: Data & AI Generation Form */}
-              <div className="flex-1 flex flex-col overflow-hidden bg-white">
+              <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-white">
                 <form onSubmit={handleSaveSceneEdit} className="flex-1 p-8 space-y-6 overflow-y-auto custom-scrollbar">
                   <div className="space-y-5">
                     <div className="space-y-2">

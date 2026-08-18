@@ -511,6 +511,8 @@
       "aiRegenerate": "AI 고화질 이미지 재생성",
       "processing": "처리 중...",
       "updateStoryboard": "스토리보드에 업데이트",
+      "pendingPreviewConfirm": "아직 적용하지 않은 새 이미지가 있습니다.\n\n이 이미지를 적용한 뒤 저장할까요?\n취소하면 편집 화면으로 돌아가 직접 적용하거나 버릴 수 있습니다.",
+      "pendingPreviewApply": "적용하고 저장",
       "editInstruction": "이미지 수정 지시",
       "editInstructionPlaceholder": "예: 배경을 더 어둡게, 인물 표정을 밝게, 옷 색상을 빨간색으로...",
       "upscaleLabel": "고화질",
