@@ -313,40 +313,54 @@ export interface SuggestPromptResult {
  */
 export async function suggestVideoPromptFromImage(
   startImage: string,
-  opts?: { language?: 'ko' | 'en'; priorDescription?: string },
+  opts?: { language?: 'ko' | 'en'; priorDescription?: string; endImage?: string },
 ): Promise<SuggestPromptResult> {
   const language = opts?.language ?? 'ko';
   const prior = opts?.priorDescription?.trim() ?? '';
+  const endImage = opts?.endImage?.trim() || undefined;
 
   if (MOCK_MODE) {
     await new Promise((r) => setTimeout(r, 800));
+    if (endImage) {
+      return { ok: true, prompt: language === 'ko' ? '카메라가 첫 장면에서 부드럽게 밀려들어가며 마지막 구도로 자연스럽게 이어집니다.' : 'The camera pushes in smoothly from the first framing and settles into the final composition.' };
+    }
     return { ok: true, prompt: language === 'ko' ? '카메라가 천천히 줌인하며 부드러운 자연광 속 피사체를 포착합니다.' : 'Slow camera zoom-in on the subject with soft natural light.' };
   }
 
   const ai = await proxyClient();
   if (!ai) return { ok: false, error: 'no_session' };
 
-  const { mimeType, base64 } = await normalizeImageInput(startImage);
+  const start = await normalizeImageInput(startImage);
+  const end = endImage ? await normalizeImageInput(endImage) : null;
   const langInstr = language === 'ko'
     ? '한국어로 답하세요. 반환은 오직 프롬프트 텍스트만 (설명·인사·따옴표 없이).'
     : 'Answer in English. Return ONLY the prompt text (no intros, no quotes).';
 
   const priorPart = prior
-    ? `\nContext hint (from image metadata, use as reference only): "${prior}"`
+    ? `\nContext hint (from the storyboard, use as reference only): "${prior}"`
     : '';
+
+  // 끝 프레임이 있으면 "이 그림을 움직여라" 가 아니라 "이 그림에서 저 그림으로
+  // 가라" 가 과제다. 두 장을 같이 보여주고 그 사이의 변화를 서술하게 한다 —
+  // 스토리보드 모션 문구(예: "천천히 줌인")로는 전환이 절대 재현되지 않는다.
+  const instruction = end
+    ? `You are a short-form video prompt writer. IMAGE 1 is the START frame and IMAGE 2 is the END frame ` +
+      `of a single continuous shot. Write a 1~3 sentence video prompt describing how the shot travels from ` +
+      `the first framing to the second: camera movement, subject motion, and how the mood shifts. ` +
+      `Describe only the transition — do not restate what is already visible in either frame. ` +
+      `Keep it under 60 words. ${langInstr}${priorPart}`
+    : `You are a short-form video prompt writer. Given this image as a start frame, ` +
+      `write a compelling 1~3 sentence video prompt describing motion, camera work, and mood. ` +
+      `Keep it under 60 words. ${langInstr}${priorPart}`;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
         parts: [
-          { inlineData: { mimeType, data: base64 } },
-          {
-            text:
-              `You are a short-form video prompt writer. Given this image as a start frame, ` +
-              `write a compelling 1~3 sentence video prompt describing motion, camera work, and mood. ` +
-              `Keep it under 60 words. ${langInstr}${priorPart}`,
-          },
+          { inlineData: { mimeType: start.mimeType, data: start.base64 } },
+          ...(end ? [{ inlineData: { mimeType: end.mimeType, data: end.base64 } }] : []),
+          { text: instruction },
         ],
       },
     });

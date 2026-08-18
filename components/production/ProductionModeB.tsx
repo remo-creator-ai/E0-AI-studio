@@ -21,8 +21,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Clock, Download,
-  DownloadCloud, ImageUp, Loader2, Package, Play, RefreshCw, Rocket, Sparkles, Trash2,
-  Upload, Video, X, AlertCircle, Wand2, Film as FilmIcon,
+  DownloadCloud, ImageUp, Loader2, Package, Play, Rocket, Sparkles, Trash2,
+  Upload, Video, X, AlertCircle, Wand2, Film as FilmIcon, Pencil,
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { useStore } from '../../store';
@@ -35,6 +35,7 @@ import { genErrorSummary } from '../../lib/genErrorMessages';
 import { useGenErrorAlert } from '../../hooks/useGenErrorAlert';
 import {
   generateStudioVideo, videoStudioCreditCost, detectAspectFromImage,
+  suggestVideoPromptFromImage, SUGGEST_PROMPT_COST,
   VIDEO_STUDIO_MODEL, KLING_PROMPT_MAX, clampKlingPrompt,
   type ConcreteAspect, type VideoDuration, type VideoResolution,
 } from '../../services/videoStudioService';
@@ -331,8 +332,12 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     }
     if (!options?.skipConfirm) {
       const label = s.resolution === '1080p' || s.endImage ? MODEL_LABEL_PRO : MODEL_LABEL_STD;
+      // 이미 결과가 있는 씬이면 "덮어쓰나?" 가 첫 질문이다. 테이크로 쌓인다는 걸 알린다.
+      const retakeNote = scene.video_url
+        ? '\n· 기존 영상은 테이크로 보관되고 새 영상이 대표가 됩니다'
+        : '';
       const ok = await confirm(
-        `씬 ${scene.order} 영상을 만듭니다.\n\n· ${label} · ${s.duration}초 · ${s.resolution}\n· 크레딧 ${cost}cr 차감\n· 소요 1~3분\n\n계속할까요?`,
+        `씬 ${scene.order} 영상을 만듭니다.\n\n· ${label} · ${s.duration}초 · ${s.resolution}\n· 크레딧 ${cost}cr 차감\n· 소요 1~3분${retakeNote}\n\n계속할까요?`,
       );
       if (!ok) return;
     }
@@ -414,6 +419,44 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       }
     })();
   }, [addJob, alert, balance, buildKlingPrompt, confirm, deduct, getSettings, hasEnough, project?.title, projectTag, updateJob, updateScene, user?.id, addTakeStore, setCardModeStore, t]);
+
+  // ── 프롬프트 상상하기 (AI 제안) ──
+  //
+  // 스토리보드의 모션 문구("천천히 줌인")는 이미지 기획용이라 그대로 영상에
+  // 넣으면 의도한 씬이 거의 안 나온다. 실제 시작 프레임(있으면 끝 프레임까지)을
+  // 보고 영상용 프롬프트를 새로 쓰게 한다.
+  const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
+
+  const suggestPrompt = useCallback(async (scene: Scene) => {
+    if (!scene.image_url) {
+      await alert('시작 프레임 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
+      return;
+    }
+    if (!hasEnough(SUGGEST_PROMPT_COST)) {
+      await alert(`크레딧이 부족합니다. (필요 ${SUGGEST_PROMPT_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return;
+    }
+    setSuggestingFor(scene.id);
+    try {
+      const s = getSettings(scene.id);
+      const result = await suggestVideoPromptFromImage(scene.image_url, {
+        language,
+        priorDescription: getDisplayPrompts(scene).video,
+        endImage: s.endImage,
+      });
+      if (!result.ok || !result.prompt) {
+        await showGenError(result.error ?? 'no_response', 'video');
+        return;
+      }
+      await deduct(SUGGEST_PROMPT_COST, `영상 프롬프트 상상 (씬 ${scene.order})`);
+      patchSettings(scene.id, { prompt: clampKlingPrompt(result.prompt) });
+    } catch (e) {
+      console.error('[ModeB] 프롬프트 상상 실패:', e);
+      await showGenError(e, 'video');
+    } finally {
+      setSuggestingFor(null);
+    }
+  }, [alert, showGenError, balance, deduct, hasEnough, getSettings, patchSettings, language]);
 
   // ── 네비게이션: 씬 스크롤 이동 ──
   const scrollToScene = useCallback((sceneId: string) => {
@@ -689,12 +732,12 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             }}
             onUpscale={() => runUpscale(scene)}
             onGenerate={() => runGenerate(scene)}
-            onRegenerate={async () => {
-              const ok = await confirm(
-                `씬 ${idx + 1} 에 새 테이크를 추가합니다.\n\n· 새로 만들면 하단 테이크 스택에 쌓이고 자동으로 대표가 됩니다\n· 기존 테이크는 계속 보관되며 클릭해서 대표를 바꿀 수 있어요\n· 브라우저 새로고침 시 이 세션의 추가 테이크는 사라지고 대표 하나만 유지됩니다 (영구 저장은 다음 업데이트)\n\n계속할까요?`,
-              );
-              if (ok) runGenerate(scene, { skipConfirm: true });
-            }}
+            // 예전에는 여기서 바로 재생성했다 — 같은 프롬프트로 다시 뽑으니
+            // 결과도 거의 같았다. 영상에서 결과를 가르는 건 프롬프트라,
+            // 먼저 프롬프트를 고칠 수 있는 편집 화면으로 보낸다. 과금은 거기서만.
+            onRegenerate={() => setCardModeStore(scene.id, 'editor')}
+            suggesting={suggestingFor === scene.id}
+            onSuggestPrompt={() => suggestPrompt(scene)}
             onOpenLibraryForEnd={() => setPickerFor(scene.id)}
             onPrev={idx > 0 ? () => scrollToScene(scenes[idx - 1].id) : undefined}
             onNext={idx < scenes.length - 1 ? () => scrollToScene(scenes[idx + 1].id) : undefined}
@@ -859,8 +902,12 @@ interface SceneCardProps {
   onSelectMainTake: (takeId: string) => void;
   onUpscale: () => void;
   onGenerate: () => void;
+  /** 결과 화면에서 "프롬프트 고쳐서 다시 만들기" — 편집 화면으로 되돌린다 */
   onRegenerate: () => void;
   onOpenLibraryForEnd: () => void;
+  /** AI 프롬프트 상상 진행 중 */
+  suggesting: boolean;
+  onSuggestPrompt: () => void;
   onPrev?: () => void;
   onNext?: () => void;
 }
@@ -869,7 +916,7 @@ const SceneCard: React.FC<SceneCardProps> = ({
   scene, videoUrl, onHealed, index, total, selected, cardMode, settings, upscaleStatus, upscaleProgress,
   job, nextSceneImage, language, displayPrompts, takes, mainTakeId, onSelectMainTake,
   onToggleSelect, onSetMode, onPatchSettings, onPatchScene, onUpscale, onGenerate, onRegenerate, onOpenLibraryForEnd,
-  onPrev, onNext,
+  suggesting, onSuggestPrompt, onPrev, onNext,
 }) => {
   const done = !!videoUrl;
   const generating = job?.status === 'generating';
@@ -939,7 +986,30 @@ const SceneCard: React.FC<SceneCardProps> = ({
 
       {/* 카드 본체 */}
       <div className="p-5 pointer-events-auto">
-        {done ? (
+        {/* 편집기가 done 보다 앞선다 — 완료된 씬도 "프롬프트 고쳐서 다시 만들기" 로
+            편집 화면에 돌아올 수 있어야 한다. 생성이 끝나면 부모가 mode 를 idle 로
+            되돌리므로 평소에는 결과 화면이 보인다. */}
+        {cardMode === 'editor' ? (
+          // ─── (b) 편집기 전개 ───
+          <SceneEditor
+            scene={scene}
+            settings={settings}
+            upscaleStatus={upscaleStatus}
+            job={job}
+            nextSceneImage={nextSceneImage}
+            language={language}
+            displayPrompts={displayPrompts}
+            modelLabel={modelLabel}
+            cost={cost}
+            isRetake={done}
+            suggesting={suggesting}
+            onSuggestPrompt={onSuggestPrompt}
+            onBack={() => onSetMode('idle')}
+            onPatch={onPatchSettings}
+            onGenerate={onGenerate}
+            onOpenLibrary={onOpenLibraryForEnd}
+          />
+        ) : done ? (
           // ─── (c) 완료 상태: 결과 영상이 주인공 (목업 그대로 · 그리드 분할) ───
           <SceneDoneView
             scene={scene}
@@ -953,23 +1023,6 @@ const SceneCard: React.FC<SceneCardProps> = ({
             onSelectMainTake={onSelectMainTake}
             onRegenerate={onRegenerate}
           />
-        ) : cardMode === 'editor' ? (
-          // ─── (b) 편집기 전개 ───
-          <SceneEditor
-            scene={scene}
-            settings={settings}
-            upscaleStatus={upscaleStatus}
-            job={job}
-            nextSceneImage={nextSceneImage}
-            language={language}
-            displayPrompts={displayPrompts}
-            modelLabel={modelLabel}
-            cost={cost}
-            onBack={() => onSetMode('idle')}
-            onPatch={onPatchSettings}
-            onGenerate={onGenerate}
-            onOpenLibrary={onOpenLibraryForEnd}
-          />
         ) : (
           // ─── (a) 액션 선택 ───
           <SceneActionPicker
@@ -980,6 +1033,9 @@ const SceneCard: React.FC<SceneCardProps> = ({
             generating={generating}
             failed={failed}
             failedError={job?.error}
+            usingStoryboardDefault={settings.prompt === null || !settings.prompt.trim()}
+            suggesting={suggesting}
+            onSuggestPrompt={onSuggestPrompt}
             onUpscale={onUpscale}
             onOpenEditor={() => onSetMode('editor')}
             onPatchScene={onPatchScene}
@@ -1071,12 +1127,18 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
           >
             <Download size={16} /> 대표 영상 다운로드
           </a>
+          {/* 결과가 맘에 안 들 때 바꿔야 하는 건 대부분 프롬프트다.
+              같은 프롬프트로 다시 뽑으면 비슷한 결과가 나오므로 바로 생성하지 않고
+              편집 화면으로 보낸다 (크레딧은 거기서 생성할 때만 빠진다). */}
           <button
             onClick={onRegenerate}
-            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 flex items-center justify-center gap-2"
+            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-primary/40 text-primary font-black text-sm hover:bg-primary/5 flex items-center justify-center gap-2"
           >
-            <RefreshCw size={16} /> 한 번 더 만들기 · {regenerateCost}cr
+            <Pencil size={16} /> 프롬프트 고쳐서 다시 만들기
           </button>
+          <p className="text-[11px] text-zinc-400 leading-relaxed px-1">
+            프롬프트를 그대로 두고 다시 뽑으면 비슷한 결과가 나옵니다. 생성은 {regenerateCost}cr.
+          </p>
           <div className="mt-auto p-3 rounded-xl bg-amber-50 border border-amber-200">
             <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
               합치기에는 <strong>완성된 영상 1개</strong>가 들어갑니다. 여러 테이크 지원(대표 지정)은 다음 업데이트 예정.
@@ -1314,13 +1376,18 @@ interface SceneActionPickerProps {
   generating: boolean;
   failed: boolean;
   failedError?: string;
+  /** 영상 프롬프트를 아직 손대지 않아 스토리보드 모션 문구를 그대로 쓰는 상태 */
+  usingStoryboardDefault: boolean;
+  suggesting: boolean;
+  onSuggestPrompt: () => void;
   onUpscale: () => void;
   onOpenEditor: () => void;
   /** 이미지 프롬프트 편집 반영 (image_prompt_en 또는 content_kr 필드) */
   onPatchScene: (patch: Partial<Scene>) => void;
 }
 const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
-  scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError, onUpscale, onOpenEditor, onPatchScene,
+  scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError,
+  usingStoryboardDefault, suggesting, onSuggestPrompt, onUpscale, onOpenEditor, onPatchScene,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-5">
@@ -1382,6 +1449,27 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
             {!upscaled ? '업스케일 먼저' : generating ? '생성 중' : '30cr~'}
           </span>
         </button>
+
+        {/* 영상 프롬프트 상태 — 씬을 옮겨 다닐 때 여기서 바로 보인다.
+            스토리보드 모션 문구 그대로면 씬이 의도대로 안 나오므로, 생성에
+            들어가기 전에 손볼 기회를 준다. 자동으로 호출하지는 않는다(1cr 과금). */}
+        {usingStoryboardDefault && scene.image_url && (
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+            <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
+              이 씬은 아직 <strong>스토리보드 모션 문구</strong>를 그대로 씁니다. 그대로 생성하면 의도한 움직임이 안 나올 수 있어요.
+            </p>
+            <button
+              type="button"
+              onClick={onSuggestPrompt}
+              disabled={suggesting || generating}
+              className="w-full px-3 py-2 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-black hover:bg-amber-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {suggesting
+                ? <><Loader2 size={13} className="animate-spin" /> 상상하는 중...</>
+                : <><Wand2 size={13} /> AI로 프롬프트 상상 · {SUGGEST_PROMPT_COST}cr</>}
+            </button>
+          </div>
+        )}
 
         {failed && failedError && (
           <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-[11px] text-red-800">
@@ -1470,6 +1558,10 @@ interface SceneEditorProps {
   displayPrompts: { image: string; video: string };
   modelLabel: string;
   cost: number;
+  /** 이미 결과 영상이 있는 씬을 다시 만드는 중인지 */
+  isRetake: boolean;
+  suggesting: boolean;
+  onSuggestPrompt: () => void;
   onBack: () => void;
   onPatch: (patch: Partial<SceneSettings>) => void;
   onGenerate: () => void;
@@ -1477,10 +1569,23 @@ interface SceneEditorProps {
 }
 const SceneEditor: React.FC<SceneEditorProps> = ({
   scene, settings, upscaleStatus, job, nextSceneImage, language, displayPrompts,
-  modelLabel, cost, onBack, onPatch, onGenerate, onOpenLibrary,
+  modelLabel, cost, isRetake, suggesting, onSuggestPrompt, onBack, onPatch, onGenerate, onOpenLibrary,
 }) => {
   const generating = job?.status === 'generating';
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+
+  /** 아직 손대지 않아 스토리보드 모션 문구를 그대로 쓰는 상태 */
+  const usingStoryboardDefault = settings.prompt === null || !settings.prompt.trim();
+
+  // 다시 만들기로 들어왔으면 프롬프트로 바로 커서를 보낸다 — 여기가 고칠 곳이다.
+  useEffect(() => {
+    if (!isRetake) return;
+    const el = promptRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [isRetake]);
 
   const handleEndFile = (file: File) => {
     const reader = new FileReader();
@@ -1498,7 +1603,7 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
         disabled={generating}
         className="text-xs font-bold text-zinc-500 hover:text-primary flex items-center gap-1 disabled:opacity-40"
       >
-        ‹ 방식 다시 고르기
+        {isRetake ? '‹ 결과 영상으로 돌아가기' : '‹ 방식 다시 고르기'}
       </button>
 
       {/* 업스케일 상태바 (안전 재확인) */}
@@ -1575,25 +1680,64 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
         </div>
       </div>
 
-      {/* 프롬프트 (한 언어) */}
-      <div>
-        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-          영상 프롬프트 ({language === 'ko' ? '한국어' : 'English'})
-        </label>
+      {/* ── 영상 프롬프트 — 이 화면의 주인공 ──
+          결과를 가르는 건 사실상 이 한 칸이다. 스토리보드의 모션 문구는 이미지
+          기획용이라 그대로 쓰면 의도한 씬이 거의 안 나온다. 그래서 크게 띄우고,
+          손대지 않았으면 그 사실을 눈에 띄게 알린다. */}
+      <div className="rounded-2xl border-2 border-primary/30 bg-primary/[0.03] p-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-xs font-black text-zinc-800 flex items-center gap-1.5">
+            <Video size={14} className="text-primary" />
+            영상 프롬프트 ({language === 'ko' ? '한국어' : 'English'})
+          </label>
+          {isRetake && (
+            <span className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-black">
+              다시 만들기
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onSuggestPrompt}
+            disabled={suggesting || generating || !scene.image_url}
+            className="ml-auto px-3 py-1.5 rounded-lg bg-white border border-primary/40 text-primary text-xs font-black hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-primary transition-colors flex items-center gap-1.5"
+            title={settings.endImage
+              ? `START·END 두 프레임을 보고 전환 프롬프트를 씁니다 (${SUGGEST_PROMPT_COST}cr)`
+              : `시작 프레임을 보고 영상 프롬프트를 씁니다 (${SUGGEST_PROMPT_COST}cr)`}
+          >
+            {suggesting
+              ? <><Loader2 size={13} className="animate-spin" /> 상상하는 중...</>
+              : <><Wand2 size={13} /> AI로 프롬프트 상상 · {SUGGEST_PROMPT_COST}cr</>}
+          </button>
+        </div>
+
+        <p className="mt-1.5 text-[11px] text-zinc-500 leading-relaxed">
+          {settings.endImage
+            ? 'END 프레임이 있으므로 두 프레임 사이의 움직임을 쓰는 게 좋습니다. AI 상상은 두 장을 같이 보고 전환을 서술합니다.'
+            : '카메라 움직임 · 피사체 동작 · 분위기 변화를 적을수록 결과가 의도에 가까워집니다.'}
+        </p>
+
         <textarea
+          ref={promptRef}
           value={promptValue}
           onChange={(e) => onPatch({ prompt: e.target.value })}
-          rows={3}
+          rows={5}
           disabled={generating}
-          className="mt-1.5 w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm resize-none"
+          placeholder="예) 카메라가 인물의 눈높이에서 천천히 밀려들어가고, 창밖 햇빛이 얼굴을 스치며 표정이 미소로 풀린다"
+          className="mt-2 w-full px-3 py-2.5 rounded-xl border-2 border-zinc-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm leading-relaxed resize-y"
         />
-        <div className="mt-1 flex items-center justify-between text-[10px] text-zinc-400">
-          <span>
-            {settings.prompt !== null && settings.prompt.trim()
-              ? '편집됨 · 위 내용 그대로 전송'
-              : '기본 · 원본 씬 모션(video_motion_en) 전송'}
-          </span>
-          <span className={promptValue.length > KLING_PROMPT_MAX ? 'text-red-600 font-black' : ''}>
+
+        <div className="mt-1.5 flex items-center justify-between gap-3 text-[11px]">
+          {usingStoryboardDefault ? (
+            <span className="font-bold text-amber-700 flex items-center gap-1">
+              <AlertCircle size={12} className="shrink-0" />
+              스토리보드 모션 문구를 그대로 씁니다 — 씬이 의도대로 안 나올 수 있어요
+            </span>
+          ) : (
+            <span className="font-bold text-emerald-700 flex items-center gap-1">
+              <CheckCircle2 size={12} className="shrink-0" /> 편집됨 · 위 내용 그대로 전송
+            </span>
+          )}
+          <span className={`shrink-0 ${promptValue.length > KLING_PROMPT_MAX ? 'text-red-600 font-black' : 'text-zinc-400'}`}>
             {promptValue.length}/{KLING_PROMPT_MAX}자
           </span>
         </div>
