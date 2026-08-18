@@ -544,6 +544,8 @@
       "upscaleConfirm": "Proceed with {{level}} upscale? ({{cost}} credits will be deducted)",
       "allUpscaled": "All scenes are already upscaled.",
       "batchUpscaleComplete": "Batch upscale completed.",
+      "batchUpscaleDowngraded": "Batch upscale completed.\n\nHowever, {{count}} cut(s) were processed one step lower because the current image model does not support {{requested}}. You were only charged for the resolution actually delivered.",
+      "upscaleDowngraded": "The current image model does not support {{requested}}, so the cut was processed at {{applied}}.\nOnly {{cost}}cr was charged. If you need {{requested}}, switch the image model to Nano Banana Pro and try again.",
       "noImages": "No image assets to download.",
       "zipError": "An error occurred while compressing files.",
       "importSuccess": "Storyboard data imported successfully.",

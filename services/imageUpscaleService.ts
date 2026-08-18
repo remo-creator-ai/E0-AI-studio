@@ -22,6 +22,7 @@ import { DEFAULT_IMAGE_MODEL, UPSCALE_CREDIT_COST } from '../types';
 // 유일한 예외적 참조: 모델 라우팅. GPT Image 2 는 Google SDK 를 타지 않으므로
 // geminiService 가 생성 경로에서 하는 것과 같은 분기를 업스케일에도 둔다.
 import { isOpenAIImageModel, upscaleImageOpenAI } from './openaiImageService';
+import { ladderFrom, isImageSizeRejection } from './imageSizeLadder';
 
 // ---------- 해상도 ----------
 export type UpscaleTargetSize = '2K' | '4K';
@@ -59,6 +60,13 @@ export interface UpscaleResult {
   dataUrl?: string;
   failure?: UpscaleFailure;
   message?: string;
+  /**
+   * 실제로 성공한 해상도 단계. 요청값과 다를 수 있다 —
+   * 모델이 요청 해상도를 거부하면 한 단계 낮춰 재시도하기 때문이다.
+   * 호출부는 **이 값으로** 과금하고 upscale_level 을 기록해야 한다.
+   * 요청은 4K 인데 결과가 2K 인데도 5cr 을 받으면 그건 그냥 오과금이다.
+   */
+  appliedSize?: UpscaleTargetSize;
 }
 
 export interface UpscaleInput {
@@ -128,7 +136,7 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
   if (MOCK_MODE) {
     await new Promise((r) => setTimeout(r, 1500));
     // MOCK: 원본을 그대로 돌려줌 (UI 흐름만 검증). 실제 해상도 변화 없음.
-    return { ok: true, dataUrl: input.imageUrl };
+    return { ok: true, dataUrl: input.imageUrl, appliedSize: input.targetSize ?? '2K' };
   }
 
   const targetSize: UpscaleTargetSize = input.targetSize ?? '2K';
@@ -144,7 +152,8 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
         input.aspect,
         targetSize,
       );
-      return { ok: true, dataUrl };
+      // OpenAI 는 픽셀 크기를 직접 지정하므로 요청 해상도가 곧 결과 해상도다.
+      return { ok: true, dataUrl, appliedSize: targetSize };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('no_api_key')) return { ok: false, failure: 'no_api_key', message: msg };
@@ -161,32 +170,52 @@ export async function upscaleSceneImage(input: UpscaleInput): Promise<UpscaleRes
 
   const { mimeType, base64 } = await normalizeImageInput(input.imageUrl);
 
+  // 모델마다 지원하는 imageSize 상한이 다르다. 생성 경로는 예전부터 사다리를
+  // 타고 내려갔는데 업스케일만 단일 해상도로 요청해서, 4K 를 지원하지 않는
+  // 모델(Nano Banana 2)에서 4K 버튼이 매번 실패했다. 같은 사다리를 쓴다.
   try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: {
-        parts: [
-          { inlineData: { mimeType, data: base64 } },
-          { text: buildUpscalePrompt(input.aspect, targetSize) },
-        ],
-      },
-      config: {
-        responseModalities: ['Image'],
-        imageConfig: { aspectRatio: input.aspect, imageSize: targetSize },
-      },
-    });
+    let lastError: unknown = null;
 
-    const candidate = response.candidates?.[0];
-    if (!candidate) return { ok: false, failure: 'error', message: 'no_candidates' };
-    if (candidate.finishReason && candidate.finishReason !== 'STOP') {
-      return { ok: false, failure: 'blocked', message: candidate.finishReason };
-    }
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData) {
-        return { ok: true, dataUrl: `data:image/png;base64,${part.inlineData.data}` };
+    // 1K 는 업스케일 등급이 아니다. 거기까지 내려가면 "돈은 받고 해상도는
+    // 그대로" 가 되므로 시도 자체를 하지 않고 실패로 알린다.
+    const sizes = ladderFrom(model, targetSize).filter((s): s is UpscaleTargetSize => s !== '1K');
+
+    for (const imageSize of sizes) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: {
+            parts: [
+              { inlineData: { mimeType, data: base64 } },
+              { text: buildUpscalePrompt(input.aspect, targetSize) },
+            ],
+          },
+          config: {
+            responseModalities: ['Image'],
+            imageConfig: { aspectRatio: input.aspect, imageSize },
+          },
+        });
+
+        const candidate = response.candidates?.[0];
+        if (!candidate) return { ok: false, failure: 'error', message: 'no_candidates' };
+        if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+          return { ok: false, failure: 'blocked', message: candidate.finishReason };
+        }
+        for (const part of candidate.content?.parts || []) {
+          if (part.inlineData) {
+            return { ok: true, dataUrl: `data:image/png;base64,${part.inlineData.data}`, appliedSize: imageSize };
+          }
+        }
+        return { ok: false, failure: 'error', message: 'no_image_data' };
+      } catch (e) {
+        lastError = e;
+        // 해상도 거부만 낮춰서 재시도한다. 차단·쿼터는 낮춰도 결과가 같다.
+        if (!isImageSizeRejection(e)) throw e;
+        console.warn(`[upscale] imageSize=${imageSize} 거부됨 (${model}). 한 단계 낮춰 재시도합니다.`);
       }
     }
-    return { ok: false, failure: 'error', message: 'no_image_data' };
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes('GEMINI_API_KEY') || msg.includes('503')) {

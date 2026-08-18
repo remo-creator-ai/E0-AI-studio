@@ -48,6 +48,7 @@ import {
 import { AssetLibraryPicker } from '../AssetLibraryPicker';
 import { SelfHealingVideo } from '../ui/SelfHealingVideo';
 import type { Scene } from '../../types';
+import { UPSCALE_CREDIT_COST } from '../../types';
 
 // ── 모델 라벨 파생 (하드코딩 금지, VIDEO_STUDIO_MODEL 상수에서 파생) ──
 // 'kling-v2-6' → 'Kling 2.6'
@@ -248,15 +249,25 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   const isGenerating = (sceneId: string) => sceneJobs[sceneId]?.status === 'generating';
   const anyGenerating = Object.values(sceneJobs).some((j) => j.status === 'generating');
 
-  // ── 업스케일 실행 ──
-  const runUpscale = useCallback(async (scene: Scene) => {
+  /**
+   * 업스케일 실행. 성공 여부를 돌려준다.
+   *
+   * 배치(전체 생성)에서는 실패한 씬의 영상 생성을 건너뛰어야 한다. 예전에는
+   * 반환값이 없어서 실패해도 그대로 Kling 으로 넘어갔는데, 저해상도 컷은
+   * 애초에 Kling 이 거부하는 입력이라 영상 크레딧만 날렸다.
+   * silent 는 배치용 — 27컷이면 실패 모달이 27번 뜨는 걸 막고 마지막에 요약한다.
+   */
+  const runUpscale = useCallback(async (scene: Scene, options?: { silent?: boolean }): Promise<boolean> => {
+    const silent = options?.silent === true;
+    const report = async (payload: unknown) => { if (!silent) await showGenError(payload, 'upscale'); };
+
     if (!scene.image_url) {
-      await alert('업스케일할 원본 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
-      return;
+      if (!silent) await alert('업스케일할 원본 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
+      return false;
     }
     if (!hasEnough(IMAGE_UPSCALE_COST)) {
-      await alert(`크레딧이 부족합니다. (필요 ${IMAGE_UPSCALE_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
-      return;
+      if (!silent) await alert(`크레딧이 부족합니다. (필요 ${IMAGE_UPSCALE_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return false;
     }
     setUpscaleJobStore(scene.id, 'running');
     setUpscaleProgressStore(scene.id, 0);
@@ -281,18 +292,22 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       if (!result.ok || !result.dataUrl) {
         setUpscaleJobStore(scene.id, 'failed');
         console.error('[ModeB] 업스케일 실패:', result.message);
-        await showGenError(result, 'upscale');
-        return;
+        await report(result);
+        return false;
       }
-      await deduct(IMAGE_UPSCALE_COST, `업스케일 (씬 ${scene.order})`);
-      updateScene(scene.id, { image_url: result.dataUrl, upscale_level: '2K' });
+      // 실제 적용된 해상도로 과금·기록한다 (모델이 요청 해상도를 거부하면 낮아질 수 있다).
+      const applied = result.appliedSize ?? '2K';
+      await deduct(UPSCALE_CREDIT_COST[applied], `${applied} 업스케일 (씬 ${scene.order})`);
+      updateScene(scene.id, { image_url: result.dataUrl, upscale_level: applied });
       setUpscaleJobStore(scene.id, 'done');
       setUpscaleProgressStore(scene.id, 100);
+      return true;
     } catch (e) {
       window.clearInterval(progressTimer);
       setUpscaleJobStore(scene.id, 'failed');
       console.error('[ModeB] 업스케일 예외:', e);
-      await showGenError(e, 'upscale');
+      await report(e);
+      return false;
     }
   }, [alert, showGenError, balance, deduct, hasEnough, updateScene, setUpscaleJobStore, setUpscaleProgressStore, project?.image_model]);
 
@@ -513,10 +528,18 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       `선택된 씬 중 아직 업스케일 안 된 ${scenesNeedingUpscale.length}개 씬을 업스케일합니다.\n\n크레딧 ${upscaleBatchCost}cr 차감 · 순차 실행.`,
     );
     if (!ok) return;
+    // runUpscale 내부에서 hasEnough 재검사, upscale_level 갱신.
+    // 실패 모달은 씬마다 띄우지 않고 마지막에 한 번 요약한다.
+    const failed: number[] = [];
     for (const s of scenesNeedingUpscale) {
-      // runUpscale 내부에서 hasEnough 재검사, upscale_level 갱신
-      // (이 루프 도중 잔액이 부족해지면 각 호출에서 alert 후 중단)
-      await runUpscale(s);
+      if (!(await runUpscale(s, { silent: true }))) failed.push(s.order);
+    }
+    if (failed.length > 0) {
+      await alert(
+        `${scenesNeedingUpscale.length - failed.length}/${scenesNeedingUpscale.length} 업스케일 완료.\n` +
+        `실패: ${failed.map((o) => `#${o}`).join(', ')}\n\n실패한 씬은 크레딧이 차감되지 않았습니다.`,
+        { type: failed.length === scenesNeedingUpscale.length ? 'error' : 'warning' }
+      );
     }
   }, [scenesNeedingUpscale, upscaleBatchCost, hasEnough, balance, alert, confirm, runUpscale]);
 
@@ -713,14 +736,27 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           onConfirm={async (targetScenes) => {
             setShowBatchModal(false);
             // 순차 실행 (완전 병렬은 Kling rate limit 문제 소지)
+            const upscaleFailed: number[] = [];
             for (const s of targetScenes) {
               if (!isUpscaled(s)) {
-                // 자동 업스케일 먼저
-                await runUpscale(s);
+                // 자동 업스케일 먼저. 실패하면 영상 생성으로 넘어가지 않는다 —
+                // 저해상도 컷은 Kling 이 거부하는 입력이라 영상 크레딧만 날린다.
+                const ok = await runUpscale(s, { silent: true });
+                if (!ok) {
+                  upscaleFailed.push(s.order);
+                  continue;
+                }
               }
               await runGenerate(s, { skipConfirm: true });
               // 다음 잡 시작 전 짧게 대기 (rate limit 여유)
               await new Promise((r) => setTimeout(r, 200));
+            }
+            if (upscaleFailed.length > 0) {
+              await alert(
+                `업스케일에 실패해 영상 생성을 건너뛴 씬이 있습니다: ${upscaleFailed.map((o) => `#${o}`).join(', ')}\n\n` +
+                '해당 씬은 개별 업스케일 버튼으로 다시 시도해 주세요. (실패한 씬의 영상 크레딧은 차감되지 않았습니다)',
+                { type: 'warning' }
+              );
             }
           }}
           balance={balance}

@@ -246,8 +246,14 @@ export const AssemblyStep: React.FC = () => {
         model: activeImageModel,
       });
       if (result.ok && result.dataUrl) {
-        await deduct(cost, `${targetSize} 업스케일 (CUT #${project.scenes.findIndex(s => s.id === editingScene.id) + 1})`);
-        setEditingScene({ ...editingScene, image_url: result.dataUrl, upscale_level: targetSize });
+        // 모델이 4K 를 거부해 2K 로 내려갔을 수 있다. 요청값이 아니라
+        // 실제 적용된 해상도로 과금하고 기록한다.
+        const applied = result.appliedSize ?? targetSize;
+        await deduct(UPSCALE_CREDIT_COST[applied], `${applied} 업스케일 (CUT #${project.scenes.findIndex(s => s.id === editingScene.id) + 1})`);
+        setEditingScene({ ...editingScene, image_url: result.dataUrl, upscale_level: applied });
+        if (applied !== targetSize) {
+          await alert(t('assembly.alerts.upscaleDowngraded', { requested: targetSize, applied, cost: UPSCALE_CREDIT_COST[applied] }), { type: 'warning' });
+        }
       } else {
         console.error('Upscale failed:', result.message);
         await showGenError(result, 'upscale');
@@ -281,6 +287,8 @@ export const AssemblyStep: React.FC = () => {
 
     const failures: Array<{ order: number; message: string }> = [];
     let successCount = 0;
+    /** 모델이 요청 해상도를 거부해 한 단계 낮게 처리된 컷 수 */
+    let downgraded = 0;
 
     try {
       for (let i = 0; i < pendingScenes.length; i++) {
@@ -298,8 +306,11 @@ export const AssemblyStep: React.FC = () => {
             model: activeImageModel,
           });
           if (result.ok && result.dataUrl) {
-            await deduct(cost, `${batchUpscaleSize} 업스케일 (CUT #${scene.order})`);
-            updateScene(scene.id, { image_url: result.dataUrl, upscale_level: batchUpscaleSize });
+            // 개별 업스케일과 같은 규칙 — 실제 적용된 해상도로 과금·기록한다.
+            const applied = result.appliedSize ?? batchUpscaleSize;
+            await deduct(UPSCALE_CREDIT_COST[applied], `${applied} 업스케일 (CUT #${scene.order})`);
+            updateScene(scene.id, { image_url: result.dataUrl, upscale_level: applied });
+            if (applied !== batchUpscaleSize) downgraded++;
             successCount++;
           } else {
             console.error(`Upscale failed for scene ${scene.order}:`, result.message);
@@ -312,7 +323,12 @@ export const AssemblyStep: React.FC = () => {
       }
 
       if (failures.length === 0) {
-        await alert(t('assembly.alerts.batchUpscaleComplete'), { type: 'success' });
+        await alert(
+          downgraded > 0
+            ? t('assembly.alerts.batchUpscaleDowngraded', { count: downgraded, requested: batchUpscaleSize })
+            : t('assembly.alerts.batchUpscaleComplete'),
+          { type: downgraded > 0 ? 'warning' : 'success' }
+        );
       } else {
         const failedList = failures.map(f => `CUT #${f.order}: ${f.message}`).join('\n');
         await alert(

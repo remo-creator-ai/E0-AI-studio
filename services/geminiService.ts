@@ -5,6 +5,7 @@ import { AdDuration, AspectRatio, SceneCount, CategorizedRefImage, REFERENCE_CAT
 import { generateKlingVideo } from './klingService';
 import { normalizeImageInput } from './imageUtils';
 import { proxyClient, proxyFetch } from '../lib/aiProxy';
+import { ladderFor, isImageSizeRejection } from './imageSizeLadder';
 import {
   isOpenAIImageModel,
   generateGridImageOpenAI,
@@ -283,7 +284,7 @@ export async function generate3x3GridImage(prompt: string, referenceImagesBase64
     // 모델별 최대 지원 해상도가 달라 실패하면 한 단계씩 낮춰 재시도한다.
     let lastError: unknown;
 
-    for (const imageSize of IMAGE_SIZE_LADDER[model] ?? DEFAULT_IMAGE_SIZE_LADDER) {
+    for (const imageSize of ladderFor(model)) {
       try {
         const response = await ai.models.generateContent({
           model,
@@ -332,27 +333,6 @@ export async function generate3x3GridImage(prompt: string, referenceImagesBase64
 
     throw lastError instanceof Error ? lastError : new Error(String(lastError));
   });
-}
-
-/**
- * 모델별 시도 해상도 순서 (높은 것 → 낮은 것).
- *
- * 4K 시트는 3×3 기준 컷당 1280x720 으로 Kling std 입력과 정확히 맞는다.
- * 다만 preview 모델의 지원 여부가 공식 문서에 명시돼 있지 않아, 검증된
- * 모델만 4K 로 시작하고 나머지는 2K 부터 시도한 뒤 실패 시 내려간다.
- * (gemini-3-pro-image-preview 는 upscaleImage 에서 4K 실동작이 확인됨)
- */
-const IMAGE_SIZE_LADDER: Record<string, string[]> = {
-  'gemini-3-pro-image-preview': ['4K', '2K', '1K'],
-  'gemini-3.1-flash-image-preview': ['2K', '1K'],
-};
-const DEFAULT_IMAGE_SIZE_LADDER = ['2K', '1K'];
-
-/** 해상도 파라미터가 거부된 응답인지 판별. 다른 실패와 섞이면 안 된다. */
-function isImageSizeRejection(e: unknown): boolean {
-  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
-  const looksLikeBadRequest = msg.includes('400') || msg.includes('invalid') || msg.includes('not supported');
-  return looksLikeBadRequest && (msg.includes('imagesize') || msg.includes('image_size') || msg.includes('resolution') || msg.includes('size'));
 }
 
 /** generateSingleImage 의 텍스트 파트를 만든다 (Gemini·OpenAI 공용). */
@@ -479,7 +459,7 @@ export async function generateSingleImage(input: GenerateSingleImageInput) {
     // 호출 1회로 끝난다. 모델이 거부하면 시트와 같은 방식으로 한 단계씩 낮춘다.
     let lastError: unknown;
 
-    for (const imageSize of IMAGE_SIZE_LADDER[model] ?? DEFAULT_IMAGE_SIZE_LADDER) {
+    for (const imageSize of ladderFor(model)) {
       try {
         const response = await ai.models.generateContent({
           model,

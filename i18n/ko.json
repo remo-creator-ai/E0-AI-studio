@@ -555,6 +555,8 @@
       "upscaleConfirm": "{{level}} 업스케일을 진행하시겠습니까? ({{cost}} 크레딧 차감)",
       "allUpscaled": "모든 씬이 이미 업스케일되었습니다.",
       "batchUpscaleComplete": "일괄 업스케일이 완료되었습니다.",
+      "batchUpscaleDowngraded": "일괄 업스케일이 완료되었습니다.\n\n다만 {{count}}개 컷은 현재 이미지 모델이 {{requested}} 를 지원하지 않아 한 단계 낮은 해상도로 처리했습니다. 크레딧도 그 해상도 기준으로만 차감했습니다.",
+      "upscaleDowngraded": "현재 이미지 모델이 {{requested}} 를 지원하지 않아 {{applied}} 로 처리했습니다.\n크레딧은 {{cost}}cr 만 차감했습니다. {{requested}} 가 필요하면 이미지 모델을 Nano Banana Pro 로 바꾼 뒤 다시 시도해 주세요.",
       "noImages": "다운로드할 이미지 자산이 없습니다.",
       "zipError": "파일 압축 중 오류가 발생했습니다.",
       "importSuccess": "스토리보드 데이터를 성공적으로 불러왔습니다.",
