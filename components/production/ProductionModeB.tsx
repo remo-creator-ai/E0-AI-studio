@@ -1033,9 +1033,11 @@ const SceneCard: React.FC<SceneCardProps> = ({
             generating={generating}
             failed={failed}
             failedError={job?.error}
-            usingStoryboardDefault={settings.prompt === null || !settings.prompt.trim()}
+            settings={settings}
+            fallbackVideoPrompt={displayPrompts.video}
             suggesting={suggesting}
             onSuggestPrompt={onSuggestPrompt}
+            onPatchSettings={onPatchSettings}
             onUpscale={onUpscale}
             onOpenEditor={() => onSetMode('editor')}
             onPatchScene={onPatchScene}
@@ -1260,6 +1262,81 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
 };
 
 // =============================================================
+//  영상(모션) 프롬프트 편집기 — 액션 화면용
+//
+//  예전엔 이 화면에 이미지 프롬프트만 있었다. 정작 영상 결과를 가르는 모션
+//  프롬프트는 보이지도, 고칠 수도 없었고 — "AI로 상상" 을 눌러도 결과가 어디에
+//  들어갔는지 화면에 나타나지 않았다. 여기서 바로 보고 고칠 수 있게 한다.
+//
+//  이미지 프롬프트(ImagePromptEditor)는 Scene 필드를 저장/되돌리기로 다루지만,
+//  이쪽은 SceneSettings.prompt(세션 상태)라 입력 즉시 반영한다.
+// =============================================================
+interface VideoPromptEditorProps {
+  /** 사용자가 편집한 프롬프트. null 이면 스토리보드 모션 문구를 그대로 쓴다. */
+  value: string | null;
+  /** 스토리보드 모션 문구 (기본값) */
+  fallback: string;
+  hasEndFrame: boolean;
+  hasImage: boolean;
+  suggesting: boolean;
+  disabled: boolean;
+  onChange: (next: string) => void;
+  onSuggest: () => void;
+}
+const VideoPromptEditor: React.FC<VideoPromptEditorProps> = ({
+  value, fallback, hasEndFrame, hasImage, suggesting, disabled, onChange, onSuggest,
+}) => {
+  const usingDefault = value === null || !value.trim();
+  const text = usingDefault ? fallback : value;
+
+  return (
+    <div className={`rounded-xl border-2 overflow-hidden ${usingDefault ? 'border-amber-300 bg-amber-50/40' : 'border-primary/30 bg-primary/[0.03]'}`}>
+      <div className="px-3 py-2 flex items-center gap-2 border-b border-zinc-100 bg-white/70">
+        <Video size={12} className={usingDefault ? 'text-amber-600' : 'text-primary'} />
+        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">영상 프롬프트 · 모션</span>
+        <button
+          type="button"
+          onClick={onSuggest}
+          disabled={suggesting || disabled || !hasImage}
+          className="ml-auto px-2.5 py-1 rounded-lg bg-white border border-primary/40 text-primary text-[11px] font-black hover:bg-primary hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-primary transition-colors flex items-center gap-1"
+          title={hasEndFrame
+            ? `START·END 두 프레임을 보고 전환 프롬프트를 씁니다 (${SUGGEST_PROMPT_COST}cr)`
+            : `시작 프레임을 보고 영상 프롬프트를 씁니다 (${SUGGEST_PROMPT_COST}cr)`}
+        >
+          {suggesting
+            ? <><Loader2 size={11} className="animate-spin" /> 상상하는 중...</>
+            : <><Wand2 size={11} /> AI로 상상 · {SUGGEST_PROMPT_COST}cr</>}
+        </button>
+      </div>
+
+      <div className="p-3 space-y-2">
+        <textarea
+          value={text}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          disabled={disabled}
+          placeholder="예) 카메라가 인물의 눈높이에서 천천히 밀려들어가고, 창밖 햇빛이 얼굴을 스치며 표정이 미소로 풀린다"
+          className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm leading-relaxed resize-y"
+        />
+        <p className={`text-[11px] font-bold leading-relaxed flex items-start gap-1 ${usingDefault ? 'text-amber-800' : 'text-emerald-700'}`}>
+          {usingDefault ? (
+            <>
+              <AlertCircle size={12} className="shrink-0 mt-0.5" />
+              <span>스토리보드 모션 문구 그대로입니다. 이대로 생성하면 의도한 움직임이 안 나올 수 있어요 — 고쳐 쓰거나 AI에게 맡기세요.</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={12} className="shrink-0 mt-0.5" />
+              <span>이 내용 그대로 영상 생성에 전달됩니다.</span>
+            </>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// =============================================================
 //  이미지 프롬프트 편집기 (한글/영문 토글)
 //
 //  Scene 필드 매핑:
@@ -1376,10 +1453,12 @@ interface SceneActionPickerProps {
   generating: boolean;
   failed: boolean;
   failedError?: string;
-  /** 영상 프롬프트를 아직 손대지 않아 스토리보드 모션 문구를 그대로 쓰는 상태 */
-  usingStoryboardDefault: boolean;
+  settings: SceneSettings;
+  /** 스토리보드 모션 문구 (편집값이 없을 때의 기본) */
+  fallbackVideoPrompt: string;
   suggesting: boolean;
   onSuggestPrompt: () => void;
+  onPatchSettings: (patch: Partial<SceneSettings>) => void;
   onUpscale: () => void;
   onOpenEditor: () => void;
   /** 이미지 프롬프트 편집 반영 (image_prompt_en 또는 content_kr 필드) */
@@ -1387,7 +1466,8 @@ interface SceneActionPickerProps {
 }
 const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
   scene, upscaleStatus, upscaleProgress, upscaled, generating, failed, failedError,
-  usingStoryboardDefault, suggesting, onSuggestPrompt, onUpscale, onOpenEditor, onPatchScene,
+  settings, fallbackVideoPrompt, suggesting, onSuggestPrompt, onPatchSettings,
+  onUpscale, onOpenEditor, onPatchScene,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-5">
@@ -1405,6 +1485,17 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
           )}
         </div>
         <ImagePromptEditor scene={scene} onPatch={onPatchScene} />
+        {/* 이미지 프롬프트와 나란히 — 영상 결과를 가르는 건 이쪽이다 */}
+        <VideoPromptEditor
+          value={settings.prompt}
+          fallback={fallbackVideoPrompt}
+          hasEndFrame={!!settings.endImage}
+          hasImage={!!scene.image_url}
+          suggesting={suggesting}
+          disabled={generating}
+          onChange={(next) => onPatchSettings({ prompt: next })}
+          onSuggest={onSuggestPrompt}
+        />
       </div>
 
       {/* 우: 액션 3개 */}
@@ -1449,27 +1540,6 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
             {!upscaled ? '업스케일 먼저' : generating ? '생성 중' : '30cr~'}
           </span>
         </button>
-
-        {/* 영상 프롬프트 상태 — 씬을 옮겨 다닐 때 여기서 바로 보인다.
-            스토리보드 모션 문구 그대로면 씬이 의도대로 안 나오므로, 생성에
-            들어가기 전에 손볼 기회를 준다. 자동으로 호출하지는 않는다(1cr 과금). */}
-        {usingStoryboardDefault && scene.image_url && (
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
-            <p className="text-[11px] font-bold text-amber-900 leading-relaxed">
-              이 씬은 아직 <strong>스토리보드 모션 문구</strong>를 그대로 씁니다. 그대로 생성하면 의도한 움직임이 안 나올 수 있어요.
-            </p>
-            <button
-              type="button"
-              onClick={onSuggestPrompt}
-              disabled={suggesting || generating}
-              className="w-full px-3 py-2 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-black hover:bg-amber-100 disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              {suggesting
-                ? <><Loader2 size={13} className="animate-spin" /> 상상하는 중...</>
-                : <><Wand2 size={13} /> AI로 프롬프트 상상 · {SUGGEST_PROMPT_COST}cr</>}
-            </button>
-          </div>
-        )}
 
         {failed && failedError && (
           <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-[11px] text-red-800">
