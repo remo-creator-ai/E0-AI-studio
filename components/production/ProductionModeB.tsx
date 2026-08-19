@@ -46,6 +46,9 @@ import {
   useModeBState, DEFAULT_SCENE_SETTINGS,
   type SceneSettings, type CardMode, type UpscaleStatus, type SceneTake,
 } from '../../store/modeBStateStore';
+import { generateNarration, narrationCreditCost, NARRATION_MAX_CHARS, type NarrationCue } from '../../services/narrationService';
+import { VOICE_PRESETS, DEFAULT_VOICE } from '../../services/ttsService';
+import { buildSrt, buildCutList, buildScriptText, buildTimeline, buildReadme } from '../../lib/editorPackage';
 import { AssetLibraryPicker } from '../AssetLibraryPicker';
 import { SelfHealingVideo } from '../ui/SelfHealingVideo';
 import type { Scene } from '../../types';
@@ -74,6 +77,28 @@ function slugifyForFile(title: string, fallback = 'sodam'): string {
     .replace(/\s+/g, '-')
     .slice(0, 40);
   return s || fallback;
+}
+
+/**
+ * 내려받은 mp4 의 실제 재생 길이(초).
+ *
+ * 자막·타임라인이 이 값을 쓴다. 요청 길이(5초/10초)를 그대로 믿으면 Kling 이
+ * 4.9초를 돌려줬을 때 뒤 씬부터 자막이 조금씩 밀린다. 못 재면 null 을 주고
+ * 호출부가 요청 길이로 폴백한다.
+ */
+function measureVideoDuration(blob: Blob): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const video = document.createElement('video');
+    const done = (value: number | null) => { URL.revokeObjectURL(url); resolve(value); };
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => {
+      const d = video.duration;
+      done(Number.isFinite(d) && d > 0 ? d : null);
+    };
+    video.onerror = () => done(null);
+    video.src = url;
+  });
 }
 
 // ── 로컬 타입 (재-export 목적 · 실 정의는 modeBStateStore) ──
@@ -582,6 +607,130 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     }
   }, [selectedScenes, alert, project?.title, updateScene]);
 
+  // ── CapCut 편집 패키지 내보내기 ──
+  //
+  // 앱 안에서 영상을 합치지 않고, 편집자가 CapCut 에서 바로 이어붙일 수 있는
+  // 재료 한 벌을 ZIP 으로 내려준다. 파일명 순서가 곧 편집 순서라 CapCut 에
+  // 통째로 끌어다 놓으면 순서대로 배치된다.
+  //
+  // 나레이션은 통짜로 한 번에 합성한다 — 씬별로 나눠 만들면 같은 목소리라도
+  // 톤이 갈린다. 대신 합성 응답의 타임포인트로 "자르는 지점" 을 같이 준다.
+  const [exporting, setExporting] = useState(false);
+  const [exportStep, setExportStep] = useState<string>('');
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const exportEditorPackage = useCallback(async (options: { voiceId: string; withNarration: boolean }) => {
+    const targets = selectedScenes.filter((s) => !!s.video_url);
+    if (targets.length === 0) {
+      await alert('내보낼 완료된 씬 영상이 없습니다.', { type: 'warning' });
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const zip = new JSZip();
+
+      // 1) 씬 영상 — 실제 재생 길이를 같이 재둔다. 자막·타임라인이 이 값을 쓴다.
+      setExportStep(`씬 영상 ${targets.length}개 받는 중...`);
+      const packed = await Promise.all(targets.map(async (s, idx) => {
+        const filename = `scene-${String(idx + 1).padStart(2, '0')}.mp4`;
+        let durationSeconds = getSettings(s.id).duration as number;
+        try {
+          let res = await fetch(s.video_url!);
+          if (!res.ok) {
+            const fresh = await refreshVideoSignedUrl(s.video_url!);
+            if (fresh !== s.video_url) {
+              updateScene(s.id, { video_url: fresh });
+              res = await fetch(fresh);
+            }
+          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          zip.file(filename, blob);
+          const measured = await measureVideoDuration(blob);
+          if (measured) durationSeconds = measured;
+        } catch (e) {
+          console.warn('[ModeB] 패키지 씬 다운로드 실패:', s.order, e);
+          return null;
+        }
+        return {
+          order: idx + 1,
+          durationSeconds,
+          script: (language === 'ko' ? s.script_kr : s.script_en) || s.script_kr || s.script_en || '',
+          filename,
+        };
+      }));
+
+      const scenes = packed.filter((p): p is NonNullable<typeof p> => p !== null);
+      if (scenes.length === 0) throw new Error('씬 영상을 하나도 받지 못했습니다.');
+      const missing = targets.length - scenes.length;
+
+      // 2) 나레이션 (통짜) + 자르는 지점
+      let cues: NarrationCue[] = [];
+      let narrationIncluded = false;
+      if (options.withNarration) {
+        const cost = narrationCreditCost(scenes.map((s) => ({ order: s.order, script: s.script })));
+        if (!hasEnough(cost)) {
+          await alert(`나레이션 크레딧이 부족합니다. (필요 ${cost}cr / 잔액 ${balance}cr)\n\n영상과 문서만 담아 계속합니다.`, { type: 'warning' });
+        } else {
+          setExportStep('나레이션 합성 중...');
+          const result = await generateNarration({
+            scenes: scenes.map((s) => ({ order: s.order, script: s.script })),
+            voiceId: options.voiceId,
+          });
+          if (result.ok && result.audioUrl) {
+            await deduct(cost, `나레이션 합성 (${scenes.length}씬)`);
+            const b64 = result.audioUrl.split(',')[1] ?? '';
+            zip.file('narration.mp3', b64, { base64: true });
+            cues = result.cues ?? [];
+            narrationIncluded = true;
+          } else {
+            // 나레이션 실패가 패키지 전체를 막지는 않는다. 영상·문서는 그대로 쓸모가 있다.
+            await alert(`나레이션을 만들지 못했습니다.\n${result.message ?? ''}\n\n영상과 문서만 담아 계속합니다.`, { type: 'warning' });
+          }
+        }
+      }
+
+      // 3) 문서
+      setExportStep('문서 만드는 중...');
+      const totalSeconds = scenes.reduce((sum, s) => sum + s.durationSeconds, 0);
+      zip.file('subtitles.srt', buildSrt(scenes));
+      zip.file('timeline.txt', buildTimeline(scenes));
+      zip.file('script.txt', buildScriptText(scenes));
+      if (narrationIncluded) zip.file('cut-list.txt', buildCutList(scenes, cues));
+      zip.file('README.txt', buildReadme({
+        projectTitle: project?.title ?? '소담 프로젝트',
+        sceneCount: scenes.length,
+        totalSeconds,
+        hasNarration: narrationIncluded,
+      }));
+
+      setExportStep('압축하는 중...');
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugifyForFile(project?.title ?? 'sodam')}-capcut.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      const notes = [
+        `씬 ${scenes.length}개 · 총 ${Math.round(totalSeconds)}초`,
+        narrationIncluded ? '나레이션 포함 · cut-list.txt 의 시각에서 자르세요' : '나레이션 미포함',
+      ];
+      if (missing > 0) notes.push(`⚠️ ${missing}개 씬은 영상을 받지 못해 빠졌습니다`);
+      await alert(`편집 패키지를 내려받았습니다.\n\n${notes.join('\n')}\n\n압축을 풀고 README.txt 부터 보세요.`, { type: 'success' });
+    } catch (e) {
+      console.error('[ModeB] 편집 패키지 내보내기 실패:', e);
+      await alert(`편집 패키지를 만들지 못했습니다.\n${genErrorSummary(e, t)}`, { type: 'error' });
+    } finally {
+      setExporting(false);
+      setExportStep('');
+    }
+  }, [selectedScenes, alert, project?.title, updateScene, getSettings, language, hasEnough, balance, deduct, t]);
+
   const runUpscaleSelected = useCallback(async () => {
     if (scenesNeedingUpscale.length === 0) return;
     if (!hasEnough(upscaleBatchCost)) {
@@ -668,6 +817,18 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               >
                 <ImageUp size={16} />
                 선택 업스케일 ({scenesNeedingUpscale.length}개 · {upscaleBatchCost}cr)
+              </button>
+            )}
+            {/* CapCut 편집 패키지 — 씬 영상 + 나레이션 + 자막/컷리스트 한 벌 */}
+            {doneSelectedScenes.length > 0 && (
+              <button
+                onClick={() => setExportOpen(true)}
+                disabled={exporting}
+                className="px-4 py-3 rounded-2xl bg-primary hover:bg-[#003E99] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,80,191,0.28)] flex items-center gap-2 disabled:opacity-60"
+                title="CapCut 에 바로 끌어다 놓을 수 있는 편집 패키지를 만듭니다"
+              >
+                {exporting ? <Loader2 size={16} className="animate-spin" /> : <FilmIcon size={16} />}
+                {exporting ? (exportStep || '만드는 중...') : 'CapCut 편집 패키지'}
               </button>
             )}
             {/* 완료된 씬 배치 다운로드 (zip) */}
@@ -789,6 +950,19 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
           maxRemaining={1}
           title="END 프레임 선택"
           subtitle="보관함에서 이미지 하나를 골라주세요."
+        />
+      )}
+
+      {/* ══════════ CapCut 편집 패키지 모달 ══════════ */}
+      {exportOpen && (
+        <EditorPackageModal
+          scenes={doneSelectedScenes.map((s) => ({
+            order: s.order,
+            script: (language === 'ko' ? s.script_kr : s.script_en) || s.script_kr || s.script_en || '',
+          }))}
+          balance={balance}
+          onClose={() => setExportOpen(false)}
+          onConfirm={(opts) => { setExportOpen(false); exportEditorPackage(opts); }}
         />
       )}
 
@@ -2021,6 +2195,131 @@ const FloatingSceneNav: React.FC<FloatingSceneNavProps> = ({ currentIndex, total
       >
         <ChevronDown size={18} />
       </button>
+    </div>
+  );
+};
+
+// =============================================================
+//  CapCut 편집 패키지 모달
+//
+//  앱에서 영상을 합치는 대신, CapCut 에서 바로 이어붙일 재료 한 벌을 만든다.
+//  여기서 정하는 건 두 가지뿐이다 — 나레이션을 넣을지, 넣는다면 어떤 목소리로.
+// =============================================================
+interface EditorPackageModalProps {
+  scenes: Array<{ order: number; script: string }>;
+  balance: number;
+  onClose: () => void;
+  onConfirm: (options: { voiceId: string; withNarration: boolean }) => void;
+}
+const EditorPackageModal: React.FC<EditorPackageModalProps> = ({ scenes, balance, onClose, onConfirm }) => {
+  const [voiceId, setVoiceId] = useState(DEFAULT_VOICE.id);
+  const [withNarration, setWithNarration] = useState(true);
+
+  const scripted = scenes.filter((s) => s.script.trim());
+  const charCount = scripted.reduce((sum, s) => sum + s.script.trim().length, 0);
+  const cost = narrationCreditCost(scenes);
+  const tooLong = charCount > NARRATION_MAX_CHARS;
+  const noScript = scripted.length === 0;
+  const canNarrate = withNarration && !tooLong && !noScript && balance >= cost;
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-md">
+      <div className="bg-white border border-zinc-200 rounded-[2rem] w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-5 border-b border-zinc-100 flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-xl text-primary"><FilmIcon size={20} /></div>
+          <div className="flex-1">
+            <h3 className="text-lg font-black tracking-tight text-zinc-900">CapCut 편집 패키지</h3>
+            <p className="text-[11px] text-zinc-400 mt-0.5">씬 {scenes.length}개를 CapCut 에서 이어붙일 재료로 묶습니다</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-full"><X size={18} /></button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1.5 text-xs text-zinc-600">
+            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">들어가는 것</div>
+            <p>· <strong className="text-zinc-800">scene-01.mp4 …</strong> 씬 영상 — 파일명 순서가 곧 편집 순서</p>
+            <p>· <strong className="text-zinc-800">subtitles.srt</strong> 자막 · <strong className="text-zinc-800">timeline.txt</strong> 씬별 시작 시각</p>
+            <p>· <strong className="text-zinc-800">script.txt</strong> 전체 대사 · <strong className="text-zinc-800">README.txt</strong> 임포트 순서</p>
+            {withNarration && <p>· <strong className="text-zinc-800">narration.mp3 + cut-list.txt</strong> 나레이션과 자르는 지점</p>}
+          </div>
+
+          {/* 나레이션 */}
+          <div>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={withNarration}
+                onChange={(e) => setWithNarration(e.target.checked)}
+                disabled={noScript}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-sm font-black text-zinc-900">나레이션도 만들기</span>
+              {!noScript && !tooLong && (
+                <span className="ml-auto text-xs font-black text-primary">{cost}cr</span>
+              )}
+            </label>
+
+            {noScript ? (
+              <p className="mt-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900">
+                대사가 있는 씬이 없습니다. 스토리보드에서 대사를 채우면 나레이션을 만들 수 있어요.
+              </p>
+            ) : (
+              <p className="mt-2 text-[11px] text-zinc-500 leading-relaxed">
+                전체 대사 {charCount}자를 <strong>한 번에</strong> 읽습니다. 씬별로 나눠 만들면 같은 목소리라도 톤이 갈리기 때문입니다.
+                자르는 지점은 cut-list.txt 에 초 단위로 적어 드립니다.
+              </p>
+            )}
+
+            {tooLong && !noScript && (
+              <p className="mt-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-[11px] font-bold text-red-800">
+                대사가 {charCount}자로 한 번에 합성할 수 있는 {NARRATION_MAX_CHARS}자를 넘습니다.
+                쪼개 만들면 목소리가 갈리므로 나누지 않습니다 — 대사를 줄이거나 나레이션 없이 내보내세요.
+              </p>
+            )}
+
+            {withNarration && !noScript && !tooLong && balance < cost && (
+              <p className="mt-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900">
+                크레딧이 부족합니다 (필요 {cost}cr / 잔액 {balance}cr). 나레이션 없이 내보내집니다.
+              </p>
+            )}
+          </div>
+
+          {/* 목소리 */}
+          {canNarrate && (
+            <div>
+              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">목소리</div>
+              <div className="grid grid-cols-2 gap-2">
+                {VOICE_PRESETS.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => setVoiceId(v.id)}
+                    className={`px-3 py-2.5 rounded-xl border-2 text-left text-xs font-bold transition-all ${
+                      voiceId === v.id
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-zinc-200 text-zinc-600 hover:border-primary/40'
+                    }`}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-zinc-100 flex gap-2">
+          <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">
+            취소
+          </button>
+          <button
+            onClick={() => onConfirm({ voiceId, withNarration: canNarrate })}
+            className="flex-1 py-3 rounded-full bg-primary hover:bg-[#003E99] text-white font-black text-sm shadow-[0_8px_20px_rgba(0,80,191,0.25)] flex items-center justify-center gap-2"
+          >
+            <DownloadCloud size={16} />
+            패키지 만들기{canNarrate ? ` · ${cost}cr` : ''}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
