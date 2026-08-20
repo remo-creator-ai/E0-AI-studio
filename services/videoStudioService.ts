@@ -321,6 +321,9 @@ export async function suggestVideoPromptFromImage(
 
   if (MOCK_MODE) {
     await new Promise((r) => setTimeout(r, 800));
+    if (endImage && endImage === startImage) {
+      return { ok: true, prompt: language === 'ko' ? '카메라가 아주 천천히 밀려들어갔다가 제자리로 돌아오고, 머리카락과 빛이 은은하게 흔들립니다.' : 'The camera drifts in slowly and returns to the exact starting framing while hair and light shimmer gently.' };
+    }
     if (endImage) {
       return { ok: true, prompt: language === 'ko' ? '카메라가 첫 장면에서 부드럽게 밀려들어가며 마지막 구도로 자연스럽게 이어집니다.' : 'The camera pushes in smoothly from the first framing and settles into the final composition.' };
     }
@@ -330,8 +333,10 @@ export async function suggestVideoPromptFromImage(
   const ai = await proxyClient();
   if (!ai) return { ok: false, error: 'no_session' };
 
+  // 루프는 두 프레임이 같은 그림이라 한 장만 보내면 된다 (전송량·혼동 모두 줄인다).
+  const loop = !!endImage && endImage === startImage;
   const start = await normalizeImageInput(startImage);
-  const end = endImage ? await normalizeImageInput(endImage) : null;
+  const end = endImage && !loop ? await normalizeImageInput(endImage) : null;
   const langInstr = language === 'ko'
     ? '한국어로 답하세요. 반환은 오직 프롬프트 텍스트만 (설명·인사·따옴표 없이).'
     : 'Answer in English. Return ONLY the prompt text (no intros, no quotes).';
@@ -340,10 +345,22 @@ export async function suggestVideoPromptFromImage(
     ? `\nContext hint (from the storyboard, use as reference only): "${prior}"`
     : '';
 
+  // 끝 프레임이 시작과 같은 그림이면 과제가 또 다르다. "A 에서 B 로 가라" 가
+  // 아니라 "움직였다가 제자리로 돌아와라" 다. 전환 지시문을 그대로 쓰면
+  // 모델이 두 장의 차이를 찾으려다 엉뚱한 변화를 만들어낸다.
+  const isLoop = loop;
+
   // 끝 프레임이 있으면 "이 그림을 움직여라" 가 아니라 "이 그림에서 저 그림으로
   // 가라" 가 과제다. 두 장을 같이 보여주고 그 사이의 변화를 서술하게 한다 —
   // 스토리보드 모션 문구(예: "천천히 줌인")로는 전환이 절대 재현되지 않는다.
-  const instruction = end
+  const instruction = isLoop
+    ? `You are a short-form video prompt writer. This image is BOTH the start and the end frame — ` +
+      `the shot must loop seamlessly. Write a 1~3 sentence video prompt describing motion that departs ` +
+      `from this exact framing and returns to it by the end: gentle camera drift that comes back, ` +
+      `cyclical subject motion, ambient movement (hair, steam, light, fabric). ` +
+      `Avoid one-way movement that cannot return, and avoid cuts or new elements entering. ` +
+      `Keep it under 60 words. ${langInstr}${priorPart}`
+    : end
     ? `You are a short-form video prompt writer. IMAGE 1 is the START frame and IMAGE 2 is the END frame ` +
       `of a single continuous shot. Write a 1~3 sentence video prompt describing how the shot travels from ` +
       `the first framing to the second: camera movement, subject motion, and how the mood shifts. ` +

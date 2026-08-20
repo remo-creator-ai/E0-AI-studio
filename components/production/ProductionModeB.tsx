@@ -22,7 +22,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronUp, Clock, Download,
   DownloadCloud, ImageUp, Loader2, Package, Play, Rocket, Sparkles, Trash2,
-  Upload, Video, X, AlertCircle, Wand2, Film as FilmIcon, Pencil,
+  Upload, Video, X, AlertCircle, Wand2, Film as FilmIcon, Pencil, Repeat,
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { useStore } from '../../store';
@@ -473,14 +473,19 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   // 보고 영상용 프롬프트를 새로 쓰게 한다.
   const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
 
-  const suggestPrompt = useCallback(async (scene: Scene) => {
+  /**
+   * 한 씬의 프롬프트를 AI 로 다시 쓴다. 성공 여부를 돌려준다.
+   * silent 는 일괄 처리용 — 씬마다 오류 모달을 띄우지 않고 끝에 한 번 요약한다.
+   */
+  const suggestPrompt = useCallback(async (scene: Scene, options?: { silent?: boolean }): Promise<boolean> => {
+    const silent = options?.silent === true;
     if (!scene.image_url) {
-      await alert('시작 프레임 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
-      return;
+      if (!silent) await alert('시작 프레임 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
+      return false;
     }
     if (!hasEnough(SUGGEST_PROMPT_COST)) {
-      await alert(`크레딧이 부족합니다. (필요 ${SUGGEST_PROMPT_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
-      return;
+      if (!silent) await alert(`크레딧이 부족합니다. (필요 ${SUGGEST_PROMPT_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return false;
     }
     setSuggestingFor(scene.id);
     try {
@@ -491,20 +496,34 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         endImage: s.endImage,
       });
       if (!result.ok || !result.prompt) {
-        await showGenError(result.error ?? 'no_response', 'video');
-        return;
+        if (!silent) await showGenError(result.error ?? 'no_response', 'video');
+        return false;
       }
       await deduct(SUGGEST_PROMPT_COST, `영상 프롬프트 상상 (씬 ${scene.order})`);
       // 스토리보드(JSON)에도 함께 반영한다 — 새로고침해도 남고, 스토리보드
       // 화면에서도 같은 모션 문구를 보게 된다.
       setVideoMotion(scene.id, clampKlingPrompt(result.prompt));
+      return true;
     } catch (e) {
       console.error('[ModeB] 프롬프트 상상 실패:', e);
-      await showGenError(e, 'video');
+      if (!silent) await showGenError(e, 'video');
+      return false;
     } finally {
       setSuggestingFor(null);
     }
   }, [alert, showGenError, balance, deduct, hasEnough, getSettings, setVideoMotion, language]);
+
+  // ── 영상 프롬프트 일괄 업그레이드 ──
+  //
+  // 업스케일 다음에 오는 기본 절차로 둔다. 스토리보드의 모션 문구는 이미지
+  // 기획용이라 그대로 영상에 넣으면 의도한 씬이 거의 안 나오는데, 씬마다
+  // 들어가서 버튼을 누르게 하면 사실상 아무도 안 한다.
+  //
+  // 이미 손댄 씬은 건드리지 않는다 — 사용자가 공들여 쓴 문구를 AI 문구로
+  // 덮어쓰는 건 도움이 아니라 사고다.
+  const [promptBatch, setPromptBatch] = useState<{ current: number; total: number } | null>(null);
+
+
 
   // ── 네비게이션: 씬 스크롤 이동 ──
   const scrollToScene = useCallback((sceneId: string) => {
@@ -555,6 +574,56 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   // ── 선택된 씬 중 아직 업스케일 안 된 것들 (배치 업스케일 대상) ──
   const scenesNeedingUpscale = selectedScenes.filter((s) => !isUpscaled(s) && !!s.image_url);
   const upscaleBatchCost = scenesNeedingUpscale.length * IMAGE_UPSCALE_COST;
+  const scenesNeedingPrompt = useMemo(
+    () => selectedScenes.filter((s) => {
+      if (!s.image_url) return false;
+      const p = getSettings(s.id).prompt;
+      return p === null || !p.trim();
+    }),
+    [selectedScenes, getSettings],
+  );
+  const promptBatchCost = scenesNeedingPrompt.length * SUGGEST_PROMPT_COST;
+
+  const upgradePromptsSelected = useCallback(async () => {
+    const targets = scenesNeedingPrompt;
+    if (targets.length === 0) return;
+    if (!hasEnough(promptBatchCost)) {
+      await alert(`크레딧이 부족합니다. (필요 ${promptBatchCost}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+      return;
+    }
+    const ok = await confirm(
+      `아직 손대지 않은 ${targets.length}개 씬의 영상 프롬프트를 AI 로 다시 씁니다.\n\n`
+      + `· 각 씬의 시작 프레임(끝 프레임이 있으면 둘 다)을 보고 새로 작성합니다\n`
+      + `· 크레딧 ${promptBatchCost}cr 차감 · 순차 실행\n`
+      + `· 이미 직접 고친 씬은 건드리지 않습니다\n`
+      + `· 결과는 스토리보드에도 저장됩니다\n\n계속할까요?`,
+    );
+    if (!ok) return;
+
+    const failed: number[] = [];
+    setPromptBatch({ current: 0, total: targets.length });
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        setPromptBatch({ current: i + 1, total: targets.length });
+        const done = await suggestPrompt(targets[i], { silent: true });
+        if (!done) failed.push(targets[i].order);
+        // 연속 호출 사이 짧은 간격 — 레이트 리밋 여유
+        if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 300));
+      }
+    } finally {
+      setPromptBatch(null);
+    }
+
+    if (failed.length === 0) {
+      await alert(`${targets.length}개 씬의 영상 프롬프트를 새로 썼습니다.\n\n각 씬에서 내용을 확인하고 필요하면 다듬으세요.`, { type: 'success' });
+    } else {
+      await alert(
+        `${targets.length - failed.length}/${targets.length} 완료.\n`
+        + `실패: ${failed.map((o) => `#${o}`).join(', ')}\n\n실패한 씬은 크레딧이 차감되지 않았습니다.`,
+        { type: failed.length === targets.length ? 'error' : 'warning' },
+      );
+    }
+  }, [scenesNeedingPrompt, promptBatchCost, hasEnough, balance, alert, confirm, suggestPrompt]);
 
   // ── 완료된 씬 영상 배치 다운로드 (zip) ──
   const [batchDownloading, setBatchDownloading] = useState(false);
@@ -817,6 +886,20 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               >
                 <ImageUp size={16} />
                 선택 업스케일 ({scenesNeedingUpscale.length}개 · {upscaleBatchCost}cr)
+              </button>
+            )}
+            {/* 업스케일 다음 순서 — 영상 프롬프트를 한 번에 다시 쓴다.
+                씬마다 들어가서 누르게 하면 사실상 아무도 안 하므로 여기 둔다. */}
+            {scenesNeedingPrompt.length > 0 && (
+              <button
+                onClick={upgradePromptsSelected}
+                disabled={!!promptBatch}
+                className="px-4 py-3 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-black text-sm shadow-[0_6px_16px_rgba(124,58,237,0.28)] flex items-center gap-2 disabled:opacity-60"
+                title="시작 프레임(끝 프레임이 있으면 둘 다)을 보고 영상 프롬프트를 새로 씁니다. 이미 직접 고친 씬은 제외됩니다."
+              >
+                {promptBatch
+                  ? <><Loader2 size={16} className="animate-spin" /> 프롬프트 {promptBatch.current}/{promptBatch.total}</>
+                  : <><Wand2 size={16} /> 프롬프트 일괄 업그레이드 ({scenesNeedingPrompt.length}개 · {promptBatchCost}cr)</>}
               </button>
             )}
             {/* CapCut 편집 패키지 — 씬 영상 + 나레이션 + 자막/컷리스트 한 벌 */}
@@ -1969,6 +2052,11 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
           {settings.endImage ? (
             <div className="aspect-video rounded-xl overflow-hidden bg-zinc-900 border-2 border-zinc-300 relative">
               <img src={settings.endImage} alt="" className="w-full h-full object-contain" />
+              {settings.endImage === scene.image_url && (
+                <span className="absolute bottom-1 left-1 px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-black flex items-center gap-1">
+                  <Repeat size={10} /> 루프
+                </span>
+              )}
               <button
                 onClick={() => onPatch({ endImage: undefined })}
                 className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center"
@@ -1979,6 +2067,17 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
             </div>
           ) : (
             <div className="aspect-video rounded-xl border-2 border-dashed border-zinc-300 flex flex-col items-center justify-center gap-2.5 p-3 bg-zinc-50">
+              {/* 시작 프레임을 끝 프레임으로도 쓰면 처음과 끝이 같아져 이어붙였을 때
+                  끊김 없이 반복되는 루프 영상이 된다. */}
+              {scene.image_url && (
+                <button
+                  onClick={() => onPatch({ endImage: scene.image_url })}
+                  className="px-3 py-1.5 rounded-lg bg-white border border-primary/30 text-sm font-bold text-primary hover:bg-primary hover:text-white transition-colors flex items-center gap-1.5"
+                  title="시작 프레임과 같은 그림으로 끝나 반복 재생이 자연스러운 영상이 됩니다"
+                >
+                  <Repeat size={14} /> 시작과 같은 프레임 (루프)
+                </button>
+              )}
               {nextSceneImage && (
                 <button
                   onClick={() => onPatch({ endImage: nextSceneImage })}
