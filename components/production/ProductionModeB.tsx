@@ -477,13 +477,15 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
    * 한 씬의 프롬프트를 AI 로 다시 쓴다. 성공 여부를 돌려준다.
    * silent 는 일괄 처리용 — 씬마다 오류 모달을 띄우지 않고 끝에 한 번 요약한다.
    */
-  const suggestPrompt = useCallback(async (scene: Scene, options?: { silent?: boolean }): Promise<boolean> => {
+  const suggestPrompt = useCallback(async (scene: Scene, options?: { silent?: boolean; skipCharge?: boolean }): Promise<boolean> => {
     const silent = options?.silent === true;
+    // 일괄 처리는 호출부가 한 번만 과금한다. 여기서 또 빼면 이중 차감이다.
+    const skipCharge = options?.skipCharge === true;
     if (!scene.image_url) {
       if (!silent) await alert('시작 프레임 이미지가 없습니다. 스토리보드에서 씬 이미지를 먼저 만들어주세요.', { type: 'warning' });
       return false;
     }
-    if (!hasEnough(SUGGEST_PROMPT_COST)) {
+    if (!skipCharge && !hasEnough(SUGGEST_PROMPT_COST)) {
       if (!silent) await alert(`크레딧이 부족합니다. (필요 ${SUGGEST_PROMPT_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
       return false;
     }
@@ -499,7 +501,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         if (!silent) await showGenError(result.error ?? 'no_response', 'video');
         return false;
       }
-      await deduct(SUGGEST_PROMPT_COST, `영상 프롬프트 상상 (씬 ${scene.order})`);
+      if (!skipCharge) await deduct(SUGGEST_PROMPT_COST, `영상 프롬프트 상상 (씬 ${scene.order})`);
       // 스토리보드(JSON)에도 함께 반영한다 — 새로고침해도 남고, 스토리보드
       // 화면에서도 같은 모션 문구를 보게 된다.
       setVideoMotion(scene.id, clampKlingPrompt(result.prompt));
@@ -582,20 +584,29 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     }),
     [selectedScenes, getSettings],
   );
-  const promptBatchCost = scenesNeedingPrompt.length * SUGGEST_PROMPT_COST;
+  /**
+   * 일괄 업그레이드는 씬 수와 무관하게 정액 1cr.
+   *
+   * 씬마다 1cr 을 받으면 27컷 프로젝트가 27cr(₩1,350)이 되는데, 이 작업의 원가는
+   * 이미지 한 장을 붙인 텍스트 모델 호출이라 이미지 생성(3~5cr)보다 훨씬 싸다.
+   * 게다가 이 단계는 뒤에 오는 30cr 짜리 영상 생성의 품질을 좌우한다 —
+   * 여기에 요금 장벽을 세우면 나쁜 프롬프트로 비싼 영상을 뽑게 만들 뿐이다.
+   * 개별 버튼(씬 하나)은 그대로 1cr 이다.
+   */
+  const PROMPT_BATCH_COST = SUGGEST_PROMPT_COST;
 
   const upgradePromptsSelected = useCallback(async () => {
     const targets = scenesNeedingPrompt;
     if (targets.length === 0) return;
-    if (!hasEnough(promptBatchCost)) {
-      await alert(`크레딧이 부족합니다. (필요 ${promptBatchCost}cr / 잔액 ${balance}cr)`, { type: 'warning' });
+    if (!hasEnough(PROMPT_BATCH_COST)) {
+      await alert(`크레딧이 부족합니다. (필요 ${PROMPT_BATCH_COST}cr / 잔액 ${balance}cr)`, { type: 'warning' });
       return;
     }
     const ok = await confirm(
       `아직 손대지 않은 ${targets.length}개 씬의 영상 프롬프트를 AI 로 다시 씁니다.\n\n`
       + `· 각 씬의 시작 프레임(끝 프레임이 있으면 둘 다)을 보고 새로 작성합니다\n`
-      + `· 크레딧 ${promptBatchCost}cr 차감 · 순차 실행\n`
-      + `· 이미 직접 고친 씬은 건드리지 않습니다\n`
+      + `· 몇 개를 하든 ${PROMPT_BATCH_COST}cr — 씬 수만큼 붙지 않습니다\n`
+      + `· 순차 실행 · 이미 직접 고친 씬은 건드리지 않습니다\n`
       + `· 결과는 스토리보드에도 저장됩니다\n\n계속할까요?`,
     );
     if (!ok) return;
@@ -605,7 +616,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     try {
       for (let i = 0; i < targets.length; i++) {
         setPromptBatch({ current: i + 1, total: targets.length });
-        const done = await suggestPrompt(targets[i], { silent: true });
+        // skipCharge — 과금은 이 루프가 끝난 뒤 한 번만 한다.
+        const done = await suggestPrompt(targets[i], { silent: true, skipCharge: true });
         if (!done) failed.push(targets[i].order);
         // 연속 호출 사이 짧은 간격 — 레이트 리밋 여유
         if (i < targets.length - 1) await new Promise((r) => setTimeout(r, 300));
@@ -614,16 +626,29 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       setPromptBatch(null);
     }
 
+    const succeeded = targets.length - failed.length;
+    // 하나도 못 만들었으면 받지 않는다.
+    if (succeeded > 0) {
+      await deduct(PROMPT_BATCH_COST, `영상 프롬프트 일괄 업그레이드 (${succeeded}씬)`);
+    }
+
     if (failed.length === 0) {
-      await alert(`${targets.length}개 씬의 영상 프롬프트를 새로 썼습니다.\n\n각 씬에서 내용을 확인하고 필요하면 다듬으세요.`, { type: 'success' });
+      await alert(
+        `${targets.length}개 씬의 영상 프롬프트를 새로 썼습니다. (${PROMPT_BATCH_COST}cr)\n\n`
+        + '각 씬에서 내용을 확인하고 필요하면 다듬으세요.',
+        { type: 'success' },
+      );
     } else {
       await alert(
-        `${targets.length - failed.length}/${targets.length} 완료.\n`
-        + `실패: ${failed.map((o) => `#${o}`).join(', ')}\n\n실패한 씬은 크레딧이 차감되지 않았습니다.`,
+        `${succeeded}/${targets.length} 완료.\n`
+        + `실패: ${failed.map((o) => `#${o}`).join(', ')}\n\n`
+        + (succeeded > 0
+          ? `${PROMPT_BATCH_COST}cr 만 차감되었습니다. 실패한 씬은 다시 시도해 주세요.`
+          : '차감된 크레딧은 없습니다.'),
         { type: failed.length === targets.length ? 'error' : 'warning' },
       );
     }
-  }, [scenesNeedingPrompt, promptBatchCost, hasEnough, balance, alert, confirm, suggestPrompt]);
+  }, [scenesNeedingPrompt, PROMPT_BATCH_COST, hasEnough, balance, alert, confirm, deduct, suggestPrompt]);
 
   // ── 완료된 씬 영상 배치 다운로드 (zip) ──
   const [batchDownloading, setBatchDownloading] = useState(false);
@@ -895,11 +920,11 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
                 onClick={upgradePromptsSelected}
                 disabled={!!promptBatch}
                 className="px-4 py-3 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-black text-sm shadow-[0_6px_16px_rgba(124,58,237,0.28)] flex items-center gap-2 disabled:opacity-60"
-                title="시작 프레임(끝 프레임이 있으면 둘 다)을 보고 영상 프롬프트를 새로 씁니다. 이미 직접 고친 씬은 제외됩니다."
+                title="시작 프레임(끝 프레임이 있으면 둘 다)을 보고 영상 프롬프트를 새로 씁니다. 몇 개를 하든 정액 1cr · 이미 직접 고친 씬은 제외됩니다."
               >
                 {promptBatch
                   ? <><Loader2 size={16} className="animate-spin" /> 프롬프트 {promptBatch.current}/{promptBatch.total}</>
-                  : <><Wand2 size={16} /> 프롬프트 일괄 업그레이드 ({scenesNeedingPrompt.length}개 · {promptBatchCost}cr)</>}
+                  : <><Wand2 size={16} /> 프롬프트 일괄 업그레이드 ({scenesNeedingPrompt.length}개 · {PROMPT_BATCH_COST}cr)</>}
               </button>
             )}
             {/* CapCut 편집 패키지 — 씬 영상 + 나레이션 + 자막/컷리스트 한 벌 */}
