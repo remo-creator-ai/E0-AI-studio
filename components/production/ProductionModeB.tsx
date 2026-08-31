@@ -40,7 +40,10 @@ import {
   type ConcreteAspect, type VideoDuration, type VideoResolution,
 } from '../../services/videoStudioService';
 import { upscaleSceneImage, IMAGE_UPSCALE_COST } from '../../services/imageUpscaleService';
-import { saveVideoHistory, refreshVideoSignedUrl } from '../../services/videoHistoryService';
+import {
+  saveVideoHistory, refreshVideoSignedUrl, refreshVideoSignedUrlDetailed,
+  fetchSceneVideo, type SceneVideoFetch,
+} from '../../services/videoHistoryService';
 import { useVideoGenStore, type VideoJob } from '../../store/videoGenStore';
 import {
   useModeBState, DEFAULT_SCENE_SETTINGS,
@@ -77,6 +80,38 @@ function slugifyForFile(title: string, fallback = 'sodam'): string {
     .replace(/\s+/g, '-')
     .slice(0, 40);
   return s || fallback;
+}
+
+// ── 씬 영상 내려받기 실패 안내 ──
+//
+// 실패를 조용히 삼키면 빈 zip 이 그대로 내려가 사용자는 "압축 파일이 손상됐다" 는
+// OS 오류만 보게 된다. 실패한 씬 번호와 진짜 이유(만료 재발급 실패 / 원본 삭제)를
+// 구분해서 알려준다.
+interface SceneFetchFailure {
+  order: number;
+  issue?: SceneVideoFetch['issue'];
+  message?: string;
+}
+
+function describeSceneFailures(failures: SceneFetchFailure[]): string {
+  const list = (fs: SceneFetchFailure[]) => fs.map((f) => `#${f.order}`).join(', ');
+  const deleted = failures.filter((f) => f.issue === 'deleted');
+  const rest = failures.filter((f) => f.issue !== 'deleted');
+  const lines: string[] = [];
+  if (deleted.length > 0) {
+    lines.push(
+      `· 씬 ${list(deleted)}: 서버에 원본 영상이 없습니다.\n`
+      + '  영상 보관함은 30일 / 최근 100편까지만 보관하므로, 오래된 프로젝트의 씬 영상은\n'
+      + '  자동 정리됐을 수 있습니다. 해당 씬은 다시 생성해야 합니다.',
+    );
+  }
+  if (rest.length > 0) {
+    lines.push(
+      `· 씬 ${list(rest)}: 내려받지 못했습니다 (${rest[0].message ?? '원인 불명'}).\n`
+      + '  로그인이 풀렸을 수 있습니다. 새로고침 후 다시 시도해 주세요.',
+    );
+  }
+  return lines.join('\n\n');
 }
 
 /**
@@ -438,6 +473,9 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             hasStartFrame: true,
             hasEndFrame: !!endImage,
             videoUrl: result.videoUrl,
+            // 씬 영상은 프로젝트 산출물 — 히스토리 30일 TTL·100편 상한에 지워지면
+            // 프로젝트를 다시 열었을 때 재생·다운로드가 전부 깨진다 (migration 043).
+            pinned: true,
           });
           if (saved.ok && saved.item) {
             finalUrl = saved.item.url;
@@ -662,28 +700,30 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
     setBatchDownloading(true);
     try {
       const zip = new JSZip();
+      const failures: SceneFetchFailure[] = [];
       // 각 씬 mp4 를 병렬로 fetch 해 zip 에 담기
       await Promise.all(
         targets.map(async (s) => {
-          try {
-            let res = await fetch(s.video_url!);
-            if (!res.ok) {
-              // signed URL 만료(403) 가능성 → 1회 재발급 후 재시도
-              const fresh = await refreshVideoSignedUrl(s.video_url!);
-              if (fresh !== s.video_url) {
-                updateScene(s.id, { video_url: fresh });
-                res = await fetch(fresh);
-              }
-            }
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const blob = await res.blob();
-            zip.file(sceneFilename(s), blob);
-          } catch (e) {
-            // 개별 실패는 스킵 · 나머지는 계속
-            console.warn('scene download failed:', s.order, e);
+          // signed URL 은 1시간 만료 → fetchSceneVideo 가 재발급을 먼저 시도한다.
+          const r = await fetchSceneVideo(s.video_url!);
+          if (!r.ok || !r.blob) {
+            console.warn('scene download failed:', s.order, r.issue, r.message);
+            failures.push({ order: s.order, issue: r.issue, message: r.message });
+            return;
           }
+          if (r.url && r.url !== s.video_url) updateScene(s.id, { video_url: r.url });
+          zip.file(sceneFilename(s), r.blob);
         }),
       );
+
+      // 한 개도 못 받았으면 빈 zip 을 내려보내지 않는다.
+      // (예전엔 그냥 내려가서 "아카이브가 비어 있다" 는 OS 오류로만 드러났다)
+      const okCount = targets.length - failures.length;
+      if (okCount === 0) {
+        await alert(`씬 영상을 하나도 받지 못했습니다.\n\n${describeSceneFailures(failures)}`, { type: 'error' });
+        return;
+      }
+
       const content = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
@@ -693,6 +733,13 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      if (failures.length > 0) {
+        await alert(
+          `${okCount}/${targets.length}개 씬만 담았습니다.\n\n${describeSceneFailures(failures)}`,
+          { type: 'warning' },
+        );
+      }
     } catch (e) {
       console.error('[ModeB] 배치 다운로드 실패:', e);
       await alert(`배치 다운로드에 실패했습니다.\n${genErrorSummary(e, t)}`, { type: 'error' });
@@ -726,27 +773,20 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
 
       // 1) 씬 영상 — 실제 재생 길이를 같이 재둔다. 자막·타임라인이 이 값을 쓴다.
       setExportStep(`씬 영상 ${targets.length}개 받는 중...`);
+      const exportFailures: SceneFetchFailure[] = [];
       const packed = await Promise.all(targets.map(async (s, idx) => {
         const filename = `scene-${String(idx + 1).padStart(2, '0')}.mp4`;
         let durationSeconds = getSettings(s.id).duration as number;
-        try {
-          let res = await fetch(s.video_url!);
-          if (!res.ok) {
-            const fresh = await refreshVideoSignedUrl(s.video_url!);
-            if (fresh !== s.video_url) {
-              updateScene(s.id, { video_url: fresh });
-              res = await fetch(fresh);
-            }
-          }
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const blob = await res.blob();
-          zip.file(filename, blob);
-          const measured = await measureVideoDuration(blob);
-          if (measured) durationSeconds = measured;
-        } catch (e) {
-          console.warn('[ModeB] 패키지 씬 다운로드 실패:', s.order, e);
+        const r = await fetchSceneVideo(s.video_url!);
+        if (!r.ok || !r.blob) {
+          console.warn('[ModeB] 패키지 씬 다운로드 실패:', s.order, r.issue, r.message);
+          exportFailures.push({ order: s.order, issue: r.issue, message: r.message });
           return null;
         }
+        if (r.url && r.url !== s.video_url) updateScene(s.id, { video_url: r.url });
+        zip.file(filename, r.blob);
+        const measured = await measureVideoDuration(r.blob);
+        if (measured) durationSeconds = measured;
         return {
           order: idx + 1,
           durationSeconds,
@@ -756,7 +796,8 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       }));
 
       const scenes = packed.filter((p): p is NonNullable<typeof p> => p !== null);
-      if (scenes.length === 0) throw new Error('씬 영상을 하나도 받지 못했습니다.');
+      // 여기서 던지면 나레이션 합성 전이라 크레딧은 차감되지 않는다.
+      if (scenes.length === 0) throw new Error(`씬 영상을 하나도 받지 못했습니다.\n\n${describeSceneFailures(exportFailures)}`);
       const missing = targets.length - scenes.length;
 
       // 2) 나레이션 (통짜) + 자르는 지점
@@ -814,7 +855,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
         `씬 ${scenes.length}개 · 총 ${Math.round(totalSeconds)}초`,
         narrationIncluded ? '나레이션 포함 · cut-list.txt 의 시각에서 자르세요' : '나레이션 미포함',
       ];
-      if (missing > 0) notes.push(`⚠️ ${missing}개 씬은 영상을 받지 못해 빠졌습니다`);
+      if (missing > 0) notes.push(`⚠️ ${missing}개 씬은 영상을 받지 못해 빠졌습니다\n\n${describeSceneFailures(exportFailures)}`);
       await alert(`편집 패키지를 내려받았습니다.\n\n${notes.join('\n')}\n\n압축을 풀고 README.txt 부터 보세요.`, { type: 'success' });
     } catch (e) {
       console.error('[ModeB] 편집 패키지 내보내기 실패:', e);
@@ -1399,6 +1440,48 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
     el.play().catch(() => {});
   };
 
+  // ── 대표 영상 단일 다운로드 ──
+  //
+  // 예전엔 <a href={videoUrl} download>. 두 가지가 겹쳐서 안 됐다.
+  //   1) videoUrl 은 1시간 만료 signed URL → 만료 후엔 InvalidJWT JSON 페이지로 이동.
+  //   2) <a download> 는 cross-origin(Supabase) 링크에 아예 먹지 않아, 살아 있는
+  //      URL 이어도 파일 저장이 아니라 브라우저 재생/이동이 된다.
+  // 그래서 클릭 시점에 Content-Disposition(download 옵션) 을 붙여 재발급한다.
+  const { alert: modalAlert } = useModal();
+  const [downloading, setDownloading] = useState(false);
+  const downloadMain = async () => {
+    if (!videoUrl || downloading) return;
+    setDownloading(true);
+    try {
+      const filename = sceneFilename(scene);
+      const r = await refreshVideoSignedUrlDetailed(videoUrl, { download: filename });
+      if (r.issue === 'deleted') {
+        await modalAlert(
+          '서버에 원본 영상이 없습니다.\n\n영상 보관함은 30일 / 최근 100편까지만 보관합니다.\n'
+          + '이 씬은 다시 생성해야 합니다.',
+          { type: 'error' },
+        );
+        return;
+      }
+      if (!r.refreshed && r.issue === 'sign-failed') {
+        await modalAlert(
+          `다운로드 링크를 새로 받지 못했습니다.\n${r.message ?? ''}\n\n새로고침 후 다시 시도해 주세요.`,
+          { type: 'error' },
+        );
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = r.url;
+      a.download = filename;      // same-origin fallback (외부 URL 일 때는 무시됨)
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* 좌: 비디오 · 우: 액션 (목업 minmax(0,1.6fr) minmax(0,1fr)) */}
@@ -1431,13 +1514,14 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
           >
             <Play size={16} /> 전체화면 재생
           </button>
-          <a
-            href={videoUrl}
-            download={sceneFilename(scene)}
-            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 flex items-center justify-center gap-2"
+          <button
+            onClick={() => void downloadMain()}
+            disabled={!videoUrl || downloading}
+            className="w-full px-4 py-3 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-700 font-black text-sm hover:bg-zinc-50 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <Download size={16} /> 대표 영상 다운로드
-          </a>
+            {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {downloading ? '링크 준비 중...' : '대표 영상 다운로드'}
+          </button>
           {/* 결과가 맘에 안 들 때 바꿔야 하는 건 대부분 프롬프트다.
               같은 프롬프트로 다시 뽑으면 비슷한 결과가 나오므로 바로 생성하지 않고
               편집 화면으로 보낸다 (크레딧은 거기서 생성할 때만 빠진다). */}

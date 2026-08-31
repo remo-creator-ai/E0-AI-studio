@@ -30,6 +30,8 @@ export interface VideoHistoryItem {
   thumbnail_path: string | null;
   url: string;                 // 표시용 signed URL 또는 objectURL(MOCK)
   saved_asset_id: string | null;
+  /** true 면 자동 정리(30일 TTL · 100편 상한) 대상에서 제외 — 프로젝트 씬 영상 (migration 043) */
+  pinned?: boolean;
   created_at: string;
 }
 
@@ -43,6 +45,11 @@ export interface SaveVideoHistoryInput {
   hasEndFrame?: boolean;
   /** Kling 이 반환한 원격 mp4 URL — 서비스가 내려받아 Storage 로 재업로드한다 */
   videoUrl: string;
+  /**
+   * 프로젝트 산출물(씬 영상)이라 자동 정리에서 빼야 하는 항목인지.
+   * 히스토리 상한·TTL 에 걸려 원본이 사라지면 프로젝트가 통째로 깨진다.
+   */
+  pinned?: boolean;
 }
 
 // ================= MOCK (인메모리) =================
@@ -87,6 +94,7 @@ export async function saveVideoHistory(
       storage_path: `mock/${input.ownerId}/${Date.now()}.mp4`,
       thumbnail_path: null,
       saved_asset_id: null,
+      pinned: !!input.pinned,
       created_at: nowIso(),
       videoUrl: input.videoUrl,
     };
@@ -111,21 +119,33 @@ export async function saveVideoHistory(
   });
   if (upErr) return { ok: false, error: upErr.message };
 
-  const { data, error } = await supabase
+  const row = {
+    id: historyId,
+    owner_id: input.ownerId,
+    prompt: input.prompt,
+    aspect: input.aspect,
+    duration_sec: input.durationSec,
+    model: input.model,
+    has_start_frame: !!input.hasStartFrame,
+    has_end_frame: !!input.hasEndFrame,
+    storage_path: path,
+  };
+  let { data, error } = await supabase
     .from('video_generation_history')
-    .insert({
-      id: historyId,
-      owner_id: input.ownerId,
-      prompt: input.prompt,
-      aspect: input.aspect,
-      duration_sec: input.durationSec,
-      model: input.model,
-      has_start_frame: !!input.hasStartFrame,
-      has_end_frame: !!input.hasEndFrame,
-      storage_path: path,
-    })
+    .insert(input.pinned ? { ...row, pinned: true } : row)
     .select('*')
     .single();
+  // migration 043 이 아직 안 올라간 환경에서는 pinned 컬럼이 없다.
+  // 영상 저장 자체가 실패하는 것보다는 정리 대상으로라도 남기는 편이 낫다.
+  // (043 배포가 끝나면 이 폴백은 지워도 된다)
+  if (error && input.pinned && /pinned/i.test(error.message)) {
+    console.warn('[videoHistory] pinned 컬럼 없음 — migration 043 미적용. 폴백 저장.');
+    ({ data, error } = await supabase
+      .from('video_generation_history')
+      .insert(row)
+      .select('*')
+      .single());
+  }
   if (error || !data) {
     await supabase.storage.from(BUCKET).remove([path]);
     return { ok: false, error: error?.message ?? 'insert failed' };
@@ -196,20 +216,103 @@ export async function countVideoHistory(ownerId: string): Promise<number> {
 // ================= signed URL 만료 대응 · 재발급 =================
 //
 // project.scenes[i].video_url 에는 저장 시점의 signed URL 이 박혀 있다.
-// SIGNED_TTL(1h) 이 지나면 그 URL 은 403 이 되어 <video> 가 검은 화면으로 표시된다.
+// SIGNED_TTL(1h) 이 지나면 그 URL 은 400 InvalidJWT("exp" claim timestamp check failed)
+// 가 되어 <video> 는 검은 화면, 다운로드는 JSON 오류 페이지가 뜬다.
 // 이 함수는 만료된 supabase 서명 URL 을 파싱해 storage_path 를 추출한 뒤 재발급한다.
 // supabase 형식이 아닌 URL 은 그대로 반환 (예: Kling 직접 URL).
-export async function refreshVideoSignedUrl(oldUrl: string): Promise<string> {
-  if (!oldUrl) return oldUrl;
+
+/** 재발급이 안 되는 이유. 호출부가 사용자에게 정확한 문구를 보여주는 근거. */
+export type VideoUrlIssue =
+  | 'not-supabase'  // 외부(Kling 등) URL — 재발급 대상 아님
+  | 'other-bucket'  // video-history 가 아닌 버킷
+  | 'deleted'       // 원본이 Storage 에 없음 (30일 TTL · 100편 상한 정리로 삭제됨)
+  | 'sign-failed';  // 그 외 (로그인 세션 만료 · 네트워크 · 권한)
+
+export interface RefreshedVideoUrl {
+  /** 실제로 써야 할 URL. 재발급 실패 시엔 원본을 그대로 돌려준다. */
+  url: string;
+  /** 새 URL 을 발급했는지 여부 */
+  refreshed: boolean;
+  issue?: VideoUrlIssue;
+  message?: string;
+}
+
+/**
+ * 재발급 결과를 이유까지 담아 돌려준다.
+ *
+ * 기존 refreshVideoSignedUrl 은 실패해도 원본 URL 을 그대로 반환해서, 호출부가
+ * "재발급 불가" 와 "원래 안 만료됨" 을 구분하지 못했다. 그 탓에 배치 다운로드가
+ * 전부 실패해도 빈 zip 이 조용히 내려갔다.
+ *
+ * @param opts.download 넘기면 Supabase 가 Content-Disposition: attachment 를 붙여준다.
+ *                      cross-origin 링크에는 <a download> 속성이 먹지 않으므로,
+ *                      단일 파일 다운로드는 반드시 이 옵션을 써야 한다.
+ */
+export async function refreshVideoSignedUrlDetailed(
+  oldUrl: string,
+  opts?: { download?: string },
+): Promise<RefreshedVideoUrl> {
+  if (!oldUrl) return { url: oldUrl, refreshed: false, issue: 'not-supabase' };
   // Supabase signed URL 패턴: <base>/storage/v1/object/sign/<bucket>/<path>?token=...
-  const m = oldUrl.match(/\/storage\/v1\/object\/sign\/([^/]+)\/(.+?)\?/);
-  if (!m) return oldUrl;
-  const [, bucketId, path] = m;
-  if (bucketId !== BUCKET) return oldUrl; // 다른 버킷은 재발급 못 함
-  if (MOCK_MODE) return oldUrl;
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_TTL);
-  if (error || !data?.signedUrl) return oldUrl;
-  return data.signedUrl;
+  // 쿼리스트링이 없는 변형도 있으므로 '?' 를 필수로 두지 않는다.
+  const m = oldUrl.match(/\/storage\/v1\/object\/sign\/([^/]+)\/([^?]+)/);
+  if (!m) return { url: oldUrl, refreshed: false, issue: 'not-supabase' };
+  const [, bucketId, rawPath] = m;
+  if (bucketId !== BUCKET) return { url: oldUrl, refreshed: false, issue: 'other-bucket' };
+  if (MOCK_MODE) return { url: oldUrl, refreshed: false };
+
+  let path = rawPath;
+  try { path = decodeURIComponent(rawPath); } catch { /* 인코딩 아님 → 원문 사용 */ }
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, SIGNED_TTL, opts?.download ? { download: opts.download } : undefined);
+  if (error || !data?.signedUrl) {
+    const message = error?.message ?? 'sign failed';
+    // Storage 는 없는 객체에 대해 404 "Object not found" 를 준다.
+    const gone = /not\s*found|does not exist|404/i.test(message);
+    return { url: oldUrl, refreshed: false, issue: gone ? 'deleted' : 'sign-failed', message };
+  }
+  return { url: data.signedUrl, refreshed: true };
+}
+
+export async function refreshVideoSignedUrl(oldUrl: string): Promise<string> {
+  return (await refreshVideoSignedUrlDetailed(oldUrl)).url;
+}
+
+export interface SceneVideoFetch {
+  ok: boolean;
+  blob?: Blob;
+  /** 실제로 성공한 URL — 호출부가 프로젝트에 되박아 두면 다음 시도가 빨라진다. */
+  url?: string;
+  issue?: VideoUrlIssue | 'http';
+  message?: string;
+}
+
+/**
+ * 씬 mp4 를 내려받는다.
+ *
+ * 저장된 signed URL 은 1시간이면 만료라 "일단 받아보고 실패하면 재발급" 은 거의 항상
+ * 헛돈다. 재발급을 먼저 하고, 그게 막히면 그때 원본으로 한 번 더 시도한다.
+ */
+export async function fetchSceneVideo(oldUrl: string): Promise<SceneVideoFetch> {
+  if (!oldUrl) return { ok: false, issue: 'not-supabase', message: 'empty url' };
+  const refreshed = await refreshVideoSignedUrlDetailed(oldUrl);
+  // 원본이 삭제된 건 재시도로 해결되지 않는다 — 곧바로 이유를 돌려준다.
+  if (refreshed.issue === 'deleted') return { ok: false, issue: 'deleted', message: refreshed.message };
+
+  const candidates = refreshed.refreshed && refreshed.url !== oldUrl ? [refreshed.url, oldUrl] : [oldUrl];
+  let message = refreshed.message ?? '';
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return { ok: true, blob: await res.blob(), url };
+      message = `HTTP ${res.status}`;
+    } catch (e) {
+      message = e instanceof Error ? e.message : String(e);
+    }
+  }
+  return { ok: false, issue: refreshed.issue ?? 'http', message };
 }
 
 // ================= 개별 삭제 =================
@@ -241,12 +344,23 @@ export async function markVideoHistorySaved(historyId: string, savedAssetId: str
 // ================= 상한 트리밍 (100편) =================
 async function trimToLimit(ownerId: string): Promise<void> {
   if (MOCK_MODE) { trimMock(ownerId); return; }
-  const { data: excess } = await supabase
+  // 프로젝트 씬 영상(pinned)은 상한 계산에서도, 삭제 대상에서도 제외한다.
+  // 컬럼이 아직 없는 환경(043 미적용)에서는 필터를 뺀 쿼리로 폴백.
+  let { data: excess, error } = await supabase
     .from('video_generation_history')
     .select('id, storage_path')
     .eq('owner_id', ownerId)
+    .eq('pinned', false)
     .order('created_at', { ascending: false })
     .range(VIDEO_HISTORY_MAX_PER_USER, VIDEO_HISTORY_MAX_PER_USER + 50);
+  if (error && /pinned/i.test(error.message)) {
+    ({ data: excess } = await supabase
+      .from('video_generation_history')
+      .select('id, storage_path')
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: false })
+      .range(VIDEO_HISTORY_MAX_PER_USER, VIDEO_HISTORY_MAX_PER_USER + 50));
+  }
   if (!excess || excess.length === 0) return;
   const paths = excess.map((r) => r.storage_path);
   await supabase.storage.from(BUCKET).remove(paths);
@@ -255,7 +369,7 @@ async function trimToLimit(ownerId: string): Promise<void> {
 
 function trimMock(ownerId: string): void {
   const rows = mockRows();
-  const own = rows.filter((r) => r.owner_id === ownerId);
+  const own = rows.filter((r) => r.owner_id === ownerId && !r.pinned);
   if (own.length <= VIDEO_HISTORY_MAX_PER_USER) return;
   const overflow = own.slice(VIDEO_HISTORY_MAX_PER_USER);
   mockDb = rows.filter((r) => !overflow.includes(r));
