@@ -38,6 +38,9 @@ import { detectAspectFromImage } from '../services/videoStudioService';
 import { STYLE_PROMPT_GUIDES } from '../constants';
 import { scenePromptForImage } from '../lib/scenePrompt';
 import { sceneImageToBlob } from '../services/imageUtils';
+import { isOwnProject } from '../services/projectService';
+import { isBase64DataUri } from '../services/storageService';
+import { parseExportedProject } from '../services/storyboardImporter';
 import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
@@ -562,20 +565,67 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     }
   };
 
+  /**
+   * .storyboard 파일 불러오기.
+   *
+   * 파일 안의 프로젝트 id 를 그대로 쓰면 자동저장이 그 id 로 upsert 한다.
+   * 남이 내보낸 파일이면 그 행은 원래 주인 소유라 projects RLS
+   * (UPDATE USING auth.uid() = user_id · 001_initial.sql) 에 막혀 42501 이
+   * 나고, 헤더에는 "읽기 전용" 만 뜬 채 편집이 하나도 저장되지 않는다.
+   *
+   * 그래서 소유를 먼저 확인하고 갈라진다.
+   *   · 내 프로젝트 파일 → id 를 유지해 원래 행을 이어서 쓴다(백업 복원).
+   *   · 그 외(남의 파일 · 지워진 프로젝트 · 다른 환경) → parseExportedProject
+   *     로 프로젝트·씬 id 를 새로 발급해 내 계정의 사본으로 만든다. 씬
+   *     이미지는 scene-images 가 공개 버킷이라 URL 을 그대로 참조해도 보인다.
+   */
   const handleImportStoryboard = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (event) => {
+      const text = event.target?.result as string;
       try {
-        const json = JSON.parse(event.target?.result as string);
-        if (json && Array.isArray(json.scenes)) {
+        const json = JSON.parse(text);
+        if (!json || typeof json !== 'object' || !Array.isArray(json.scenes)) {
+          await alert(t('assembly.alerts.invalidFile'), { type: 'error' });
+          return;
+        }
+
+        const sourceId = typeof json.id === 'string' ? json.id : null;
+        if (sourceId && await isOwnProject(sourceId)) {
           setProject({ ...json, thumbnail: json.thumbnail || project?.thumbnail || null } as Project);
           await alert(t('assembly.alerts.importSuccess'), { type: 'success' });
-        } else {
-          await alert(t('assembly.alerts.invalidFile'), { type: 'error' });
+          return;
         }
+
+        const result = parseExportedProject(text);
+        if (result.error || !result.project) {
+          await alert(result.error ?? t('assembly.alerts.invalidFile'), { type: 'error' });
+          return;
+        }
+
+        // 041 이전에 내보낸 스냅샷은 씬 이미지가 base64 로 파일에 박혀 있다.
+        // 사본은 프로젝트 id 가 새것이라 첫 저장 시점엔 그 행이 아직 없고,
+        // scene-images 쓰기 정책(041: 최상위 폴더 = 내 프로젝트)이 업로드를
+        // 막는다. 그대로 두면 수십 MB base64 가 projects 행에 그냥 들어간다.
+        // 조용히 무거워지느니 여기서 끊고 다시 내보내게 안내한다.
+        const hasEmbeddedImages =
+          result.project.scenes.some((s) => isBase64DataUri(s.image_url)) ||
+          result.project.grid_images.some((g) => isBase64DataUri(g));
+        if (hasEmbeddedImages) {
+          await alert(t('assembly.alerts.importLegacyEmbedded'), { type: 'error' });
+          return;
+        }
+
+        setProject(result.project);
+        await alert(
+          result.warnings.length > 0
+            ? [t('assembly.alerts.importedAsCopy'), '', ...result.warnings].join('\n')
+            : t('assembly.alerts.importedAsCopy'),
+          { type: result.warnings.length > 0 ? 'warning' : 'success' },
+        );
       } catch (err) {
         console.error(err);
         await alert(t('assembly.alerts.fileReadError'), { type: 'error' });

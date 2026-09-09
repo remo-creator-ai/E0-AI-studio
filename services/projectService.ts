@@ -130,3 +130,29 @@ export async function deleteProject(projectId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+/**
+ * 이 id 의 프로젝트가 내 것인지 확인한다.
+ *
+ * projects 의 RLS 는 SELECT 를 `auth.uid() = user_id` 로 제한하므로
+ * "행이 보이면 내 것" 이 그대로 성립한다(001_initial.sql). 관리자용 우회
+ * 정책도 없어서 예외가 없다.
+ *
+ * 조회가 실패하면(네트워크 오류, id 가 UUID 가 아님 등) 소유가 아닌 쪽으로
+ * 판단한다 — 남의 행 id 를 그대로 쓰면 자동저장 upsert 가 RLS 42501 로
+ * 막혀 저장이 통째로 사라지지만, 사본을 만드는 쪽은 최악이라도 프로젝트가
+ * 하나 더 생길 뿐이다.
+ */
+export async function isOwnProject(projectId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', projectId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Project ownership check failed:', error.message);
+    return false;
+  }
+  return !!data;
+}

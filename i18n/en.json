@@ -549,6 +549,8 @@
       "noImages": "No image assets to download.",
       "zipError": "An error occurred while compressing files.",
       "importSuccess": "Storyboard data imported successfully.",
+      "importedAsCopy": "This storyboard was created on another account, so it was imported as a copy in your projects. The original is left untouched.",
+      "importLegacyEmbedded": "This storyboard file uses an old format with scene images embedded in the file (base64), so it cannot be imported from another account. Open the project once on the original account, export it again, and use that file.",
       "invalidFile": "Invalid storyboard file.",
       "autoTrimError": "An error occurred during auto trim.",
       "upscaleError": "Upscale error: {{message}}",
