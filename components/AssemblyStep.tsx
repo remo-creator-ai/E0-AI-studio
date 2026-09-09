@@ -149,14 +149,16 @@ export const AssemblyStep: React.FC = () => {
     const handleResize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth - 32; // p-4 좌우 패딩
-        const storyboardWidth = 1122; // 297mm in pixels at 96dpi
+        // 시트 폭 @96dpi — A4 가로 297mm ≒ 1122px, 세로 210mm ≒ 794px.
+        // 방향을 안 보면 세로 시트가 컨테이너의 70% 크기로만 그려진다.
+        const storyboardWidth = isPortraitPagination ? 794 : 1122;
         setZoomScale(Math.min(1.8, Math.max(0.3, containerWidth / storyboardWidth)));
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [project?.layout]);
+  }, [project?.layout, isPortraitPagination]);
 
   // Reset crop/zoom state when editing a different scene
   useEffect(() => {
@@ -978,13 +980,24 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
   }
 
   const isPortrait = project.aspect_ratio === '9:16';
+  // 시트 방향 — 쇼츠(9:16)는 A4 세로, 그 외에는 A4 가로.
+  const sheetW = isPortrait ? '210mm' : '297mm';
+  const sheetH = isPortrait ? '297mm' : '210mm';
 
   return (
     <div className="space-y-8 animate-in zoom-in-95 duration-500 pb-20">
       <style>{`
+  /* @page 는 클래스로 분기할 수 없어서 시트 방향이 바뀔 때마다 여기서 다시
+     쓴다. styles.css 의 @page 보다 문서 순서상 뒤라 size 를 덮어쓴다.
+     이게 없으면 쇼츠 스토리보드(A4 세로)도 가로 용지로 인쇄돼 잘려 나갔다. */
+  @page {
+    size: A4 ${isPortrait ? 'portrait' : 'landscape'};
+    margin: 0;
+  }
+
   .storyboard-page {
-    width: ${isPortrait ? '210mm' : '297mm'};
-    height: ${isPortrait ? '297mm' : '210mm'};
+    width: ${sheetW};
+    height: ${sheetH};
     background: white;
     padding: 15mm;
     color: black;
@@ -993,6 +1006,17 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+
+  /* 인쇄 시트도 같은 방향. styles.css 의 print 블록은 여백·페이지 나눔만
+     맡고 크기는 여기서 준다 (그쪽 !important 와 동급이라 뒤쪽이 이긴다). */
+  @media print {
+    .storyboard-page {
+      width: ${sheetW} !important;
+      height: ${sheetH} !important;
+      min-height: ${sheetH} !important;
+      max-height: ${sheetH} !important;
+    }
   }
 `}</style>
 
@@ -1125,9 +1149,16 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                           <div className="bg-black text-white px-2 py-1 text-[9px] font-black italic">
                             CUT #{String(globalIdx + 1).padStart(2, '0')}
                           </div>
-                          <div className="flex-1 bg-gray-50 relative overflow-hidden">
+                          {/* 쇼츠(9:16)는 칸보다 훨씬 세로로 길다. object-cover 로 채우면
+                              위아래가 잘려 인쇄본에서 컷 구도를 확인할 수 없으므로
+                              프레임 전체를 담고 남는 폭은 여백으로 둔다. */}
+                          <div className={`flex-1 relative overflow-hidden ${isPortrait ? 'bg-white' : 'bg-gray-50'}`}>
                             {scene.image_url ? (
-                              <img src={scene.image_url} alt={`Cut ${globalIdx + 1}`} className="w-full h-full object-cover" />
+                              <img
+                                src={scene.image_url}
+                                alt={`Cut ${globalIdx + 1}`}
+                                className={`w-full h-full ${isPortrait ? 'object-contain' : 'object-cover'}`}
+                              />
                             ) : (
                               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-200 gap-1">
                                 <ImageIcon size={20} />

@@ -181,31 +181,36 @@ h1 span, h2 span, h3 span {
 }
 
 /* ─── 스토리보드 시트 (화면 미리보기) ───
-   A4 가로 = 297mm ≒ 1122px @96dpi. 화면에서도 이 폭을 고정해야
-   AssemblyStep 의 zoom 계산(containerWidth / 1122)이 실제와 맞는다.
-   폭이 없으면 시트가 내용 크기로 줄어들어, 넓은 화면에서 좌우에 빈 여백이 남는다.
-   인쇄 시에는 아래 @media print 가 297mm 로 덮어쓴다. */
+   A4 가로 = 297mm ≒ 1122px @96dpi. 폭이 없으면 시트가 내용 크기로 줄어들어
+   넓은 화면에서 좌우에 빈 여백이 남는다. 실제 폭·높이는 AssemblyStep 이
+   시트 방향에 맞춰 mm 로 덮어쓴다 (쇼츠 9:16 은 A4 세로 210mm). */
 .storyboard-page {
   width: 1122px;
   flex: none;
 }
 
-/* Print: Force A4 Landscape (must be outside @media print for some CSS processors) */
+/* Print: 용지 방향과 시트 크기는 AssemblyStep 이 정한다 — 쇼츠(9:16)
+   스토리보드는 A4 세로, 그 외에는 A4 가로다. @page 는 선택자로 분기할 수
+   없어서 컴포넌트가 인라인 <style> 로 size 를 덮어쓴다(문서 순서상 뒤).
+   여기서는 방향과 무관한 여백만 없앤다. */
 @page {
   size: A4 landscape;
   margin: 0;
 }
 
-/* Print Styles for A4 Landscape Storyboard */
+/* Print Styles — 방향에 무관한 부분만. 크기는 AssemblyStep 참고 */
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
+  /* 크기는 @page 가 정한 페이지 영역을 그대로 따른다 — 가로/세로 어느
+     방향이든 맞게 늘어난다. 예전엔 297x210mm 로 못박혀 있어서 A4 세로로
+     인쇄해도 시트가 가로로 잘렸다. */
   html {
-    width: 297mm !important;
-    height: 210mm !important;
+    width: auto !important;
+    height: auto !important;
   }
 
   body {
@@ -213,8 +218,8 @@ h1 span, h2 span, h3 span {
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    width: 297mm !important;
-    height: 210mm !important;
+    width: auto !important;
+    height: auto !important;
   }
 
   /* Hide everything except storyboard pages */
@@ -272,10 +277,7 @@ h1 span, h2 span, h3 span {
   }
 
   .storyboard-page {
-    width: 297mm !important;
-    height: 210mm !important;
-    min-height: 210mm !important;
-    max-height: 210mm !important;
+    /* width/height 는 AssemblyStep 의 인라인 <style> 이 방향에 맞춰 준다 */
     padding: 10mm !important;
     margin: 0 !important;
     box-shadow: none !important;
