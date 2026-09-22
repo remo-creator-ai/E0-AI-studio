@@ -32,6 +32,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useModal } from '../ui/ModalProvider';
 import { useTranslation } from 'react-i18next';
 import { genErrorSummary } from '../../lib/genErrorMessages';
+import { slugifyForFile } from '../../lib/fileName';
 import { useGenErrorAlert } from '../../hooks/useGenErrorAlert';
 import {
   generateStudioVideo, videoStudioCreditCost, detectAspectFromImage,
@@ -71,15 +72,6 @@ function sceneFilename(scene: Scene, isMain = true): string {
   const num = String(scene.order).padStart(2, '0');
   const tag = isMain ? '' : ''; // Phase 1: 항상 main. 향후 '-main' 태그 여기서 결정.
   return `scene-${num}${tag}.mp4`;
-}
-
-/** 프로젝트 제목 → 파일명 안전 슬러그 */
-function slugifyForFile(title: string, fallback = 'sodam'): string {
-  const s = title.trim()
-    .replace(/[<>:"/\\|?*]+/g, '')  // 파일명 금지 문자
-    .replace(/\s+/g, '-')
-    .slice(0, 40);
-  return s || fallback;
 }
 
 // ── 씬 영상 내려받기 실패 안내 ──

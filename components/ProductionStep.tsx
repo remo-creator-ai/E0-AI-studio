@@ -45,6 +45,7 @@ import { useCreditStore, CREDIT_COSTS } from '../store/creditStore';
 import { useModal } from './ui/ModalProvider';
 import { useGenErrorAlert } from '../hooks/useGenErrorAlert';
 import { classifyGenError, genErrorSummary } from '../lib/genErrorMessages';
+import { slugifyForFile } from '../lib/fileName';
 import { generateSceneVideo } from '../services/geminiService';
 import { proxyHealth } from '../lib/aiProxy';
 import { sceneImageToBlob } from '../services/imageUtils';
@@ -875,7 +876,7 @@ export const ProductionStep: React.FC = () => {
                           const url = URL.createObjectURL(blob);
                           const link = document.createElement('a');
                           link.href = url;
-                          link.download = `SODAM_${project.title.replace(/\s+/g, '_')}.storyboard`;
+                          link.download = `SODAM_${slugifyForFile(project.title)}.storyboard`;
                           link.click();
                           URL.revokeObjectURL(url);
                           setStoryboardDownloaded(true);
@@ -912,7 +913,7 @@ export const ProductionStep: React.FC = () => {
                           const url = URL.createObjectURL(content);
                           const link = document.createElement('a');
                           link.href = url;
-                          link.download = `SODAM_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
+                          link.download = `SODAM_Assets_${slugifyForFile(project.title)}.zip`;
                           link.click();
                           URL.revokeObjectURL(url);
                           setAssetsDownloaded(true);

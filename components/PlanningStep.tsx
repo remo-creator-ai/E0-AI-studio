@@ -28,6 +28,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useModal } from './ui/ModalProvider';
 import { AdDuration, VisualStyle, Scene, ProjectStep, StoryboardLayout, AspectRatio, SceneCount, SCENE_DURATION_MAP } from '../types';
 import { getSceneGridUnits } from '../lib/sceneGrid';
+import { slugifyForFile } from '../lib/fileName';
 import { generateAdScript, translateText } from '../services/geminiService';
 import { parseStoryboardJSON } from '../services/storyboardImporter';
 import { RefreshCw } from 'lucide-react';
@@ -252,7 +253,7 @@ export const PlanningStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `SODAM_Storyboard_${project.title.replace(/\s+/g, '_')}.txt`;
+    link.download = `SODAM_Storyboard_${slugifyForFile(project.title)}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
