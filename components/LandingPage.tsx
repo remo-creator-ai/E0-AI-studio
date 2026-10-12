@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check, Film, Image, Layers, PenTool, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BrandLogo } from './BrandLogo';
+import { LandingVideoExample } from './LandingVideoExample';
 import { BRAND, CONTENT_STARTS } from '../lib/brand';
 import { MOCK_MODE } from '../lib/mockAuth';
 import { useAuthStore } from '../store/authStore';
@@ -35,7 +36,7 @@ export const LandingPage: React.FC = () => {
     <main id="main-content">
       <section className="e0-hero">
         <div className="e0-hero-copy"><span className="e0-eyebrow"><span /> CONTENT, WITH PURPOSE</span><h1>{en ? <>Your brand idea.<br />A story worth<br /><em>bringing to life.</em></> : <>브랜드의 아이디어를,<br /><em>완성도 있는</em><br />영상으로.</>}</h1><p>{en ? 'From the first idea to images and video. Create the next chapter of your brand with E0 AI Studio.' : '기획부터 이미지와 영상 제작까지.\nE0 AI Studio에서 브랜드의 다음 이야기를 만드세요.'}</p><div className="e0-hero-actions"><button className="e0-button e0-button-large" onClick={start}>{en ? 'Create content' : '콘텐츠 만들기'}<ArrowRight size={18} /></button><a href="#workflow">{en ? 'Explore the workflow' : '제작 흐름 살펴보기'}<ArrowDown /></a></div><div className="e0-hero-note"><Check size={15}/>{en ? 'One connected workflow · Your assets, your direction' : '하나로 이어지는 제작 과정 · 브랜드 자산 재사용'}</div></div>
-        <div className="e0-hero-visual"><div className="e0-visual-label"><span>THE NEXT BRAND STORY</span><span>01 / 04</span></div><div className="e0-visual-image"><img src="/e0-content.svg" alt={en ? 'Illustrated product concept for a fictional brand' : '가상 브랜드 제품 소개 콘셉트 일러스트'} width="1000" height="750" /></div><div className="e0-visual-caption"><div><small>{en ? 'CONCEPT STUDY · ILLUSTRATION' : '콘셉트 예시 · 일러스트'}</small><strong>Every detail.<br />A new perspective.</strong></div><span className="e0-round-icon"><ArrowUpRight size={26}/></span></div><div className="e0-floating-note"><Layers size={20}/><span>{en ? 'An idea, built scene by scene' : '하나의 아이디어가, 장면으로'}<small>{en ? 'PLAN → CREATE → REFINE' : '기획 → 제작 → 완성'}</small></span></div></div>
+        <LandingVideoExample en={en} />
       </section>
       <div className="e0-context"><span>{en ? 'MADE FOR BRAND STORIES' : '브랜드가 필요한 모든 순간에'}</span><div><b>{en ? 'Product launches' : '제품 소개'}</b><i/><b>{en ? 'Store campaigns' : '매장 프로모션'}</b><i/><b>{en ? 'Brand stories' : '기업·브랜드 소개'}</b></div></div>
       <section id="use-cases" className="e0-section"><div className="e0-section-heading"><div><span className="e0-eyebrow">A GOOD PLACE TO START</span><h2>{en ? 'Start with your purpose.' : '목적이 정해지면,\n제작은 더 쉬워집니다.'}</h2></div><p>{en ? 'An editable starting point for the story you need.' : '무엇을 만들지 고민하는 시간은 줄이고,\n전달하고 싶은 메시지에 집중하세요.'}</p></div><div className="e0-purpose-grid">{CONTENT_STARTS.map((item,index)=><button key={item.id} onClick={start} className="e0-purpose-card"><span className="e0-purpose-number">0{index+1}<ArrowUpRight size={22}/></span><h3>{en ? item.en : item.title}</h3><p>{en ? item.descriptionEn : item.description}</p><span className="e0-purpose-line"/></button>)}</div></section>
