@@ -12,6 +12,7 @@
 
 /** 실패 분류. i18n 키(errors.gen.<kind>) 와 1:1 대응한다. */
 export type GenErrorKind =
+  | 'previewOnly'
   | 'blockedContent'     // PROHIBITED_CONTENT, moderation_blocked — 정책 위반 소재
   | 'blockedSafety'      // SAFETY, IMAGE_SAFETY — 안전 필터
   | 'blockedRecitation'  // RECITATION, BLOCKLIST, SPII — 저작물/금칙어/개인정보
@@ -60,6 +61,7 @@ export function classifyGenError(input: unknown): GenErrorKind {
   const raw = rawText(input);
   const s = raw.toLowerCase();
   if (!s) return 'unknown';
+  if (s.includes('preview_only') || s.includes('미리보기에서는')) return 'previewOnly';
 
   // 1) 콘텐츠 차단 — 사용자가 프롬프트를 고쳐야 하는 유일한 분류라 가장 먼저 판별한다.
   if (s.includes('prohibited_content') || s.includes('moderation_blocked') ||

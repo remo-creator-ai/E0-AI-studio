@@ -185,9 +185,7 @@ export async function generateStudioVideo(input: GenerateVideoInput): Promise<Ge
   if (!prompt) return { ok: false, failure: 'error', message: 'empty_prompt' };
 
   if (MOCK_MODE) {
-    await new Promise((r) => setTimeout(r, 2000));
-    // 목 모드: 소담이 서버에 올려둔 샘플 mp4 대신 zero-byte data URL 로 대체
-    return { ok: true, videoUrl: mockVideoDataUrl() };
+    return { ok: false, failure: 'error', message: '미리보기에서는 실제 AI 생성을 사용할 수 없습니다. 서버 연결 후 이용해 주세요.' };
   }
 
   // Kling 은 프롬프트 2500자 상한 (code 1201). 자동 잘라내기.

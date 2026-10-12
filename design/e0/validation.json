@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-12",
+  "localLinks": "pass",
+  "encoding": "pass",
+  "contrastRatios": {
+    "A": {
+      "text/surface": 14.85,
+      "textSecondary/surface": 5.96,
+      "onPrimary/primary": 5.61,
+      "inputBorder/surface": 3.8,
+      "focus/surface": 5.61,
+      "danger/surface": 6.57,
+      "warning/surface": 6.46
+    },
+    "B": {
+      "text/surface": 14.55,
+      "textSecondary/surface": 8.62,
+      "onPrimary/primary": 8.65,
+      "inputBorder/surface": 4.76,
+      "focus/surface": 8.98,
+      "danger/surface": 8.66,
+      "warning/surface": 10.14
+    }
+  },
+  "browserRender": "not verified - browser unavailable",
+  "appChanges": "none"
+}

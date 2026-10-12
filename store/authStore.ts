@@ -35,12 +35,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   setIntroSurveyStatus: (s) => set({ introSurveyStatus: s }),
 
   signInWithGoogle: async () => {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
       },
     });
+    if (error) throw error;
   },
 
   // 디자인(가계정) 모드: 가짜 마스터/일반 사용자로 즉시 입장

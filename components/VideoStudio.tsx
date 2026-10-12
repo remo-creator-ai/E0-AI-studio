@@ -233,13 +233,13 @@ const FocusView: React.FC<FocusViewProps> = ({
         <div className="px-4 py-3 flex flex-wrap gap-2">
           <button
             onClick={() => onRegenerate(source.prompt, source.aspect, source.durationSec)}
-            className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-xs font-black text-white flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-primary hover:bg-[#005D53] text-xs font-black text-white flex items-center gap-1.5"
           >
             <RefreshCw size={14} /> 다시 생성
           </button>
           <a
             href={source.videoUrl}
-            download={`sodam-video-${source.id}.mp4`}
+            download={`e0-video-${source.id}.mp4`}
             className="px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 text-xs font-bold text-zinc-700 flex items-center gap-1.5"
           >
             <Download size={14} /> 다운로드
@@ -767,7 +767,7 @@ export const VideoStudio: React.FC = () => {
                 disabled={hasActiveJob}
                 className={`px-2 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                   aspect === a
-                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.25)]'
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                 }`}
               >
@@ -794,7 +794,7 @@ export const VideoStudio: React.FC = () => {
                 disabled={hasActiveJob}
                 className={`px-3 py-2 rounded-xl font-bold text-xs transition-all ${
                   duration === d
-                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.25)]'
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                 }`}
               >
@@ -815,7 +815,7 @@ export const VideoStudio: React.FC = () => {
                 disabled={hasActiveJob}
                 className={`px-3 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                   resolution === r
-                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                    ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.25)]'
                     : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                 }`}
               >
@@ -840,7 +840,7 @@ export const VideoStudio: React.FC = () => {
           data-tour="video-studio-generate"
           onClick={generate}
           disabled={!prompt.trim()}
-          className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black shadow-[0_8px_24px_rgba(0,117,104,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           <Video size={18} />
           🔥 {cost}cr · 동영상 생성
@@ -891,7 +891,7 @@ export const VideoStudio: React.FC = () => {
                           onClick={() => { setStyle({ name: cs.name, prompt: cs.prompt_guide }); setIsStylePopupOpen(false); }}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                             isSelected
-                              ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                              ? 'border-primary bg-[#F0F7F4] shadow-[0_0_20px_rgba(0,117,104,0.2)]'
                               : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                           }`}
                         >
@@ -927,7 +927,7 @@ export const VideoStudio: React.FC = () => {
                       }}
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                         isSelected
-                          ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                          ? 'border-primary bg-[#F0F7F4] shadow-[0_0_20px_rgba(0,117,104,0.2)]'
                           : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                       }`}
                     >
@@ -1093,7 +1093,7 @@ export const VideoStudio: React.FC = () => {
               <button
                 onClick={performSave}
                 disabled={saving || !saveName.trim()}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#005D53] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
               >
                 {saving ? <><Loader2 size={14} className="animate-spin" /> 저장 중...</> : <><Package size={14} /> 저장</>}
               </button>

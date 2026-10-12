@@ -294,3 +294,20 @@ After:
 | 🟡 | 스키마 마이그레이션 작성 | `masters`·`accounts` + 마스터 RPC + RLS |
 | 🟡 | authStore 교체 | signInWithGoogle → signInWithPassword(합성이메일) |
 | 🟢 | 마스터 영역 컴포넌트 구현 | UI 시안 기반 React 컴포넌트화 |
+
+
+## 2026-10-12 · E0 Brand Studio A
+
+- 새 저장소: remo-creator-ai/E0-AI-studio. 기존 커밋 기록 유지.
+- 사용자가 A안 선택. E0 랜딩·공통 로고·청록색·대시보드 목적 카드 3종·기본 브리프 적용.
+- 현재 제품 워드마크는 E0 임시 디자인. 회사 공식 eone 로고를 변형하지 않음.
+- 기존 제작/자산/설정/관리 화면의 브랜드 색·명칭과 출력물 파일명 적용.
+- 소담 행사와 후원 표시는 앱에서 해제. 파일 삭제는 개발·배포 검증 후로 보류.
+- 로컬 미리보기 CRUD·저장 한도 실패·외부 호출 차단 테스트 통과. 실제 AI 생성은 미리보기에서 불가.
+- npm 호환 범위 보안 패치 후 알려진 취약점 0건. TypeScript/Vite 빌드 통과.
+- Vercel 새 프로젝트 e0-ai-studio 생성, GitHub 연결, https://e0-ai-studio.vercel.app 에 미리보기 배포.
+- 첫 Vercel 배포는 플랫폼에 의해 production alias로 지정됨. 앱은 명시적인 미리보기 모드이고 실제 운영 개시 아님.
+- Production/Preview 모두 VITE_MOCK_AUTH=true. 새 Supabase 실연결 후 false로 변경 필요.
+- Supabase CLI 인증 없음. 비대화형 환경에서 자동 로그인 불가. 사용자 터미널 로그인 안내 상태.
+- 브라우저 연결 목록 비어 있음. 렌더링·사용자 흐름 브라우저 검증은 미완료.
+- 남은 작업: 브라우저 검증, 새 Supabase 생성/마이그레이션/Edge Function/Google OAuth/AI 키, 실기능 확인, 최종 운영 배포, 레거시 디자인 자산 삭제.

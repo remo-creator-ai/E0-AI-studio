@@ -798,7 +798,7 @@ export const ImageStudio: React.FC = () => {
                     onClick={() => setMultishotPackId(pk.id)}
                     className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
                       selected
-                        ? 'border-primary bg-[#EEF3FC]'
+                        ? 'border-primary bg-[#F0F7F4]'
                         : 'border-zinc-200 hover:border-primary/40 bg-white'
                     }`}
                   >
@@ -998,7 +998,7 @@ export const ImageStudio: React.FC = () => {
             type="button"
             onClick={mode === 'multishot' ? runMultishot : run}
             disabled={!canGenerate}
-            className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed text-white rounded-full font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full py-4 bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed text-white rounded-full font-black text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           >
             {busy ? (
               <>
@@ -1080,7 +1080,7 @@ export const ImageStudio: React.FC = () => {
                               shotIdx: idx,
                             })}
                             disabled={shot.saveState.kind === 'saving'}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-primary/60 text-white text-[10px] font-bold"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary hover:bg-[#005D53] disabled:bg-primary/60 text-white text-[10px] font-bold"
                             title={t('imageStudio.result.saveToLibrary')}
                           >
                             {shot.saveState.kind === 'saving'
@@ -1131,7 +1131,7 @@ export const ImageStudio: React.FC = () => {
                   type="button"
                   onClick={() => openSaveDialog()}
                   disabled={saveState.kind === 'saving'}
-                  className="flex flex-col items-center gap-0.5 px-5 py-2.5 bg-primary hover:bg-[#003E99] disabled:bg-primary/60 text-white rounded-full font-bold text-sm transition-all active:scale-95"
+                  className="flex flex-col items-center gap-0.5 px-5 py-2.5 bg-primary hover:bg-[#005D53] disabled:bg-primary/60 text-white rounded-full font-bold text-sm transition-all active:scale-95"
                 >
                   <span className="flex items-center gap-2">
                     {saveState.kind === 'saving' ? (
@@ -1213,7 +1213,7 @@ export const ImageStudio: React.FC = () => {
         type="button"
         onClick={() => setIsHistoryDrawerOpen(true)}
         aria-label={t('imageStudio.history.openDrawer')}
-        className="xl:hidden fixed right-4 bottom-4 z-40 w-12 h-12 rounded-full bg-primary hover:bg-[#003E99] text-white shadow-lg flex items-center justify-center"
+        className="xl:hidden fixed right-4 bottom-4 z-40 w-12 h-12 rounded-full bg-primary hover:bg-[#005D53] text-white shadow-lg flex items-center justify-center"
       >
         <HistoryIcon size={18} />
       </button>
@@ -1335,7 +1335,7 @@ export const ImageStudio: React.FC = () => {
                 type="button"
                 onClick={commitSave}
                 disabled={saveState.kind === 'saving' || !saveDraft.name.trim()}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
               >
                 {saveState.kind === 'saving' ? (
                   <>
@@ -1372,7 +1372,7 @@ export const ImageStudio: React.FC = () => {
                 onClick={() => { setStyle(null); setIsStylePopup(false); }}
                 className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                   style === null
-                    ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                    ? 'border-primary bg-[#F0F7F4] shadow-[0_0_20px_rgba(0,117,104,0.2)]'
                     : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                 }`}
               >
@@ -1415,7 +1415,7 @@ export const ImageStudio: React.FC = () => {
                         }}
                         className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                           selected
-                            ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                            ? 'border-primary bg-[#F0F7F4] shadow-[0_0_20px_rgba(0,117,104,0.2)]'
                             : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                         }`}
                       >
@@ -1449,7 +1449,7 @@ export const ImageStudio: React.FC = () => {
                       onClick={() => { setStyle({ kind: 'preset', value: s }); setIsStylePopup(false); }}
                       className={`flex flex-col items-center gap-2 p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
                         selected
-                          ? 'border-primary bg-[#EEF3FC] shadow-[0_0_20px_rgba(0,80,191,0.2)]'
+                          ? 'border-primary bg-[#F0F7F4] shadow-[0_0_20px_rgba(0,117,104,0.2)]'
                           : 'border-zinc-200 hover:border-zinc-300 bg-zinc-50 hover:bg-zinc-100'
                       }`}
                     >

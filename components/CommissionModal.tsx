@@ -221,8 +221,8 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
       >
         {phase === 'done' ? (
           <div className="p-10 text-center space-y-5">
-            <div className="w-20 h-20 rounded-full bg-[#E5EDFA] border border-[#C0D4F0] flex items-center justify-center mx-auto">
-              <CheckCircle2 size={38} className="text-[#0050BF]" />
+            <div className="w-20 h-20 rounded-full bg-[#E8F4F0] border border-[#B9D8CD] flex items-center justify-center mx-auto">
+              <CheckCircle2 size={38} className="text-[#007568]" />
             </div>
             <div className="space-y-2">
               <h3 className="text-2xl font-black tracking-tight text-zinc-900">의뢰가 접수되었습니다</h3>
@@ -231,7 +231,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
                 <strong className="text-zinc-700">{email}</strong> 으로 견적을 보내드립니다.
               </p>
               {emailFailed && (
-                <p className="text-xs text-[#0050BF] font-bold">
+                <p className="text-xs text-[#007568] font-bold">
                   알림 메일 발송은 실패했지만 의뢰는 정상 접수되었습니다. 담당자가 관리자 콘솔에서 확인합니다.
                 </p>
               )}
@@ -241,7 +241,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
             </div>
             <button
               onClick={onClose}
-              className="w-full py-4 bg-primary hover:bg-[#003E99] rounded-full text-sm font-black text-white transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
+              className="w-full py-4 bg-primary hover:bg-[#005D53] rounded-full text-sm font-black text-white transition-all shadow-[0_8px_20px_rgba(0,117,104,0.25)]"
             >
               닫기
             </button>
@@ -278,7 +278,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
                   <AttachRow icon={Film} label="생성된 영상" value={attachments.videos > 0 ? `${attachments.videos}개` : '없음'} on={attachments.videos > 0} />
 
                   {extraFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm text-[#0050BF]">
+                    <div key={idx} className="flex items-center justify-between text-sm text-[#007568]">
                       <div className="flex items-center gap-3 min-w-0">
                         <Paperclip size={16} className="shrink-0" />
                         <span className="truncate">{file.name}</span>
@@ -323,7 +323,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
                         key={s.id}
                         onClick={() => toggle(s.id)}
                         className={`text-left p-3.5 rounded-2xl border transition-all ${
-                          on ? 'bg-[#E5EDFA] border-[#C0D4F0]' : 'bg-white border-zinc-200 hover:border-zinc-300'
+                          on ? 'bg-[#E8F4F0] border-[#B9D8CD]' : 'bg-white border-zinc-200 hover:border-zinc-300'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -334,7 +334,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
                           >
                             {on && <Check size={11} strokeWidth={4} />}
                           </span>
-                          <span className={`text-sm font-black ${on ? 'text-[#003E99]' : 'text-zinc-700'}`}>{s.label}</span>
+                          <span className={`text-sm font-black ${on ? 'text-[#005D53]' : 'text-zinc-700'}`}>{s.label}</span>
                         </div>
                         <p className="text-[11px] text-zinc-500 mt-1 pl-6 leading-snug">{s.desc}</p>
                       </button>
@@ -389,7 +389,7 @@ export const CommissionModal: React.FC<CommissionModalProps> = ({ open, onClose 
               <button
                 onClick={submit}
                 disabled={phase === 'sending'}
-                className="w-full py-4 bg-primary hover:bg-[#003E99] disabled:opacity-50 rounded-full text-sm font-black text-white flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(0,80,191,0.25)] active:scale-[0.99]"
+                className="w-full py-4 bg-primary hover:bg-[#005D53] disabled:opacity-50 rounded-full text-sm font-black text-white flex items-center justify-center gap-2 transition-all shadow-[0_8px_20px_rgba(0,117,104,0.25)] active:scale-[0.99]"
               >
                 {phase === 'sending' ? (
                   <><Loader2 size={18} className="animate-spin" /> {progress || '전송 중...'}</>
@@ -427,7 +427,7 @@ const AttachRow: React.FC<{
   value: string;
   on: boolean;
 }> = ({ icon: Icon, label, value, on }) => (
-  <div className={`flex items-center gap-3 text-sm ${on ? 'text-[#003E99]' : 'text-zinc-400'}`}>
+  <div className={`flex items-center gap-3 text-sm ${on ? 'text-[#005D53]' : 'text-zinc-400'}`}>
     <Icon size={16} className="shrink-0" />
     <span className="font-bold">{label}</span>
     <span className="ml-auto text-xs">{value}</span>

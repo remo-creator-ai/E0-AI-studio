@@ -57,7 +57,7 @@ const ModeCard: React.FC<ModeCardProps> = ({ icon: Icon, title, subtitle, featur
     onClick={onClick}
     className={`group relative flex flex-col items-start p-8 rounded-3xl transition-all text-left ${
       primary
-        ? 'bg-gradient-to-br from-primary to-[#1E6FD9] text-white shadow-[0_12px_32px_rgba(0,80,191,0.35)] hover:shadow-[0_16px_40px_rgba(0,80,191,0.45)]'
+        ? 'bg-gradient-to-br from-primary to-[#248B78] text-white shadow-[0_12px_32px_rgba(0,117,104,0.35)] hover:shadow-[0_16px_40px_rgba(0,117,104,0.45)]'
         : 'bg-white border-2 border-zinc-200 hover:border-primary/40 hover:shadow-lg'
     }`}
   >

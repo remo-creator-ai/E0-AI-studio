@@ -14,10 +14,12 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { supabase } from './supabase';
+import { MOCK_MODE } from './mockAuth';
 
 export const PROXY_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-proxy`;
 
 export async function accessToken(): Promise<string | null> {
+  if (MOCK_MODE) return null;
   const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
 }

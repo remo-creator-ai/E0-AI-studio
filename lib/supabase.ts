@@ -1,3 +1,4 @@
+import { MOCK_MODE } from './mockAuth';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 
@@ -16,5 +17,9 @@ const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase: SupabaseClient<Database> = createClient<Database>(
   supabaseUrl || PLACEHOLDER_URL,
-  supabaseAnonKey || PLACEHOLDER_KEY
+  supabaseAnonKey || PLACEHOLDER_KEY,
+  {
+    auth: { storageKey: 'e0-auth', persistSession: !MOCK_MODE, autoRefreshToken: !MOCK_MODE, detectSessionInUrl: !MOCK_MODE },
+    ...(MOCK_MODE ? { global: { fetch: async () => new Response(JSON.stringify({ message: '미리보기 모드에서는 서버 작업을 사용할 수 없습니다.', code: 'PREVIEW_ONLY' }), { status: 503, headers: { 'Content-Type': 'application/json' } }) } } : {}),
+  }
 );

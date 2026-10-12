@@ -1,128 +1,47 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# E0 AI Studio
 
-# REMO AI Studio
+이원오엠에스 맞춤 브랜드 콘텐츠 제작 공간. `remo-creator-ai/E0-AI-studio`에서 독립 개발합니다.
 
-AI-powered video production platform. From script to storyboard to video — all automated.
+## 시작
 
-## Tech Stack
+```powershell
+npm ci
+npm run dev
+```
 
-- **Frontend**: React 19 + TypeScript (strict) + Vite 6
-- **State**: Zustand
-- **Styling**: Tailwind CSS v4
-- **Auth**: Supabase + Google OAuth
-- **AI**: Gemini AI (script/image/video), Kling AI (video)
-- **Deploy**: Vercel
+로컬 주소: http://127.0.0.1:3456 . Supabase 설정이 없는 로컬 개발에서는 미리보기로 동작합니다. 랜딩의 **스튜디오 미리보기**로 입장할 수 있습니다.
 
-## Run Locally
+- A안: 화이트·청록색, 브랜드 목적별 시작 템플릿 3종.
+- 기존 기획 → 이미지 → 스토리보드 → 영상 제작 흐름을 유지합니다.
+- 미리보기 프로젝트는 브라우저 로컬 저장소에 보관됩니다. AI 생성·서버 작업은 실행하지 않습니다.
+- 업로드 자산의 미리보기는 세션 한정입니다. 실제 사용자 인증·클라우드 저장은 새 Supabase 연결 후 검증합니다.
+- 프로덕션에서는 환경변수 누락만으로 가계정을 활성화하지 않습니다.
 
-**Prerequisites:** Node.js 18+
+## 검증
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Copy `.env.local.example` to `.env.local` and set your keys:
-   ```
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_ADMIN_EMAIL=admin@example.com
-   ```
-3. Run the app:
-   ```bash
-   npm run dev
-   ```
-
-## Build
-
-```bash
+```powershell
 npm run build
+node tests/e0-core.test.mjs
 ```
 
-Runs `tsc --noEmit && vite build`. Output in `dist/`.
+설계 문서: [분석·후보](design/e0/index.html), [A 기능 PRD](design/e0/A-product-prd.html), [A 디자인 PRD](design/e0/A-design-prd.html).
 
-## Deployment (Vercel)
+## 새 프로젝트 배포
 
-### Branch Strategy
+기존 소담 프로젝트의 URL·키·배포 훅을 사용하지 않습니다. `.env.example`의 공개 설정값을 **E0 전용 프로젝트**의 값으로 채웁니다.
 
-- `master` — development branch
-- `main` — production branch (Vercel deploys from here)
+1. Vercel: 프로젝트 `e0-ai-studio`, Vite, 빌드 `npm run build`, 출력 `dist`, 설치 `npm ci`.
+2. 검토 배포에만 `VITE_MOCK_AUTH=true`를 명시합니다. 운영 배포는 `false`와 새 Supabase 공개 URL/anon key를 사용합니다.
+3. Supabase: 새 빈 프로젝트에 `supabase/migrations`를 번호순 적용합니다. 기존 마이그레이션은 보존하며 `pg_cron` 등 필요 확장과 실제 적용 결과를 확인해야 합니다. 아직 새 서버에 적용하지 않았습니다.
+4. `supabase/functions`의 필요한 Edge Functions를 새 프로젝트에 배포합니다. AI 공급자 비밀키는 서버 측에만 저장합니다.
+5. Google OAuth에 새 Supabase 콜백과 E0 사이트/리다이렉트 URL을 등록합니다. 최초 관리자 로그인 후 서버의 profiles.role을 별도로 부여합니다. 프런트 관리자 이메일은 UI 노출 용도일 뿐 서버 권한이 아닙니다.
+6. 서로 다른 사용자로 프로젝트 접근 격리·저장·재열기·생성 실패/차감·다운로드를 검증합니다. 신규 크레딧·사용 정책은 운영 전 확인합니다.
+7. 실제 도메인 확정 후 canonical/OG URL 및 검색 노출을 설정합니다. 현재 robots.txt는 검토 버전의 검색 수집을 차단합니다.
 
-### Deploy Steps
+## 자산 정리 순서
 
-1. Commit & push to `master`
-2. Merge to `main`:
-   ```bash
-   git checkout main && git merge master && git push origin main && git checkout master
-   ```
-3. Trigger deploy (choose one):
+소담 로고·캐릭터·과거 디자인 문서는 현재 앱에서 참조하지 않습니다. 사용자의 지시에 따라 **개발·배포 검증 이후** 남은 레거시 파일을 정리합니다. 원본 커밋 이력은 유지합니다.
 
-   **Option A: Deploy Hook**
-   ```bash
-   curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_vygv6160dHyLDg5qJM4kqRWf9tFX/zyp1t8fip0"
-   ```
+## 기술
 
-   **Option B: Vercel API** (requires token)
-   ```bash
-   curl -s -X POST "https://api.vercel.com/v13/deployments?teamId=team_aDbLgUvNQFsnJMcz0sE0bpN1" \
-     -H "Authorization: Bearer $VERCEL_TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{"name":"remo-ai-studio","project":"prj_vygv6160dHyLDg5qJM4kqRWf9tFX","gitSource":{"type":"github","org":"remo-creator-ai","repo":"REMO-AI-Studio-v1","ref":"main","repoId":1142116745},"target":"production"}'
-   ```
-
-4. Build takes ~3-5 minutes. Check status at Vercel Dashboard > Deployments.
-
-## Supabase Setup
-
-### Required Tables
-
-Run migrations in order from `supabase/migrations/`:
-
-| Migration | Description |
-|-----------|-------------|
-| `schema.sql` | profiles, projects, RLS, triggers |
-| `002_project_summaries.sql` | get_project_summaries RPC |
-| `003_current_stage.sql` | current_stage column |
-| `004_fix_rpc_security.sql` | RPC security fixes |
-| `005_user_credits.sql` | user_credits table, deduct/initialize RPCs |
-
-### Admin: Add Credits
-
-```sql
-UPDATE user_credits
-SET balance = balance + 100, max_credits = max_credits + 100
-WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user@example.com')
-RETURNING *;
-```
-
-## Project Structure
-
-```
-├── components/        # React components
-│   ├── LandingPage.tsx
-│   ├── Dashboard.tsx
-│   ├── Layout.tsx
-│   ├── PlanningStep.tsx
-│   ├── VisualizingStep.tsx
-│   ├── AssemblyStep.tsx
-│   ├── ProductionStep.tsx
-│   ├── SettingsPage.tsx
-│   └── AdminPage.tsx
-├── store/
-│   ├── store.ts          # Main Zustand store
-│   ├── authStore.ts      # Supabase auth
-│   ├── creditStore.ts    # Credits (Supabase-backed)
-│   └── settingsStore.ts  # User preferences
-├── services/
-│   ├── geminiService.ts  # Gemini AI API
-│   ├── klingService.ts   # Kling AI API
-│   └── projectService.ts # Project CRUD
-├── lib/
-│   └── supabase.ts       # Supabase client
-├── types/
-│   └── database.ts       # Supabase types
-├── supabase/
-│   └── migrations/       # SQL migrations
-└── vercel.json           # Vercel config
-```
+React · TypeScript · Vite · Tailwind CSS · Zustand · Supabase. API 공급자 키는 ai-proxy Edge Function에서 처리합니다.

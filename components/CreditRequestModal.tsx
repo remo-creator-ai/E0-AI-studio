@@ -174,7 +174,7 @@ export const CreditRequestModal: React.FC<Props> = ({ userId, onClose }) => {
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       disabled={submitting || hasPending}
-                      placeholder="예: 소담스퀘어"
+                      placeholder="예: 이원오엠에스"
                       className="mt-1 w-full px-3 py-2 rounded-lg border border-zinc-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-zinc-100 disabled:text-zinc-400"
                     />
                   </div>

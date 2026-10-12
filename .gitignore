@@ -62,3 +62,7 @@ design/sodami/video/
 *.sln
 *.sw?
 .vercel
+
+# Local verification artifacts
+.tmp/
+.env*

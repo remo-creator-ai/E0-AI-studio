@@ -234,7 +234,7 @@ export const CustomStylesSection: React.FC = () => {
                   type="button"
                   onClick={submitDraft}
                   disabled={saving || !draft.name.trim() || !draft.prompt_guide.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
                 >
                   {saving ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
                   {t('settings.customStyles.save')}

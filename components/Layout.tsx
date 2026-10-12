@@ -1,3 +1,6 @@
+import { BrandLogo } from './BrandLogo';
+import { BRAND } from '../lib/brand';
+import { MOCK_MODE } from '../lib/mockAuth';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +49,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) =
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
       active
-        ? 'bg-primary text-white shadow-[0_6px_18px_rgba(0,80,191,0.25)]'
+        ? 'bg-primary text-white shadow-none'
         : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
     }`}
   >
@@ -131,15 +134,14 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   }, [closeSidebar]);
 
   return (
-    <div id="app-layout" className="flex h-screen overflow-hidden bg-[#F5F7FA] text-zinc-900">
+    <div id="app-layout" className="flex h-screen overflow-hidden bg-[#F4F7F6] text-zinc-900">
       {/* Sidebar */}
       {/* overflow-y-auto: 루트가 h-screen overflow-hidden 이라 사이드바가 뷰포트보다
           길어지면 그냥 잘린다(마스터는 '관리자 콘솔'이 추가돼 특히 쉽게 넘친다).
           창을 줄이면 크레딧·로그아웃이 사라지고 스크롤도 불가능했다. */}
-      <aside className={`fixed inset-y-0 left-0 z-[60] w-80 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 overflow-y-auto print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-[60] w-64 bg-white border-r border-zinc-200 p-4 flex flex-col gap-5 overflow-y-auto print:hidden transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:transition-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-3 px-2 shrink-0">
-          <img src="/sodami.png" alt="소담이" className="w-9 h-9 rounded-xl shrink-0 object-cover" />
-          <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900">소담 <span className="text-primary">AI</span> 스튜디오</h1>
+          <BrandLogo />
         </div>
 
         {/* min-h-0 + overflow-y-auto: 화면이 짧으면 메뉴 영역만 안에서 스크롤되고
@@ -240,25 +242,25 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
 
         <div data-sidebar-account className="shrink-0 space-y-2">
         {/* Credit Balance — 골드 (크레딧=가치/보상) */}
-        <div data-tour="sidebar-credits" className="h-[48px] px-3 py-2 bg-[#E5EDFA] border border-[#C0D4F0] rounded-xl flex items-center gap-2.5">
-          <Coins size={16} className="text-[#0050BF] shrink-0" />
+        <div data-tour="sidebar-credits" className="h-[48px] px-3 py-2 bg-[#E8F4F0] border border-[#B9D8CD] rounded-xl flex items-center gap-2.5">
+          <Coins size={16} className="text-[#007568] shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2 leading-none">
               <div className="flex items-baseline gap-1 shrink-0">
-                <span className={`text-base font-black ${balance <= 10 ? 'text-[#64748B]' : 'text-[#0050BF]'}`}>{balance}</span>
+                <span className={`text-base font-black ${balance <= 10 ? 'text-[#64748B]' : 'text-[#007568]'}`}>{balance}</span>
                 <span className="text-[9px] font-bold text-[#7B93B8]">/ {maxCredits}</span>
               </div>
               {!isMasterUi && (
                 <button
                   onClick={() => setShowCreditRequest(true)}
-                  className="text-[10px] font-bold text-[#0050BF] hover:text-[#003E99] hover:underline whitespace-nowrap"
+                  className="text-[10px] font-bold text-[#007568] hover:text-[#005D53] hover:underline whitespace-nowrap"
                 >
                   + 크레딧 신청
                 </button>
               )}
             </div>
-            <div className="mt-1 h-1 bg-[#D6E3F7] rounded-full overflow-hidden" aria-label={t('common.credits')}>
-              <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#0050BF]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
+            <div className="mt-1 h-1 bg-[#CDE4DB] rounded-full overflow-hidden" aria-label={t('common.credits')}>
+              <div className={`h-full rounded-full transition-all duration-500 ${balance <= 10 ? 'bg-[#64748B]' : 'bg-[#007568]'}`} style={{ width: `${maxCredits > 0 ? (balance / maxCredits) * 100 : 0}%` }} />
             </div>
           </div>
         </div>
@@ -269,7 +271,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             {user?.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} alt="" className="w-[32px] h-[32px] rounded-full shrink-0" />
             ) : (
-              <div className="w-[32px] h-[32px] rounded-full bg-gradient-to-tr from-primary to-[#1E6FD9] shrink-0" />
+              <div className="w-[32px] h-[32px] rounded-full bg-gradient-to-tr from-primary to-[#248B78] shrink-0" />
             )}
             <div className="flex flex-col items-start overflow-hidden flex-1 min-w-0 leading-tight">
               <div className="text-xs font-bold truncate w-full text-zinc-900">
@@ -291,7 +293,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
               aria-current={currentStep === ProjectStep.SETTINGS ? 'page' : undefined}
               className={`w-[32px] h-[32px] shrink-0 flex items-center justify-center rounded-lg transition-all ${
                 currentStep === ProjectStep.SETTINGS
-                  ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.2)]'
+                  ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.2)]'
                   : 'text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900'
               }`}
             >
@@ -303,9 +305,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
 
         {/* Sponsor / Powered by — 사이드바 최하단. 저작권처럼 눈에 띄지 않되 항상 노출. */}
         <div className="shrink-0 text-center text-[10px] text-zinc-400 leading-relaxed">
-          Sponsored by <span className="font-bold text-zinc-500">openknwol</span>
-          <br />
-          AI powered by <span className="font-bold text-primary">REMO</span>
+          {BRAND.company}<br />{BRAND.name}
         </div>
       </aside>
 
@@ -319,7 +319,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative md:ml-0">
+      <main className="flex-1 min-w-0 overflow-y-auto relative md:ml-0">
+        {MOCK_MODE && <div className="e0-preview-banner" role="status">미리보기 모드 · 프로젝트는 이 브라우저에 저장됩니다. AI 생성 및 서버 연결은 준비 중입니다.</div>}
         <header className="sticky top-0 z-50 px-4 py-3 md:px-8 border-b border-zinc-200 glass-panel print:hidden">
           {(() => {
             const isWorkflowStep = [ProjectStep.PLANNING, ProjectStep.VISUALIZING, ProjectStep.ASSEMBLY, ProjectStep.PRODUCTION].includes(currentStep);
@@ -432,7 +433,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       </div>
                     )}
                     {saveStatus === 'saved' && (
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#0050BF] uppercase tracking-widest">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#007568] uppercase tracking-widest">
                         <CheckCircle2 size={12} /> {t('common.saved')}
                       </div>
                     )}
@@ -442,8 +443,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       </div>
                     )}
                     {saveStatus === 'forbidden' && (
-                      <span className="text-[#0050BF] text-xs flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-[#0050BF] rounded-full" />
+                      <span className="text-[#007568] text-xs flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-[#007568] rounded-full" />
                         {t('common.readOnly')}
                       </span>
                     )}
@@ -460,7 +461,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       return (
                         <React.Fragment key={ws.step}>
                           {i > 0 && (
-                            <div className={`h-[1px] w-6 ${isPast ? 'bg-[#0050BF]' : 'bg-zinc-200'}`} />
+                            <div className={`h-[1px] w-6 ${isPast ? 'bg-[#007568]' : 'bg-zinc-200'}`} />
                           )}
                           <button
                             onClick={() => handleNavigate(ws.step)}
@@ -468,12 +469,12 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                               isCurrent
                                 ? 'text-primary bg-primary/10'
                                 : isPast
-                                ? 'text-[#0050BF] hover:bg-zinc-100'
+                                ? 'text-[#007568] hover:bg-zinc-100'
                                 : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'
                             }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full ${
-                              isCurrent ? 'bg-primary' : isPast ? 'bg-[#E5EDFA]0' : 'bg-zinc-300'
+                              isCurrent ? 'bg-primary' : isPast ? 'bg-[#E8F4F0]0' : 'bg-zinc-300'
                             }`} />
                             {ws.label}
                           </button>

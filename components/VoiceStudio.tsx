@@ -25,7 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { genErrorSummary } from '../lib/genErrorMessages';
 
 const SAMPLE_SCRIPTS = [
-  '안녕하세요, 소담 AI 스튜디오입니다. 지금부터 시작합니다.',
+  '안녕하세요, E0 AI Studio입니다. 지금부터 시작합니다.',
   '이 제품은 여러분의 일상을 바꿔줄 특별한 경험을 선사합니다.',
   '단 한 잔의 커피가 오늘 하루를 완벽하게 만들어 드립니다.',
 ];
@@ -326,7 +326,7 @@ export const VoiceStudio: React.FC = () => {
         <button
           onClick={generate}
           disabled={!canGenerate}
-          className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="mt-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black shadow-[0_8px_24px_rgba(0,117,104,0.35)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           {busy ? <><Loader2 size={18} className="animate-spin" /> 생성 중...</> : <><Mic size={18} /> 🔥 {cost}cr · 음성 생성</>}
         </button>
@@ -425,7 +425,7 @@ export const VoiceStudio: React.FC = () => {
                   <div className="flex items-start gap-2">
                     <button
                       onClick={() => togglePlay(h)}
-                      className="shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-[#003E99]"
+                      className="shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-[#005D53]"
                     >
                       {isPlaying ? <Pause size={12} /> : <Play size={12} className="ml-0.5" />}
                     </button>

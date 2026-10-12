@@ -57,10 +57,10 @@ export const useModal = (): ModalContextValue => {
 // ---------------------------------------------------------------------------
 
 const iconMap: Record<ModalType, { icon: React.ElementType; color: string; bg: string }> = {
-  success: { icon: CheckCircle2, color: 'text-[#0050BF]', bg: 'bg-[#E5EDFA] border-[#C0D4F0]' },
-  error:   { icon: AlertCircle,  color: 'text-zinc-600',     bg: 'bg-zinc-100 border-zinc-200' },
-  warning: { icon: AlertTriangle, color: 'text-[#0050BF]',  bg: 'bg-[#E5EDFA] border-[#C0D4F0]' },
-  info:    { icon: Info,          color: 'text-[#0050BF]', bg: 'bg-[#EEF3FC] border-[#C0D4F0]' },
+  success: { icon: CheckCircle2, color: 'text-[#007568]', bg: 'bg-[#E8F4F0] border-[#B9D8CD]' },
+  error:   { icon: AlertCircle,  color: 'text-red-700',     bg: 'bg-red-50 border-red-200' },
+  warning: { icon: AlertTriangle, color: 'text-amber-800', bg: 'bg-amber-50 border-amber-200' },
+  info:    { icon: Info,          color: 'text-[#007568]', bg: 'bg-[#F0F7F4] border-[#B9D8CD]' },
 };
 
 // ---------------------------------------------------------------------------
@@ -193,8 +193,8 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
               {/* 다음 행동 안내 — 원인만 알려주고 끝내지 않는다 */}
               {modal.hint && (
-                <div className="rounded-2xl bg-[#EEF3FC] border border-[#C0D4F0] px-4 py-3">
-                  <p className="text-[13px] text-[#0050BF] font-bold leading-relaxed text-center whitespace-pre-line">
+                <div className="rounded-2xl bg-[#F0F7F4] border border-[#B9D8CD] px-4 py-3">
+                  <p className="text-[13px] text-[#007568] font-bold leading-relaxed text-center whitespace-pre-line">
                     {modal.hint}
                   </p>
                 </div>
@@ -239,7 +239,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               )}
               <button
                 onClick={() => close(modal.kind === 'confirm' ? true : true)}
-                className="flex-1 py-3.5 bg-primary hover:bg-[#003E99] rounded-full font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
+                className="flex-1 py-3.5 bg-primary hover:bg-[#005D53] rounded-full font-black text-sm text-white transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,117,104,0.25)]"
               >
                 {modal.confirmText}
               </button>

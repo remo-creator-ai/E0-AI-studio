@@ -241,7 +241,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
                     aria-pressed={selected}
                     className={`group relative flex flex-col items-stretch text-left rounded-xl border-2 overflow-hidden transition-all ${
                       selected
-                        ? 'border-primary shadow-[0_0_0_2px_rgba(0,80,191,0.15)]'
+                        ? 'border-primary shadow-[0_0_0_2px_rgba(0,117,104,0.15)]'
                         : disabled
                           ? 'opacity-40 cursor-not-allowed border-zinc-200'
                           : 'border-zinc-200 hover:border-primary/40 hover:shadow-lg'
@@ -292,7 +292,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
               type="button"
               onClick={handleConfirm}
               disabled={selectedCount === 0 || confirming}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white text-sm font-bold transition-colors"
             >
               {confirming ? (
                 <>

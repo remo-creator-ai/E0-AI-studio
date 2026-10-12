@@ -69,7 +69,7 @@ function formatDateTime(raw: string | null | undefined): string {
 const REQ_STATUS: Record<MasterRequest['status'], { label: string; cls: string }> = {
   pending: { label: '대기', cls: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]' },
   in_progress: { label: '진행', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-  completed: { label: '완료', cls: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]' },
+  completed: { label: '완료', cls: 'bg-[#E8F4F0] text-[#005D53] border-[#B9D8CD]' },
   cancelled: { label: '취소', cls: 'bg-zinc-100 text-zinc-500 border-zinc-200' },
 };
 
@@ -125,24 +125,24 @@ export const AdminPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-zinc-900 p-8 overflow-y-auto">
+    <div className="min-h-screen bg-[#F4F7F6] text-zinc-900 p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-[#EEF3FC] border border-[#C0D4F0] rounded-[2rem] p-8">
+        <div className="bg-[#F0F7F4] border border-[#B9D8CD] rounded-[2rem] p-8">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-zinc-900">관리자 콘솔</h1>
-              <p className="text-sm text-zinc-500 mt-1">오픈놀 · 가입 사용자 · 크레딧 · 의뢰 관리</p>
+              <p className="text-sm text-zinc-500 mt-1">E0 · 가입 사용자 · 크레딧 · 의뢰 관리</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span className="px-2 py-1 bg-[#E5EDFA] text-[#003E99] border border-[#C0D4F0] rounded-full font-bold">MASTER</span>
+            <span className="px-2 py-1 bg-[#E8F4F0] text-[#005D53] border border-[#B9D8CD] rounded-full font-bold">MASTER</span>
             <span>{user?.email}</span>
             {MOCK_MODE && (
-              <span className="px-2 py-1 bg-[#E5EDFA] text-[#003E99] border border-[#C0D4F0] rounded-full font-bold ml-1">디자인(가계정) 모드 · 샘플 데이터</span>
+              <span className="px-2 py-1 bg-[#E8F4F0] text-[#005D53] border border-[#B9D8CD] rounded-full font-bold ml-1">디자인(가계정) 모드 · 샘플 데이터</span>
             )}
           </div>
         </div>
@@ -180,8 +180,8 @@ export const AdminPage: React.FC = () => {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#C0D4F0] text-zinc-900 rounded-2xl px-5 py-3 shadow-2xl">
-          <span className="w-2 h-2 rounded-full bg-[#0050BF] shadow-[0_0_8px_#0050BF]" />
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white border border-[#B9D8CD] text-zinc-900 rounded-2xl px-5 py-3 shadow-2xl">
+          <span className="w-2 h-2 rounded-full bg-[#007568] shadow-[0_0_8px_#007568]" />
           <span className="text-sm font-bold">{toast}</span>
         </div>
       )}
@@ -257,7 +257,7 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
         <StatCard
           label="크레딧 신청"
           value={stats.creditRequestsTotal}
-          sub={<><span className={stats.creditRequestsPending > 0 ? 'text-rose-600 font-black' : 'text-[#0050BF]'}>대기 {stats.creditRequestsPending}</span> · <b className="text-[#0050BF]">누계 {stats.creditRequestsTotal}</b></>}
+          sub={<><span className={stats.creditRequestsPending > 0 ? 'text-rose-600 font-black' : 'text-[#007568]'}>대기 {stats.creditRequestsPending}</span> · <b className="text-[#007568]">누계 {stats.creditRequestsTotal}</b></>}
         />
       </div>
 
@@ -271,7 +271,7 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
           </div>
         </div>
         <div className="h-2.5 rounded-full bg-zinc-100 overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(0,80,191,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-400 shadow-[0_0_24px_rgba(0,117,104,0.25)]" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
         <p className="text-[11px] text-zinc-400 mt-2">
           <b className="text-primary">부여 누계 방식</b> — 지금까지 부여한 총합이 한도를 초과할 수 없음(계정이 소진해도 회복 없음). 한도 변경은 <b className="text-zinc-600">리모와 협의</b> 후 조정.
@@ -294,7 +294,7 @@ const DashboardTab: React.FC<{ goToCreditRequests: () => void }> = ({ goToCredit
               <tr key={tx.id} className="border-b border-zinc-100 last:border-0">
                 <td className="px-4 py-3 text-zinc-700">{tx.description}</td>
                 <td className="px-4 py-3 font-mono text-zinc-900">{tx.account_email}</td>
-                <td className={`px-4 py-3 text-right font-mono font-bold ${tx.amount < 0 ? 'text-zinc-500' : 'text-[#0050BF]'}`}>
+                <td className={`px-4 py-3 text-right font-mono font-bold ${tx.amount < 0 ? 'text-zinc-500' : 'text-[#007568]'}`}>
                   {tx.amount > 0 ? '+' : ''}{tx.amount}
                 </td>
                 <td className="px-4 py-3 text-right text-zinc-400">{tx.created_at}</td>
@@ -431,7 +431,7 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
           <div className="flex gap-2">{opBtn('add', '＋ 충전')}{opBtn('deduct', '－ 차감')}{opBtn('set', '＝ 설정')}</div>
         </Field>
       ) : (
-        <div className="mb-4 px-3 py-2 rounded-xl bg-[#E5EDFA] border border-[#C0D4F0] text-[11px] font-bold text-[#003E99]">
+        <div className="mb-4 px-3 py-2 rounded-xl bg-[#E8F4F0] border border-[#B9D8CD] text-[11px] font-bold text-[#005D53]">
           지급(충전)만 가능합니다. 차감·강제 설정은 정책상 제거되었습니다.
         </div>
       )}
@@ -446,7 +446,7 @@ const CreditModal: React.FC<{ account: MasterAccount; onClose: () => void; onDon
       </Field>
       {error && <p className="text-[12px] font-bold text-zinc-500 flex items-center gap-1.5 mb-2"><AlertCircle className="w-3.5 h-3.5" />{error}</p>}
       <div className="flex gap-2 pt-1">
-        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
+        <button onClick={submit} disabled={saving} className="flex-1 py-3 rounded-full bg-primary text-white hover:bg-[#005D53] shadow-[0_8px_20px_rgba(0,117,104,0.25)] disabled:opacity-50 font-black text-sm flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} 적용
         </button>
         <button onClick={onClose} className="px-5 py-3 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-bold text-sm">닫기</button>
@@ -528,7 +528,7 @@ const UsageTab: React.FC = () => {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${r.type === 'deduct' ? 'bg-zinc-100 text-zinc-500' : 'bg-primary/20 text-primary'}`}>{r.type}</span>
                   </td>
                   <td className="px-3 py-3 text-zinc-700">{r.description}</td>
-                  <td className={`px-3 py-3 text-right font-mono font-bold ${r.amount < 0 ? 'text-zinc-500' : 'text-[#0050BF]'}`}>{r.amount > 0 ? '+' : ''}{r.amount}</td>
+                  <td className={`px-3 py-3 text-right font-mono font-bold ${r.amount < 0 ? 'text-zinc-500' : 'text-[#007568]'}`}>{r.amount > 0 ? '+' : ''}{r.amount}</td>
                   <td className="px-3 py-3 text-right font-mono text-zinc-700">{r.balance_after}</td>
                 </tr>
               ))}
@@ -638,7 +638,7 @@ const CreditRequestsTab: React.FC<{ showToast: (m: string) => void; onProcessed:
                     {r.status === 'pending' ? (
                       <div className="flex gap-1.5 justify-end">
                         <button onClick={() => openApprove(r)}
-                          className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-black hover:bg-[#003E99] transition-all">
+                          className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-black hover:bg-[#005D53] transition-all">
                           승인
                         </button>
                         <button onClick={() => openReject(r)}
@@ -737,7 +737,7 @@ const CreditRequestActionModal: React.FC<{
         <button onClick={submit} disabled={submitting}
           className={`flex-1 py-3 rounded-full font-black text-sm flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 ${
             action === 'approve'
-              ? 'bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+              ? 'bg-primary text-white hover:bg-[#005D53] shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
               : 'bg-rose-500 text-white hover:bg-rose-600 shadow-[0_8px_20px_rgba(244,63,94,0.25)]'
           }`}>
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
@@ -851,7 +851,7 @@ const RequestsTab: React.FC = () => {
             onClick={() => setFilter(f.id)}
             className={`px-4 py-2 rounded-full text-xs font-black border transition-all ${
               filter === f.id
-                ? 'bg-primary border-primary text-white shadow-[0_6px_16px_rgba(0,80,191,0.25)]'
+                ? 'bg-primary border-primary text-white shadow-[0_6px_16px_rgba(0,117,104,0.25)]'
                 : 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300'
             }`}
           >
@@ -942,13 +942,13 @@ const RequestsTab: React.FC = () => {
               <div className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-4 mb-2">첨부</div>
               {selected.storyboard_url && (
                 <a href={selected.storyboard_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#003E99] hover:border-primary/40 mb-1.5">
+                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#005D53] hover:border-primary/40 mb-1.5">
                   <Download className="w-3.5 h-3.5" /> 스토리보드 · 스크립트 (.json)
                 </a>
               )}
               {selected.assets_url && (
                 <a href={selected.assets_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#003E99] hover:border-primary/40 mb-1.5">
+                  className="flex items-center gap-2 bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-bold text-[#005D53] hover:border-primary/40 mb-1.5">
                   <Download className="w-3.5 h-3.5" /> 이미지 에셋 (.zip)
                 </a>
               )}
@@ -966,7 +966,7 @@ const RequestsTab: React.FC = () => {
                 <button
                   onClick={() => importToMyProjects(selected)}
                   disabled={importing}
-                  className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-full bg-primary hover:bg-[#003E99] disabled:opacity-50 shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-black text-xs transition-colors"
+                  className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-full bg-primary hover:bg-[#005D53] disabled:opacity-50 shadow-[0_8px_20px_rgba(0,117,104,0.25)] text-white font-black text-xs transition-colors"
                 >
                   {importing ? (
                     <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 가져오는 중...</>
@@ -980,7 +980,7 @@ const RequestsTab: React.FC = () => {
                 <button onClick={() => setStatus(selected, 'in_progress')} disabled={selected.status === 'in_progress'}
                   className="py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 font-bold text-xs">진행중</button>
                 <button onClick={() => setStatus(selected, 'completed')} disabled={selected.status === 'completed'}
-                  className="py-2.5 rounded-full bg-primary hover:bg-[#003E99] disabled:opacity-40 shadow-[0_8px_20px_rgba(0,80,191,0.25)] text-white font-bold text-xs">완료</button>
+                  className="py-2.5 rounded-full bg-primary hover:bg-[#005D53] disabled:opacity-40 shadow-[0_8px_20px_rgba(0,117,104,0.25)] text-white font-bold text-xs">완료</button>
                 <button onClick={() => setStatus(selected, 'pending')} disabled={selected.status === 'pending'}
                   className="py-2.5 rounded-full bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 font-bold text-xs">신규로</button>
                 <button onClick={() => setStatus(selected, 'cancelled')} disabled={selected.status === 'cancelled'}
@@ -1034,9 +1034,9 @@ const ApiKeysTab: React.FC = () => {
           <div key={field.key} className="bg-zinc-50 rounded-xl p-5 border border-zinc-100">
             <div className="flex items-center justify-between mb-3">
               <label className="text-sm font-semibold text-zinc-700">{field.label}</label>
-              {status[field.key] === 'success' && <span className="flex items-center gap-1 text-xs text-[#0050BF] font-bold"><CheckCircle2 className="w-3 h-3" /> {t('common.savedStatus')}</span>}
+              {status[field.key] === 'success' && <span className="flex items-center gap-1 text-xs text-[#007568] font-bold"><CheckCircle2 className="w-3 h-3" /> {t('common.savedStatus')}</span>}
               {status[field.key] === 'error' && <span className="flex items-center gap-1 text-xs text-zinc-500 font-bold"><AlertCircle className="w-3 h-3" /> {t('common.failed')}</span>}
-              {configured.has(field.key) && !status[field.key] && <span className="flex items-center gap-1 text-xs text-[#0050BF]"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
+              {configured.has(field.key) && !status[field.key] && <span className="flex items-center gap-1 text-xs text-[#007568]"><CheckCircle2 className="w-3 h-3" /> {t('common.configured')}</span>}
             </div>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -1053,7 +1053,7 @@ const ApiKeysTab: React.FC = () => {
                 </button>
               </div>
               <button onClick={() => save(field.key)} disabled={saving === field.key || !values[field.key]?.trim()}
-                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#003E99] shadow-[0_8px_20px_rgba(0,80,191,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
+                className="px-5 py-3 rounded-full bg-primary text-white hover:bg-[#005D53] shadow-[0_8px_20px_rgba(0,117,104,0.25)] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none font-semibold flex items-center gap-2 shrink-0">
                 {saving === field.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('common.save')}
               </button>
             </div>

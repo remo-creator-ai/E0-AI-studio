@@ -1,11 +1,21 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "rewrites": [
+  "installCommand": "npm ci",
+  "framework": "vite",
+  "headers": [
     {
-      "source": "/api/kling/:path*",
-      "destination": "https://api.klingai.com/:path*"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
     }
   ]
 }

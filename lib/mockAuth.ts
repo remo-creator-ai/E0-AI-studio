@@ -19,11 +19,11 @@ export const MOCK_MODE: boolean =
     ? true
     : env.VITE_MOCK_AUTH === 'false'
       ? false
-      : !env.VITE_SUPABASE_URL;
+      : import.meta.env.DEV && !env.VITE_SUPABASE_URL;
 
 export type MockRole = 'master' | 'user';
 
-const ROLE_KEY = 'mock-auth-role';
+const ROLE_KEY = 'e0-mock-auth-role';
 
 /** 새로고침 후에도 가계정 세션이 유지되도록 role 을 localStorage 에 보관 */
 export function getMockRole(): MockRole | null {
@@ -46,11 +46,11 @@ export function buildMockUser(role: MockRole): User {
       : 'mock-user-0000-0000-0000-000000000000',
     aud: 'authenticated',
     role: 'authenticated',
-    email: isMaster ? 'master@sodam.local' : 'demo.user@gmail.com',
+    email: isMaster ? 'master@e0.local' : 'demo.user@gmail.com',
     app_metadata: { provider: 'mock' },
     user_metadata: {
-      full_name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 사용자 (가계정)',
-      name: isMaster ? '오픈놀 마스터 (가계정)' : '데모 사용자 (가계정)',
+      full_name: isMaster ? 'E0 관리자 (가계정)' : '데모 사용자 (가계정)',
+      name: isMaster ? 'E0 관리자 (가계정)' : '데모 사용자 (가계정)',
       role,
     },
     created_at: MOCK_CREATED_AT,

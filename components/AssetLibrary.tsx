@@ -13,7 +13,7 @@ import {
   type Asset, type AssetType, type AssetFile, type NewAssetFile,
 } from '../services/assetService';
 const TYPE_BADGE: Record<AssetType, string> = {
-  character: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]',
+  character: 'bg-[#E8F4F0] text-[#005D53] border-[#B9D8CD]',
   product:   'bg-emerald-50 text-emerald-700 border-emerald-200',
   logo:      'bg-amber-50 text-amber-700 border-amber-200',
   image:     'bg-zinc-100 text-zinc-600 border-zinc-200',
@@ -68,7 +68,7 @@ export const AssetLibrary: React.FC = () => {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#003E99] text-white rounded-full font-bold text-sm transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
+          className="flex items-center gap-2 px-5 py-3 bg-primary hover:bg-[#005D53] text-white rounded-full font-bold text-sm transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,117,104,0.25)]"
         >
           <Plus size={16} /> {t('assets.new')}
         </button>
@@ -256,7 +256,7 @@ const CreateAssetModal: React.FC<{ onClose: () => void; onDone: () => void }> = 
 
       {error && <p className="text-xs font-semibold text-red-500 mb-3">{error}</p>}
       <button onClick={submit} disabled={saving || !name.trim() || !primary}
-        className="w-full py-3.5 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-all active:scale-[0.98]">
+        className="w-full py-3.5 bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-all active:scale-[0.98]">
         {saving ? t('assets.create.submitting') : t('assets.create.submit')}
       </button>
     </ModalWrap>
@@ -392,7 +392,7 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
           {/* 액션 */}
           {editing ? (
             <div className="flex gap-2">
-              <button onClick={save} disabled={busy} className="flex-1 py-2.5 bg-primary hover:bg-[#003E99] text-white rounded-full font-bold text-sm disabled:opacity-50">{t('assets.detail.save')}</button>
+              <button onClick={save} disabled={busy} className="flex-1 py-2.5 bg-primary hover:bg-[#005D53] text-white rounded-full font-bold text-sm disabled:opacity-50">{t('assets.detail.save')}</button>
               <button onClick={() => { setEditing(false); setName(asset.name); setDesc(asset.description); }} className="px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-full font-bold text-sm">{t('assets.detail.cancel')}</button>
             </div>
           ) : (
@@ -401,7 +401,7 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
               <button
                 onClick={generateFromHere}
                 disabled={!asset.primary_url}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-[#003E99] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-colors"
               >
                 <Sparkles size={16} /> {t('assets.detail.generateFromHere')}
               </button>

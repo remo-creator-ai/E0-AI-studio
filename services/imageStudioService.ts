@@ -191,9 +191,7 @@ export async function generateStudioImage(input: GenerateInput): Promise<Generat
   if (!prompt) return { ok: false, failure: 'error', message: 'empty_prompt' };
 
   if (MOCK_MODE) {
-    // 디자인(가계정) 모드: 실제 호출 없이 흐름만 확인한다.
-    await new Promise((r) => setTimeout(r, 1200));
-    return { ok: true, imageUrl: mockImage(input.aspect) };
+    return { ok: false, failure: 'error', message: '미리보기에서는 실제 AI 생성을 사용할 수 없습니다. 서버 연결 후 이용해 주세요.' };
   }
 
   const model = input.model ?? DEFAULT_IMAGE_STUDIO_MODEL;
@@ -277,8 +275,8 @@ function mockImage(aspect: StudioAspect): string {
   const [w, h] = aspect === '1:1' ? [800, 800] : aspect === '16:9' ? [1280, 720] : [720, 1280];
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">` +
-    `<rect width="${w}" height="${h}" fill="#E5EDFA"/>` +
-    `<text x="50%" y="50%" text-anchor="middle" font-family="sans-serif" font-size="${Math.round(w / 18)}" fill="#0050BF">` +
+    `<rect width="${w}" height="${h}" fill="#E8F4F0"/>` +
+    `<text x="50%" y="50%" text-anchor="middle" font-family="sans-serif" font-size="${Math.round(w / 18)}" fill="#007568">` +
     `${aspect} preview</text></svg>`;
   return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }

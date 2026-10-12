@@ -74,7 +74,7 @@ function sceneFilename(scene: Scene, isMain = true): string {
 }
 
 /** 프로젝트 제목 → 파일명 안전 슬러그 */
-function slugifyForFile(title: string, fallback = 'sodam'): string {
+function slugifyForFile(title: string, fallback = 'e0'): string {
   const s = title.trim()
     .replace(/[<>:"/\\|?*]+/g, '')  // 파일명 금지 문자
     .replace(/\s+/g, '-')
@@ -728,7 +728,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${slugifyForFile(project?.title ?? 'sodam')}-scenes.zip`;
+      a.download = `${slugifyForFile(project?.title ?? 'e0')}-scenes.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -834,7 +834,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       zip.file('script.txt', buildScriptText(scenes));
       if (narrationIncluded) zip.file('cut-list.txt', buildCutList(scenes, cues));
       zip.file('README.txt', buildReadme({
-        projectTitle: project?.title ?? '소담 프로젝트',
+        projectTitle: project?.title ?? 'E0 프로젝트',
         sceneCount: scenes.length,
         totalSeconds,
         hasNarration: narrationIncluded,
@@ -845,7 +845,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${slugifyForFile(project?.title ?? 'sodam')}-capcut.zip`;
+      a.download = `${slugifyForFile(project?.title ?? 'e0')}-capcut.zip`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -919,7 +919,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
   return (
     <div className="space-y-5">
       {/* ══════════ 상단 sticky 헤더: 진행률 · 전체생성 · 씬 레일 ══════════ */}
-      <div className="sticky top-16 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-[#F5F7FA]/95 backdrop-blur-md border-b border-zinc-200 space-y-3">
+      <div className="sticky top-16 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-[#F4F7F6]/95 backdrop-blur-md border-b border-zinc-200 space-y-3">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
@@ -933,7 +933,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             </div>
             <div className="mt-2 h-2 w-full md:w-72 rounded-full bg-zinc-100 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-primary to-[#1E6FD9] transition-all duration-500"
+                className="h-full bg-gradient-to-r from-primary to-[#248B78] transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -960,7 +960,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               <button
                 onClick={upgradePromptsSelected}
                 disabled={!!promptBatch}
-                className="px-4 py-3 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-black text-sm shadow-[0_6px_16px_rgba(124,58,237,0.28)] flex items-center gap-2 disabled:opacity-60"
+                className="px-4 py-3 rounded-2xl bg-primary hover:bg-[#005D53] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,117,104,0.18)] flex items-center gap-2 disabled:opacity-60"
                 title="시작 프레임(끝 프레임이 있으면 둘 다)을 보고 영상 프롬프트를 새로 씁니다. 몇 개를 하든 정액 1cr · 이미 직접 고친 씬은 제외됩니다."
               >
                 {promptBatch
@@ -973,7 +973,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
               <button
                 onClick={() => setExportOpen(true)}
                 disabled={exporting}
-                className="px-4 py-3 rounded-2xl bg-primary hover:bg-[#003E99] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,80,191,0.28)] flex items-center gap-2 disabled:opacity-60"
+                className="px-4 py-3 rounded-2xl bg-primary hover:bg-[#005D53] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,117,104,0.28)] flex items-center gap-2 disabled:opacity-60"
                 title="CapCut 에 바로 끌어다 놓을 수 있는 편집 패키지를 만듭니다"
               >
                 {exporting ? <Loader2 size={16} className="animate-spin" /> : <FilmIcon size={16} />}
@@ -995,7 +995,7 @@ export const ProductionModeB: React.FC<ModeBProps> = ({ onBack }) => {
             <button
               onClick={() => setShowBatchModal(true)}
               disabled={selectedScenes.length === 0}
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black text-sm shadow-[0_8px_24px_rgba(0,80,191,0.3)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black text-sm shadow-[0_8px_24px_rgba(0,117,104,0.3)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Rocket size={16} />
               선택한 씬 생성 ({selectedScenes.length}개 · {totalSelectedCost}cr)
@@ -1510,7 +1510,7 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
           <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">이 씬 결과물</div>
           <button
             onClick={openFullscreen}
-            className="w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,80,191,0.28)] flex items-center justify-center gap-2 hover:shadow-[0_8px_20px_rgba(0,80,191,0.4)] transition-all"
+            className="w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black text-sm shadow-[0_6px_16px_rgba(0,117,104,0.28)] flex items-center justify-center gap-2 hover:shadow-[0_8px_20px_rgba(0,117,104,0.4)] transition-all"
           >
             <Play size={16} /> 전체화면 재생
           </button>
@@ -1560,7 +1560,7 @@ const SceneDoneView: React.FC<SceneDoneViewProps> = ({ scene, videoUrl, onHealed
                   key={t.id}
                   onClick={() => onSelectMainTake(t.id)}
                   className={`flex-none flex flex-col gap-1 rounded-xl border-2 overflow-hidden bg-white transition-all ${
-                    isMain ? 'border-primary shadow-[0_4px_12px_rgba(0,80,191,0.25)]' : 'border-zinc-200 hover:border-primary/40'
+                    isMain ? 'border-primary shadow-[0_4px_12px_rgba(0,117,104,0.25)]' : 'border-zinc-200 hover:border-primary/40'
                   }`}
                   style={{ width: 128 }}
                   title={isMain ? '대표 · 클릭해도 그대로' : '클릭하면 대표로 지정'}
@@ -1836,7 +1836,7 @@ const SceneTextEditor: React.FC<SceneTextEditorProps> = ({
               <button
                 onClick={save}
                 disabled={!dirty}
-                className="px-3 py-1 rounded-md bg-primary hover:bg-[#003E99] text-white text-[11px] font-black disabled:opacity-40"
+                className="px-3 py-1 rounded-md bg-primary hover:bg-[#005D53] text-white text-[11px] font-black disabled:opacity-40"
               >
                 저장
               </button>
@@ -1982,7 +1982,7 @@ const SceneActionPicker: React.FC<SceneActionPickerProps> = ({
               ? 'bg-zinc-50 border-zinc-200 text-zinc-400 cursor-not-allowed'
               : generating
                 ? 'bg-primary/10 border-primary/30 text-primary cursor-wait'
-                : 'bg-primary text-white border-primary hover:bg-[#003E99] cursor-pointer shadow-[0_4px_12px_rgba(0,80,191,0.2)]'
+                : 'bg-primary text-white border-primary hover:bg-[#005D53] cursor-pointer shadow-[0_4px_12px_rgba(0,117,104,0.2)]'
           }`}
         >
           {generating ? <Loader2 size={16} className="animate-spin" /> : <Video size={16} />}
@@ -2353,7 +2353,7 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
           <button
             onClick={onGenerate}
             disabled={generating || !promptValue.trim()}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black text-sm shadow-[0_4px_12px_rgba(0,80,191,0.25)] disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black text-sm shadow-[0_4px_12px_rgba(0,117,104,0.25)] disabled:opacity-50 flex items-center gap-2"
           >
             {generating ? <><Loader2 size={16} className="animate-spin" /> 생성 중...</> : <><Sparkles size={16} /> 영상 생성</>}
           </button>
@@ -2521,7 +2521,7 @@ const EditorPackageModal: React.FC<EditorPackageModalProps> = ({ scenes, balance
           </button>
           <button
             onClick={() => onConfirm({ voiceId, withNarration: canNarrate })}
-            className="flex-1 py-3 rounded-full bg-primary hover:bg-[#003E99] text-white font-black text-sm shadow-[0_8px_20px_rgba(0,80,191,0.25)] flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-full bg-primary hover:bg-[#005D53] text-white font-black text-sm shadow-[0_8px_20px_rgba(0,117,104,0.25)] flex items-center justify-center gap-2"
           >
             <DownloadCloud size={16} />
             패키지 만들기{canNarrate ? ` · ${cost}cr` : ''}
@@ -2673,7 +2673,7 @@ const GenerateAllModal: React.FC<GenerateAllModalProps> = ({ scenes, settingsFor
             <button
               onClick={() => onConfirm(targetScenes)}
               disabled={!canProceed}
-              className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-white text-sm font-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-primary hover:bg-[#005D53] text-white text-sm font-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
               <Rocket size={14} /> 생성 시작
             </button>

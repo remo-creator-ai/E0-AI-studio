@@ -575,7 +575,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                   disabled={busy}
                   className={`px-3 py-2 rounded-xl font-bold text-xs transition-all ${
                     duration === d
-                      ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                      ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.25)]'
                       : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                   }`}
                 >
@@ -610,7 +610,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                   disabled={busy}
                   className={`px-3 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
                     resolution === r
-                      ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,80,191,0.25)]'
+                      ? 'bg-primary text-white shadow-[0_4px_12px_rgba(0,117,104,0.25)]'
                       : 'bg-white border border-zinc-200 text-zinc-500 hover:border-primary/40'
                   }`}
                 >
@@ -704,7 +704,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                     title={s.image_prompt_en?.slice(0, 80) ?? `씬 ${i + 1}`}
                     className={`aspect-square rounded-lg text-xs font-black border-2 transition-all relative ${
                       active
-                        ? 'border-primary bg-primary text-white shadow-[0_2px_8px_rgba(0,80,191,0.25)]'
+                        ? 'border-primary bg-primary text-white shadow-[0_2px_8px_rgba(0,117,104,0.25)]'
                         : 'border-zinc-200 bg-white text-zinc-400 hover:border-primary/40'
                     }`}
                   >
@@ -798,7 +798,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
             <button
               onClick={generate}
               disabled={busy || !prompt.trim() || activeIdxs.length === 0}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-[#1E6FD9] text-white font-black shadow-[0_8px_24px_rgba(0,80,191,0.35)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-[#248B78] text-white font-black shadow-[0_8px_24px_rgba(0,117,104,0.35)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {busy ? (
                 <>
@@ -899,13 +899,13 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
                     <button
                       onClick={regenerateSameParams}
                       disabled={busy}
-                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#003E99] text-white text-[11px] font-black flex items-center gap-1 disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#005D53] text-white text-[11px] font-black flex items-center gap-1 disabled:opacity-50"
                     >
                       <RefreshCw size={12} /> 다시 생성
                     </button>
                     <a
                       href={item.url}
-                      download={`sodam-integrated-${item.id}.mp4`}
+                      download={`e0-integrated-${item.id}.mp4`}
                       className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-50 text-[11px] font-bold text-zinc-700 flex items-center gap-1"
                     >
                       <Download size={12} /> 다운로드
@@ -963,7 +963,7 @@ export const ProductionModeA: React.FC<ModeAProps> = ({ onBack }) => {
               <button
                 onClick={performSave}
                 disabled={saving || !saveName.trim()}
-                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#003E99] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-[#005D53] text-white text-sm font-black disabled:opacity-50 flex items-center gap-1.5"
               >
                 {saving ? <><Loader2 size={14} className="animate-spin" /> 저장 중...</> : <><Package size={14} /> 저장</>}
               </button>

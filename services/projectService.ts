@@ -1,3 +1,5 @@
+import { MOCK_MODE } from '../lib/mockAuth';
+import { localProjects, saveLocalProject, removeLocalProject } from '../lib/localProjects';
 import { supabase } from '../lib/supabase';
 import type { Project } from '../types';
 import { AspectRatio, SceneCount } from '../types';
@@ -7,6 +9,7 @@ export async function saveProject(
   userId: string,
   project: Project
 ): Promise<{ id: string; processedProject: Project | null }> {
+  if (MOCK_MODE) { saveLocalProject(userId, project); return { id: project.id, processedProject: null }; }
   // Check if any images need uploading to Storage
   const hasBase64 =
     project.scenes.some((s) => isBase64DataUri(s.image_url)) ||
@@ -63,6 +66,7 @@ export async function saveProject(
 }
 
 export async function loadProject(projectId: string): Promise<Project | null> {
+  if (MOCK_MODE) return localProjects().find(p => p.id === projectId) ?? null;
   const { data, error } = await supabase
     .from('projects')
     .select('*')
@@ -115,6 +119,7 @@ export async function loadProject(projectId: string): Promise<Project | null> {
 export async function renameProject(projectId: string, title: string): Promise<void> {
   const clean = title.trim();
   if (!clean) throw new Error('제목이 비어 있습니다.');
+  if (MOCK_MODE) { const project = localProjects().find(p => p.id === projectId); if (!project) throw new Error('프로젝트를 찾을 수 없습니다.'); saveLocalProject(project.user_id, { ...project, title: clean }); return; }
   const { error } = await supabase
     .from('projects')
     .update({ title: clean, updated_at: new Date().toISOString() })
@@ -123,6 +128,7 @@ export async function renameProject(projectId: string, title: string): Promise<v
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
+  if (MOCK_MODE) { removeLocalProject(projectId); return; }
   const { error } = await supabase
     .from('projects')
     .delete()
@@ -144,6 +150,7 @@ export async function deleteProject(projectId: string): Promise<void> {
  * 하나 더 생길 뿐이다.
  */
 export async function isOwnProject(projectId: string): Promise<boolean> {
+  if (MOCK_MODE) return localProjects().some(p => p.id === projectId);
   const { data, error } = await supabase
     .from('projects')
     .select('id')

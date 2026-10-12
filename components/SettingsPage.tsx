@@ -26,7 +26,7 @@ export const SettingsPage: React.FC = () => {
   const creditPercentage = (balance / maxCredits) * 100;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-zinc-900 p-8 overflow-y-auto">
+    <div className="min-h-screen bg-[#F4F7F6] text-zinc-900 p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Section 1: Account */}
         <div className="bg-white border border-zinc-100 rounded-[2rem] p-8">
@@ -40,7 +40,7 @@ export const SettingsPage: React.FC = () => {
           <div className="space-y-6">
             {/* User Info */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-[#1E6FD9] overflow-hidden">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-[#248B78] overflow-hidden">
                 {user?.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
@@ -79,7 +79,7 @@ export const SettingsPage: React.FC = () => {
               </div>
               <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-[#1E6FD9] transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-primary to-[#248B78] transition-all duration-300"
                   style={{ width: `${creditPercentage}%` }}
                 />
               </div>
@@ -139,7 +139,7 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => settings.update({ defaultVideoEngine: 'kling' })}
                   className={`flex-1 px-6 py-3 rounded-full font-semibold transition-all ${
                     settings.defaultVideoEngine === 'kling'
-                      ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+                      ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
                       : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                   }`}
                 >
@@ -149,7 +149,7 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => settings.update({ defaultVideoEngine: 'veo31' })}
                   className={`flex-1 px-6 py-3 rounded-full font-semibold transition-all ${
                     settings.defaultVideoEngine === 'veo31'
-                      ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+                      ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
                       : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                   }`}
                 >
@@ -182,7 +182,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => settings.update({ defaultDuration: duration })}
                     className={`px-6 py-3 rounded-full font-semibold transition-all ${
                       settings.defaultDuration === duration
-                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
                         : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                     }`}
                   >
@@ -209,7 +209,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => settings.update({ defaultStyle: style })}
                     className={`px-6 py-3 rounded-full font-semibold transition-all ${
                       settings.defaultStyle === style
-                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
                         : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                     }`}
                   >
@@ -235,7 +235,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => settings.update({ defaultLayout: layout })}
                     className={`px-6 py-3 rounded-full font-semibold transition-all ${
                       settings.defaultLayout === layout
-                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,80,191,0.25)]'
+                        ? 'bg-primary text-white shadow-[0_8px_20px_rgba(0,117,104,0.25)]'
                         : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
                     }`}
                   >
@@ -266,7 +266,7 @@ export const SettingsPage: React.FC = () => {
                 onClick={() => setLanguage('ko')}
                 className={`flex-1 p-4 rounded-2xl border-2 text-center transition-all ${
                   defaultLanguage === 'ko'
-                    ? 'border-primary bg-[#EEF3FC] text-primary'
+                    ? 'border-primary bg-[#F0F7F4] text-primary'
                     : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                 }`}
               >
@@ -277,7 +277,7 @@ export const SettingsPage: React.FC = () => {
                 onClick={() => setLanguage('en')}
                 className={`flex-1 p-4 rounded-2xl border-2 text-center transition-all ${
                   defaultLanguage === 'en'
-                    ? 'border-primary bg-[#EEF3FC] text-primary'
+                    ? 'border-primary bg-[#F0F7F4] text-primary'
                     : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                 }`}
               >

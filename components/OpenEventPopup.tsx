@@ -64,7 +64,7 @@ export const OpenEventPopup: React.FC = () => {
       data-open-event-popup
       role="dialog"
       aria-modal="true"
-      aria-label="소담 AI 스튜디오 오픈 기념 지원 안내"
+      aria-label="E0 AI Studio 오픈 기념 지원 안내"
       className="fixed inset-0 z-[300] flex items-center justify-center bg-zinc-950/65 p-3 backdrop-blur-sm sm:p-6"
       onClick={(event) => {
         if (event.target === event.currentTarget) close();
@@ -80,13 +80,13 @@ export const OpenEventPopup: React.FC = () => {
           href={FORM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="소담 AI 스튜디오 오픈 기념 지원 신청서 열기"
+          aria-label="E0 AI Studio 오픈 기념 지원 신청서 열기"
           className="block min-h-0 overflow-hidden bg-white focus:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary"
         >
           <img
             data-open-event-image
             src={popupImageUrl}
-            alt="소담 AI 스튜디오 오픈 기념, 30초 AI 쇼츠 제작 교육과 제작지원 및 5만원 상당 크레딧 제공 안내"
+            alt="E0 AI Studio 오픈 기념, 30초 AI 쇼츠 제작 교육과 제작지원 및 5만원 상당 크레딧 제공 안내"
             width={984}
             height={1313}
             className="block max-h-[calc(94vh-72px)] w-auto max-w-full object-contain"

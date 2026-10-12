@@ -15,12 +15,12 @@ interface AppState {
   currentStep: ProjectStep;
   project: Project | null;
   isLoading: boolean;
-  newProjectConfig: { aspectRatio: AspectRatio; sceneCount: SceneCount } | null;
+  newProjectConfig: { aspectRatio: AspectRatio; sceneCount: SceneCount; idea?: string } | null;
   pendingImageStudioRef: PendingImageStudioRef | null;
   setStep: (step: ProjectStep) => void;
   setProject: (project: Project | null) => void;
   setIsLoading: (loading: boolean) => void;
-  setNewProjectConfig: (config: { aspectRatio: AspectRatio; sceneCount: SceneCount } | null) => void;
+  setNewProjectConfig: (config: { aspectRatio: AspectRatio; sceneCount: SceneCount; idea?: string } | null) => void;
   setPendingImageStudioRef: (ref: PendingImageStudioRef | null) => void;
   updateScene: (sceneId: string, updates: Partial<Scene>) => void;
   reorderScenes: (scenes: Scene[]) => void;

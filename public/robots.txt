@@ -1,4 +1,2 @@
 User-agent: *
-Allow: /
-
-Sitemap: https://sodam-ai-studio.vercel.app/sitemap.xml
+Disallow: /

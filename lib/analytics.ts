@@ -46,7 +46,7 @@ export function track(event: string, properties?: Record<string, string | number
 }
 
 /** 페이지뷰 · currentStep 이 바뀔 때마다 App.tsx 가 호출.
- *  Sodam 은 URL 이 안 바뀌는 store 기반 라우팅이라 자동 감지 안 됨 → 명시 호출. */
+ *  E0는 URL 이 안 바뀌는 store 기반 라우팅이라 자동 감지 안 됨 → 명시 호출. */
 export function pageView(path: string, title?: string): void {
   try {
     if (!shouldSend()) {
@@ -67,7 +67,7 @@ export function pageView(path: string, title?: string): void {
 export function setUserId(userId: string | null): void {
   try {
     if (!shouldSend()) return;
-    window.gtag!('config', 'G-Q8VNCJHG0Z', { user_id: userId });
+    window.gtag!('config', import.meta.env.VITE_GA_MEASUREMENT_ID, { user_id: userId });
   } catch (e) {
     console.warn('analytics setUserId failed:', e);
   }

@@ -1,3 +1,7 @@
+import { createDemoProject } from '../lib/demoProject';
+import { saveProject } from '../services/projectService';
+import { localProjects, removeLocalProject } from '../lib/localProjects';
+import { CONTENT_STARTS } from '../lib/brand';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,7 +41,7 @@ const REQUEST_STATUS_LABELS_KR: Record<RequestStatus, string> = {
 const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
   pending: 'bg-[#F1F5F9] text-[#475569] border-[#CBD5E1]',
   in_progress: 'bg-blue-50 text-blue-700 border-blue-200',
-  completed: 'bg-[#E5EDFA] text-[#003E99] border-[#C0D4F0]',
+  completed: 'bg-[#E8F4F0] text-[#005D53] border-[#B9D8CD]',
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200',
 };
 
@@ -73,11 +77,14 @@ interface ProjectSummary {
 }
 
 export const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const en = i18n.language.startsWith('en');
+  const [startingIdea, setStartingIdea] = useState('');
   const { user } = useAuthStore();
   const { setProject, setStep } = useStore();
   const { alert, confirm } = useModal();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [myRequests, setMyRequests] = useState<ProductionRequestSummary[]>([]);
@@ -121,7 +128,12 @@ export const Dashboard: React.FC = () => {
   const loadProjects = async () => {
     if (!user) return;
     setIsLoading(true);
+    setLoadError(false);
     try {
+      if (MOCK_MODE) {
+        setProjects(localProjects().filter(p => p.user_id === user.id).map(p => ({ ...p, scenes_count: p.scenes.length, images_done: p.scenes.filter(s => s.image_url).length, videos_done: p.scenes.filter(s => s.video_url).length, thumbnail: p.thumbnail ?? null, current_stage: p.current_stage ?? null, original_creator_id: null, creator_display_name: null, creator_avatar_url: null })));
+        return;
+      }
       const { data, error } = await supabase.rpc('get_project_summaries', {
         p_user_id: user.id,
       });
@@ -147,13 +159,14 @@ export const Dashboard: React.FC = () => {
       setProjects(summaries);
     } catch (err) {
       console.error('Failed to load projects:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadMyRequests = async () => {
-    if (!user) return;
+    if (!user || MOCK_MODE) return;
     setRequestsLoading(true);
     try {
       const { data, error } = await supabase
@@ -174,6 +187,13 @@ export const Dashboard: React.FC = () => {
 
   const handleOpenProject = async (projectId: string) => {
     try {
+      if (MOCK_MODE) {
+        const local = localProjects().find(p => p.id === projectId && p.user_id === user?.id);
+        if (!local) throw new Error('Project not found');
+        setProject(local);
+        const stages: Record<string, ProjectStep> = { PLANNING: ProjectStep.PLANNING, VISUALIZING: ProjectStep.VISUALIZING, ASSEMBLY: ProjectStep.ASSEMBLY, PRODUCTION: ProjectStep.PRODUCTION };
+        setStep(stages[local.current_stage ?? ''] ?? ProjectStep.PLANNING); return;
+      }
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -223,12 +243,13 @@ export const Dashboard: React.FC = () => {
       await alert(t('dashboard.alerts.maxProjects', { max: MAX_FREE_PROJECTS }), { type: 'warning' });
       return;
     }
+    setStartingIdea('');
     setShowNewProjectModal(true);
   };
 
   const handleStartProject = () => {
     const { setNewProjectConfig } = useStore.getState();
-    setNewProjectConfig({ aspectRatio: selectedAspectRatio, sceneCount: selectedSceneCount });
+    setNewProjectConfig({ aspectRatio: selectedAspectRatio, sceneCount: selectedSceneCount, idea: startingIdea });
     setProject(null);
     setStep(ProjectStep.PLANNING);
     setShowNewProjectModal(false);
@@ -239,7 +260,7 @@ export const Dashboard: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase
+      const { error } = MOCK_MODE ? (removeLocalProject(projectId), { error: null }) : await supabase
         .from('projects')
         .delete()
         .eq('id', projectId);
@@ -274,10 +295,10 @@ export const Dashboard: React.FC = () => {
     <div className="space-y-6 md:space-y-8">
         <section data-tour="dashboard-welcome" className="space-y-5 md:flex md:items-end md:justify-between md:space-y-0">
           <div className="min-w-0 space-y-2">
-            <h1 data-dashboard-mobile-title className="text-[2rem] font-black leading-[1.15] tracking-[-0.04em] text-zinc-900 md:hidden">
+            <h1 data-dashboard-mobile-title className="e0-dashboard-title text-zinc-900 md:hidden">
               {t('dashboard.mobileTitle')}
             </h1>
-            <h2 className="hidden text-5xl font-black italic uppercase tracking-tighter text-zinc-900 md:block">
+            <h2 className="e0-dashboard-title hidden text-zinc-900 md:block">
               {t('dashboard.title')} <span className="text-primary">{t('dashboard.titleHighlight')}</span>
             </h2>
             <p data-dashboard-mobile-subtitle className="text-sm leading-6 text-zinc-500 md:hidden">{t('dashboard.mobileSubtitle')}</p>
@@ -287,10 +308,17 @@ export const Dashboard: React.FC = () => {
             data-tour="dashboard-new-project"
             data-dashboard-primary-cta
             onClick={handleNewProject}
-            className="flex min-h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-[0_8px_20px_rgba(0,80,191,0.22)] transition-all hover:bg-[#003E99] active:scale-[0.98] md:w-auto md:rounded-full md:px-7"
+            className="flex min-h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-[0_8px_20px_rgba(0,117,104,0.22)] transition-all hover:bg-[#005D53] active:scale-[0.98] md:w-auto md:rounded-full md:px-7"
           >
             <Plus size={20} /> {t('dashboard.newProject')}
           </button>
+        </section>
+
+        <section className="e0-starts" aria-label={en ? 'Choose a content purpose' : '제작 목적 선택'}>
+          {CONTENT_STARTS.map((item, index) => <button key={item.id} className="e0-purpose-card" onClick={() => { setStartingIdea(en ? item.briefEn : item.brief); setShowNewProjectModal(true); }}>
+            <span className="e0-purpose-number">0{index + 1}<ChevronRight size={18}/></span>
+            <h3>{en ? item.en : item.title}</h3><p>{en ? item.descriptionEn : item.description}</p>
+          </button>)}
         </section>
 
         <section data-dashboard-quick-actions className="space-y-3">
@@ -304,9 +332,9 @@ export const Dashboard: React.FC = () => {
                   type="button"
                   data-dashboard-quick-action={action.id}
                   onClick={() => setStep(action.step)}
-                  className="group flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-2 py-3 text-zinc-700 shadow-sm transition hover:border-primary/40 hover:bg-[#F7FAFF] hover:text-primary active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:min-h-0 md:flex-row md:justify-start md:px-5 md:py-4"
+                  className="group flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-2 py-3 text-zinc-700 shadow-sm transition hover:border-primary/40 hover:bg-[#F2F8F5] hover:text-primary active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:min-h-0 md:flex-row md:justify-start md:px-5 md:py-4"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF3FC] text-primary transition group-hover:bg-primary group-hover:text-white">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0F7F4] text-primary transition group-hover:bg-primary group-hover:text-white">
                     <ActionIcon size={18} />
                   </span>
                   <span className="whitespace-nowrap text-[11px] font-bold sm:text-xs md:text-sm">{action.label}</span>
@@ -316,6 +344,11 @@ export const Dashboard: React.FC = () => {
           </div>
         </section>
 
+        {MOCK_MODE && <button className="text-sm font-semibold text-primary underline underline-offset-4" onClick={async () => {
+          if (!user) return;
+          try { const sample = createDemoProject(en); await saveProject(user.id, sample); setProject(sample); setStep(ProjectStep.ASSEMBLY); }
+          catch { await alert(en ? 'Unable to save the sample in this browser.' : '샘플을 이 브라우저에 저장하지 못했습니다.', { type: 'error' }); }
+        }}>{en ? 'Open a prewritten sample storyboard' : '사전 작성된 샘플 스토리보드 열기'}</button>}
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-20">
@@ -323,10 +356,11 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {loadError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6"><p>{en ? 'Could not load projects.' : '프로젝트를 불러오지 못했습니다.'}</p><button className="e0-button mt-3" onClick={loadProjects}>{en ? 'Try again' : '다시 시도'}</button></div>}
         {/* Empty State */}
-        {!isLoading && projects.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-[#C0D4F0] bg-white/60 px-5 py-10 text-center md:py-16">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#C0D4F0] bg-[#EEF3FC]">
+        {!isLoading && !loadError && projects.length === 0 && (
+          <div className="rounded-3xl border border-dashed border-[#B9D8CD] bg-white/60 px-5 py-10 text-center md:py-16">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#B9D8CD] bg-[#F0F7F4]">
               <Film size={30} className="text-primary" />
             </div>
             <div className="mt-5 space-y-2">
@@ -365,7 +399,7 @@ export const Dashboard: React.FC = () => {
                 {/* Info */}
                 <div className="space-y-4 p-4 md:p-6">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 bg-[#E5EDFA] border border-[#C0D4F0] rounded-full text-[10px] font-bold text-[#0050BF] uppercase">
+                    <span className="px-3 py-1 bg-[#E8F4F0] border border-[#B9D8CD] rounded-full text-[10px] font-bold text-[#007568] uppercase">
                       {project.style}
                     </span>
                     <span className="px-3 py-1 bg-zinc-100 border border-zinc-200 rounded-full text-[10px] font-bold text-zinc-500 uppercase">
@@ -394,7 +428,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#0050BF] rounded-full transition-all"
+                        className="h-full bg-[#007568] rounded-full transition-all"
                         style={{ width: `${project.scenes_count > 0 ? (project.videos_done / project.scenes_count) * 100 : 0}%` }}
                       />
                     </div>
@@ -410,13 +444,13 @@ export const Dashboard: React.FC = () => {
 
                   {/* Creator Badge */}
                   {project.original_creator_id && user && project.original_creator_id !== user.id && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#E5EDFA] border border-[#C0D4F0] rounded-xl">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#E8F4F0] border border-[#B9D8CD] rounded-xl">
                       {project.creator_avatar_url ? (
                         <img src={project.creator_avatar_url} alt="" className="w-4 h-4 rounded-full" />
                       ) : (
-                        <User size={12} className="text-[#0050BF]" />
+                        <User size={12} className="text-[#007568]" />
                       )}
-                      <span className="text-[10px] font-bold text-[#0050BF]">
+                      <span className="text-[10px] font-bold text-[#007568]">
                         {t('dashboard.originalCreator', { name: project.creator_display_name || t('dashboard.unknownCreator') })}
                       </span>
                     </div>
@@ -566,12 +600,13 @@ export const Dashboard: React.FC = () => {
                   <h3 className="text-2xl font-black tracking-tight text-zinc-900">{t('dashboard.modal.title')}</h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">{t('dashboard.modal.subtitle')}</p>
                 </div>
-                <button onClick={() => setShowNewProjectModal(false)} className="p-3 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500">
+                <button aria-label={en ? "Close" : "닫기"} onClick={() => setShowNewProjectModal(false)} className="p-3 hover:bg-zinc-100 rounded-full transition-colors text-zinc-500">
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="p-8 space-y-8">
+              <div className="p-5 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+                {startingIdea && <p className="rounded-lg bg-primary/5 px-4 py-3 text-sm text-primary">{en ? 'Your editable brief will open in the planning step.' : '선택한 용도의 기본 문구가 기획 화면에 입력됩니다. 자유롭게 수정하세요.'}</p>}
                 {/* Aspect Ratio */}
                 <div className="space-y-3">
                   <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('dashboard.modal.aspectRatio')}</label>
@@ -580,7 +615,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => setSelectedAspectRatio(AspectRatio.LANDSCAPE)}
                       className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedAspectRatio === AspectRatio.LANDSCAPE
-                          ? 'border-primary bg-[#EEF3FC] text-primary'
+                          ? 'border-primary bg-[#F0F7F4] text-primary'
                           : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                       }`}
                     >
@@ -594,7 +629,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => setSelectedAspectRatio(AspectRatio.PORTRAIT)}
                       className={`p-6 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all ${
                         selectedAspectRatio === AspectRatio.PORTRAIT
-                          ? 'border-primary bg-[#EEF3FC] text-primary'
+                          ? 'border-primary bg-[#F0F7F4] text-primary'
                           : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                       }`}
                     >
@@ -610,14 +645,14 @@ export const Dashboard: React.FC = () => {
                 {/* Scene Count */}
                 <div className="space-y-3">
                   <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest">{t('dashboard.modal.sceneCount')}</label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {([SceneCount.CUTS_4, SceneCount.CUTS_8, SceneCount.CUTS_9, SceneCount.CUTS_18, SceneCount.CUTS_27] as SceneCount[]).map((count) => (
                       <button
                         key={count}
                         onClick={() => setSelectedSceneCount(count)}
                         className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${
                           selectedSceneCount === count
-                            ? 'border-primary bg-[#EEF3FC] text-primary'
+                            ? 'border-primary bg-[#F0F7F4] text-primary'
                             : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                         }`}
                       >
@@ -640,7 +675,7 @@ export const Dashboard: React.FC = () => {
                 {/* Start Button */}
                 <button
                   onClick={handleStartProject}
-                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#003E99] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,80,191,0.25)]"
+                  className="w-full py-4 bg-primary text-white rounded-full font-bold text-lg flex items-center justify-center gap-2 hover:bg-[#005D53] transition-all active:scale-95 shadow-[0_8px_20px_rgba(0,117,104,0.25)]"
                 >
                   <Sparkles size={20} /> {t('dashboard.modal.startProject')}
                 </button>
