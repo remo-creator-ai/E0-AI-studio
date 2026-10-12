@@ -20,9 +20,6 @@ import {
   Shield,
   HelpCircle,
   Package,
-  ImagePlus,
-  Film,
-  Mic,
   Pencil,
   Check as CheckIcon,
   X,
@@ -154,26 +151,8 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
             onClick={() => handleNavigate(ProjectStep.DASHBOARD)}
           />
 
-          <div className="mt-6 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.creative')}</div>
+          <div className="mt-6 text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.library')}</div>
           <div className="space-y-2">
-            <SidebarItem
-              icon={ImagePlus}
-              label={t('nav.imageStudio')}
-              active={currentStep === ProjectStep.IMAGE_STUDIO}
-              onClick={() => handleNavigate(ProjectStep.IMAGE_STUDIO)}
-            />
-            <SidebarItem
-              icon={Film}
-              label={t('nav.videoStudio')}
-              active={currentStep === ProjectStep.VIDEO_STUDIO}
-              onClick={() => handleNavigate(ProjectStep.VIDEO_STUDIO)}
-            />
-            <SidebarItem
-              icon={Mic}
-              label={t('nav.voiceStudio')}
-              active={currentStep === ProjectStep.VOICE_STUDIO}
-              onClick={() => handleNavigate(ProjectStep.VOICE_STUDIO)}
-            />
             <SidebarItem
               icon={Package}
               label={t('nav.assets')}
@@ -352,12 +331,6 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.adminTitle')}</span>
                     ) : currentStep === ProjectStep.ASSETS ? (
                       <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.assets')}</span>
-                    ) : currentStep === ProjectStep.IMAGE_STUDIO ? (
-                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.imageStudio')}</span>
-                    ) : currentStep === ProjectStep.VIDEO_STUDIO ? (
-                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.videoStudio')}</span>
-                    ) : currentStep === ProjectStep.VOICE_STUDIO ? (
-                      <span className="text-zinc-900 font-black text-base tracking-tight">{t('nav.voiceStudio')}</span>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button
@@ -492,9 +465,6 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           currentStep === ProjectStep.ASSEMBLY ? 'w-full max-w-[1600px] mx-auto' :
           currentStep === ProjectStep.DASHBOARD ? 'max-w-7xl mx-auto' :
           currentStep === ProjectStep.ASSETS ? 'max-w-7xl mx-auto' :
-          currentStep === ProjectStep.IMAGE_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
-          currentStep === ProjectStep.VIDEO_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
-          currentStep === ProjectStep.VOICE_STUDIO ? 'w-full max-w-[1600px] mr-auto' :
           currentStep === ProjectStep.SETTINGS ? 'max-w-4xl mx-auto' :
           currentStep === ProjectStep.ADMIN ? 'max-w-5xl mx-auto' :
           'max-w-6xl mx-auto'

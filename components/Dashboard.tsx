@@ -15,7 +15,6 @@ import {
   User,
   Monitor,
   Smartphone,
-  Mic,
   X,
   Sparkles,
   ClipboardList,
@@ -285,11 +284,6 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const quickActions = [
-    { id: 'image', label: t('nav.imageStudio'), icon: ImageIcon, step: ProjectStep.IMAGE_STUDIO },
-    { id: 'video', label: t('nav.videoStudio'), icon: Film, step: ProjectStep.VIDEO_STUDIO },
-    { id: 'voice', label: t('nav.voiceStudio'), icon: Mic, step: ProjectStep.VOICE_STUDIO },
-  ] as const;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -321,28 +315,6 @@ export const Dashboard: React.FC = () => {
           </button>)}
         </section>
 
-        <section data-dashboard-quick-actions className="space-y-3">
-          <h2 className="text-sm font-black tracking-tight text-zinc-900 md:text-base">{t('dashboard.quickStart')}</h2>
-          <div className="grid grid-cols-3 gap-2 md:max-w-2xl md:gap-3">
-            {quickActions.map((action) => {
-              const ActionIcon = action.icon;
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  data-dashboard-quick-action={action.id}
-                  onClick={() => setStep(action.step)}
-                  className="group flex min-h-[88px] min-w-0 flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-2 py-3 text-zinc-700 shadow-sm transition hover:border-primary/40 hover:bg-[#F2F8F5] hover:text-primary active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:min-h-0 md:flex-row md:justify-start md:px-5 md:py-4"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0F7F4] text-primary transition group-hover:bg-primary group-hover:text-white">
-                    <ActionIcon size={18} />
-                  </span>
-                  <span className="whitespace-nowrap text-[11px] font-bold sm:text-xs md:text-sm">{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
 
         {MOCK_MODE && <button className="text-sm font-semibold text-primary underline underline-offset-4" onClick={async () => {
           if (!user) return;

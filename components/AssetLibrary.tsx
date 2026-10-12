@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, X, ImagePlus, Trash2, Pencil, Package, Sparkles } from 'lucide-react';
+import { Plus, Search, X, ImagePlus, Trash2, Pencil, Package } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { useStore } from '../store';
-import { ProjectStep } from '../types';
 import { useModal } from './ui/ModalProvider';
 import {
   listAssets, getAsset, createAsset, updateAsset, deleteAsset,
@@ -20,9 +18,7 @@ const TYPE_BADGE: Record<AssetType, string> = {
   video:     'bg-purple-50 text-purple-700 border-purple-200',
 };
 
-// 자산 보관함 필터: user_assets 의 asset_type 그대로 (video 포함).
-// video 는 사용자가 VideoStudio 에서 "보관함 저장" 을 명시적으로 눌러야만 여기 표시됨.
-// (video_generation_history 는 별개 · VideoStudio 내부 히스토리 스트립에서만 접근)
+// 자산 보관함: 업로드한 자산과 워크플로우에서 저장한 자산을 관리합니다.
 type LibraryFilter = AssetType | 'all';
 const LIBRARY_FILTERS: LibraryFilter[] = ['all', ...ASSET_TYPES];
 
@@ -268,8 +264,6 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
   const { t } = useTranslation();
   const { confirm } = useModal();
   const user = useAuthStore((s) => s.user);
-  const setStep = useStore((s) => s.setStep);
-  const setPendingRef = useStore((s) => s.setPendingImageStudioRef);
   const [asset, setAsset] = useState<Asset | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -320,14 +314,6 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
   const isMulti = asset ? maxReferenceCount(asset.asset_type) > 0 : false;
   const refs = asset?.files.filter((f) => f.file_role === 'reference') ?? [];
 
-  // "여기서부터 생성" — 이 자산을 참고 이미지로 preload 한 채 이미지 생성 화면으로 이동.
-  // 실제 dataUrl 변환은 ImageStudio 마운트 useEffect 가 담당한다 (모듈 격리 유지).
-  const generateFromHere = () => {
-    if (!asset?.primary_url) return;
-    setPendingRef({ assetId: asset.id, primaryUrl: asset.primary_url, name: asset.name });
-    setStep(ProjectStep.IMAGE_STUDIO);
-    onClose();
-  };
 
   return (
     <ModalWrap onClose={onClose} title={asset ? asset.name : ''} size="wide">
@@ -397,14 +383,6 @@ const AssetDetailModal: React.FC<{ id: string; onClose: () => void; onChanged: (
             </div>
           ) : (
             <div className="space-y-2">
-              {/* 주 액션: 이 자산으로 이미지 생성 */}
-              <button
-                onClick={generateFromHere}
-                disabled={!asset.primary_url}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-[#005D53] disabled:bg-zinc-200 disabled:text-zinc-400 text-white rounded-full font-black text-sm transition-colors"
-              >
-                <Sparkles size={16} /> {t('assets.detail.generateFromHere')}
-              </button>
               {/* 보조 액션 */}
               <div className="flex gap-2">
                 <button onClick={() => setEditing(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded-full font-bold text-sm"><Pencil size={14} /> {t('assets.detail.edit')}</button>

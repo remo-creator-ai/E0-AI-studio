@@ -162,7 +162,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
         else anyErr = true;
       }
       if (anyErr) {
-        setPickError(t('imageStudio.reference.libraryFetchFail'));
+        setPickError(t('assets.picker.libraryFetchFail'));
       } else {
         onClose();
       }
@@ -188,7 +188,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
             type="button"
             onClick={onClose}
             className="p-2 hover:bg-zinc-100 rounded-lg transition-colors shrink-0"
-            aria-label={t('imageStudio.reference.libraryClose')}
+            aria-label={t('assets.picker.libraryClose')}
           >
             <X size={18} />
           </button>
@@ -198,7 +198,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
         <div className="flex-1 overflow-y-auto px-6 pb-3 space-y-3">
           {loading && (
             <div className="py-16 text-center text-sm text-zinc-500">
-              {t('imageStudio.reference.libraryLoading')}
+              {t('assets.picker.libraryLoading')}
             </div>
           )}
           {error && !loading && (
@@ -212,8 +212,8 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
               <Package size={28} className="mx-auto text-zinc-300 mb-2" />
               <p className="text-sm text-zinc-500">
                 {hiddenVideoCount > 0
-                  ? t('imageStudio.reference.libraryOnlyVideos')
-                  : t('imageStudio.reference.libraryEmpty')}
+                  ? t('assets.picker.libraryOnlyVideos')
+                  : t('assets.picker.libraryEmpty')}
               </p>
             </div>
           )}
@@ -221,7 +221,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
           {!loading && !error && visibleAssets && visibleAssets.length > 0 && hiddenVideoCount > 0 && (
             <div className="flex items-start gap-1.5 text-[11px] text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-2">
               <Info size={13} className="shrink-0 mt-px" />
-              <span>{t('imageStudio.reference.libraryVideoHidden', { count: hiddenVideoCount })}</span>
+              <span>{t('assets.picker.libraryVideoHidden', { count: hiddenVideoCount })}</span>
             </div>
           )}
 
@@ -276,7 +276,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
         <div className="flex items-center justify-between gap-3 p-4 border-t border-zinc-100 shrink-0">
           <div className="text-xs text-zinc-500">
             {selectedCount > 0
-              ? t('imageStudio.reference.librarySelectedCount', { count: selectedCount })
+              ? t('assets.picker.librarySelectedCount', { count: selectedCount })
               : ''}
           </div>
           <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
               disabled={confirming}
               className="px-4 py-2 rounded-full text-zinc-600 hover:bg-zinc-100 text-sm font-bold transition-colors disabled:opacity-50"
             >
-              {t('imageStudio.reference.libraryCancel')}
+              {t('assets.picker.libraryCancel')}
             </button>
             <button
               type="button"
@@ -297,14 +297,14 @@ export const AssetLibraryPicker: React.FC<AssetLibraryPickerProps> = ({
               {confirming ? (
                 <>
                   <RefreshCw size={14} className="animate-spin" />
-                  {t('imageStudio.reference.libraryAdding')}
+                  {t('assets.picker.libraryAdding')}
                 </>
               ) : (
                 <>
                   <Check size={14} />
                   {selectedCount > 0
-                    ? t('imageStudio.reference.libraryConfirm', { count: selectedCount })
-                    : t('imageStudio.reference.libraryConfirmEmpty')}
+                    ? t('assets.picker.libraryConfirm', { count: selectedCount })
+                    : t('assets.picker.libraryConfirmEmpty')}
                 </>
               )}
             </button>

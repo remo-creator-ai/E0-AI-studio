@@ -28,10 +28,6 @@
   },
   "nav": {
     "dashboard": "대시보드",
-    "creative": "크리에이티브",
-    "imageStudio": "이미지 생성",
-    "videoStudio": "동영상 생성",
-    "voiceStudio": "음성 생성",
     "assets": "자산 보관함",
     "workflow": "워크플로우",
     "planning": "1. 초안기획하기",
@@ -45,7 +41,8 @@
     "settingsTitle": "설정",
     "adminTitle": "관리자 콘솔",
     "projects": "프로젝트",
-    "untitled": "제목 없음"
+    "untitled": "제목 없음",
+    "library": "자산 관리"
   },
   "status": {
     "pending": "대기 중",
@@ -321,8 +318,7 @@
     "titleHighlight": "만들까요?",
     "subtitle": "제품 이미지와 한 줄 메시지로 브랜드 콘텐츠를 시작하세요.",
     "mobileTitle": "오늘, 어떤 콘텐츠를 만들까요?",
-    "mobileSubtitle": "브랜드의 다음 이야기를 시작하세요.",
-    "quickStart": "바로 시작하기",
+    "mobileSubtitle": "자산을 보관하고, 기획부터 영상 제작까지 이어가세요.",
     "recentProjects": "최근 프로젝트",
     "newProject": "새 프로젝트",
     "emptyTitle": "첫 프로젝트를 만들어보세요",
@@ -714,74 +710,9 @@
       "deleteConfirm": "이 자산을 삭제할까요? 등록한 이미지도 함께 삭제됩니다.",
       "deleteLinked": "이 자산은 프로젝트 {{count}}개에 연결되어 있습니다. 삭제하면 이후 레퍼런스 생성에서 제외됩니다. 계속할까요?",
       "nameLabel": "이름",
-      "descLabel": "설명 · 프롬프트",
-      "generateFromHere": "이 자산으로 이미지 생성"
-    }
-  },
-  "imageStudio": {
-    "title": "이미지 생성",
-    "subtitle": "설명 한 줄로 이미지 한 장을 만듭니다.",
-    "mode": {
-      "label": "생성 방식",
-      "text": "텍스트로 생성",
-      "reference": "이미지로 생성",
-      "multishot": "멀티샷"
+      "descLabel": "설명 · 프롬프트"
     },
-    "multishot": {
-      "packLabel": "멀티샷 팩",
-      "packHint": "선택한 팩의 6개 프리셋을 각기 다른 프롬프트로 병렬 생성합니다.",
-      "packs": {
-        "camera": "카메라 앵글",
-        "cameraDesc": "와이드 · 미디엄 · 클로즈업 · OTS · 로우앵글 · 버즈아이",
-        "character": "캐릭터 시트",
-        "characterDesc": "정면 · 3/4뷰 · 측면 · 후면 · 표정 · 액션 포즈",
-        "product": "제품 시트",
-        "productDesc": "히어로컷 · 디테일 · 라이프스타일 · 패키지 · 그룹샷 · 사용 장면"
-      },
-      "shots": {
-        "wide": "와이드",
-        "medium": "미디엄",
-        "closeup": "클로즈업",
-        "ots": "오버 더 숄더",
-        "lowAngle": "로우 앵글",
-        "birdseye": "버즈아이",
-        "front": "정면",
-        "threeQuarter": "3/4 뷰",
-        "side": "측면",
-        "back": "후면",
-        "expression": "표정",
-        "actionPose": "액션 포즈",
-        "hero": "히어로컷",
-        "detail": "디테일",
-        "lifestyle": "라이프스타일",
-        "packaging": "패키지",
-        "group": "그룹샷",
-        "inUse": "사용 장면"
-      },
-      "generateButton": "멀티샷 생성",
-      "generating": "생성 중… {{done}}/{{total}}",
-      "sheetGenerating": "시트 생성 중…",
-      "costHint": "성공한 샷만 차감 · 총 최대 {{cost}}크레딧",
-      "sheetCostHint": "6개 앵글을 한 장 시트로 · {{cost}}크레딧",
-      "retryShot": "다시 시도",
-      "shotFailed": "생성 실패",
-      "shotBusy": "생성 중",
-      "outputLabel": "출력 형식",
-      "outputIndividual": "개별 6장",
-      "outputSheet": "1개 시트",
-      "outputIndividualDesc": "각 앵글을 개별 이미지로 · 최대 6크레딧",
-      "outputSheetDesc": "6개 앵글을 한 장 그리드로 · 1크레딧",
-      "needReference": "멀티샷은 참고 이미지가 1장 이상 필요합니다."
-    },
-    "reference": {
-      "label": "참고 이미지",
-      "dropHere": "이미지를 드롭하거나 클릭해 선택",
-      "hint": "PNG · JPEG · WebP · 파일당 최대 {{mb}}MB · 최대 {{count}}장",
-      "maxCount": "참고 이미지는 최대 {{count}}장까지 등록할 수 있습니다.",
-      "badType": "PNG · JPEG · WebP 형식만 사용할 수 있습니다.",
-      "tooLarge": "파일 크기는 최대 {{mb}}MB까지 허용됩니다.",
-      "orDivider": "또는",
-      "fromLibrary": "자산 보관함에서 불러오기",
+    "picker": {
       "libraryTitle": "자산 보관함에서 참고 이미지 선택",
       "librarySubtitle": "카드를 클릭해 선택한 뒤 확인을 누르세요. 최대 {{count}}장.",
       "libraryEmpty": "자산 보관함에 등록한 이미지가 없습니다.",
@@ -795,81 +726,6 @@
       "libraryConfirm": "{{count}}장 추가",
       "libraryConfirmEmpty": "추가",
       "libraryAdding": "추가 중…"
-    },
-    "style": {
-      "label": "스타일",
-      "none": "선택 없음",
-      "popupTitle": "스타일 선택",
-      "customGroup": "나만의 스타일",
-      "presetGroup": "기본 스타일",
-      "manageInSettings": "설정에서 관리"
-    },
-    "prompt": {
-      "label": "만들고 싶은 이미지",
-      "placeholder": "만들고 싶은 이미지를 설명해 주세요.",
-      "example": "예) 햇살이 들어오는 현대적인 사무실에서 회의하는 한국인 팀"
-    },
-    "model": {
-      "label": "생성 모델"
-    },
-    "aspect": {
-      "label": "이미지 형태",
-      "square": "정사각형",
-      "landscape": "가로형",
-      "portrait": "세로형"
-    },
-    "generate": {
-      "button": "이미지 생성",
-      "generating": "이미지 생성 중…",
-      "cost": "{{count}} 크레딧"
-    },
-    "empty": "왼쪽에 원하는 이미지를 설명하고 생성해 보세요.",
-    "loading": "이미지를 만들고 있습니다.",
-    "result": {
-      "saveToLibrary": "보관함에 저장",
-      "saveToLibraryHint": "앱 내에 영구 보관",
-      "download": "PNG 다운로드",
-      "downloadHint": "파일로 내 기기에 저장",
-      "regenerate": "다시 생성",
-      "saving": "저장 중…",
-      "saved": "저장됨",
-      "viewInLibrary": "자산 보기",
-      "saveError": "저장 실패: {{message}}",
-      "saveNoUser": "저장하려면 로그인이 필요합니다.",
-      "tryMultishot": "멀티샷으로 확장",
-      "tryMultishotHint": "이 이미지로 6개 앵글 만들기"
-    },
-    "saveDialog": {
-      "title": "보관함에 저장",
-      "subtitle": "분류를 선택하고 이름을 확인해 주세요.",
-      "typeLabel": "분류",
-      "nameLabel": "이름",
-      "cancel": "취소",
-      "confirm": "저장",
-      "confirming": "저장 중…"
-    },
-    "error": {
-      "noApiKey": "이미지 생성 API 키가 등록되지 않았습니다. 관리자 콘솔에서 먼저 등록해 주세요.",
-      "blocked": "콘텐츠 정책에 따라 이 요청은 생성할 수 없습니다. 설명을 바꿔서 다시 시도해 주세요.",
-      "failed": "이미지 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-      "notEnoughCredits": "크레딧이 부족합니다. 필요 {{cost}} · 보유 {{balance}}",
-      "needReference": "참고 이미지를 1장 이상 등록해 주세요."
-    },
-    "history": {
-      "title": "히스토리",
-      "counter": "{{count}}장",
-      "retentionNote": "30일 뒤 자동 삭제 · 계속 사용하려면 보관함에 저장하세요",
-      "empty": "아직 생성한 이미지가 없습니다.",
-      "loading": "히스토리를 불러오는 중…",
-      "loadError": "히스토리를 불러오지 못했습니다.",
-      "signInRequired": "히스토리는 로그인 후 사용할 수 있습니다.",
-      "openDrawer": "히스토리 열기",
-      "closeDrawer": "히스토리 닫기",
-      "remix": "이 설정으로 다시 채우기 (Remix)",
-      "delete": "히스토리에서 삭제",
-      "deleteConfirm": "이 히스토리 항목을 삭제할까요? 보관함에 저장한 사본은 유지됩니다.",
-      "savedBadge": "보관함에 저장됨",
-      "unsavedBadge": "미저장"
     }
   },
   "settings": {
@@ -1104,34 +960,6 @@
       "replayAll": "전체 가이드 다시 보기",
       "replayAllDesc": "모든 페이지의 투어를 초기화하여 다시 볼 수 있습니다.",
       "replayPage": "가이드 다시보기"
-    },
-    "imageStudio": {
-      "mode": {
-        "title": "생성 방식 선택",
-        "desc": "텍스트만으로 만들지, 참고 이미지를 넣어 만들지, 여러 각도를 한 번에 뽑을지 고를 수 있습니다."
-      },
-      "model": {
-        "title": "생성 모델 선택",
-        "desc": "모델마다 화질과 잘하는 분야가 다릅니다. 기본 모델로 시작해 보고, 결과가 아쉬우면 다른 모델로 바꿔 보세요."
-      },
-      "generate": {
-        "title": "이미지 생성",
-        "desc": "만든 이미지는 히스토리에 남고, 마음에 들면 자산 보관함에 저장해 스토리보드나 동영상에서 다시 쓸 수 있습니다."
-      }
-    },
-    "videoStudio": {
-      "frames": {
-        "title": "시작 · 끝 프레임",
-        "desc": "시작 프레임은 영상의 첫 장면이 됩니다. 끝 프레임까지 넣으면 그 장면으로 마무리되도록 이어 줍니다. 자산 보관함에서 바로 불러올 수 있어요."
-      },
-      "resolution": {
-        "title": "길이와 해상도",
-        "desc": "길이와 해상도를 고릅니다. 끝 프레임을 지정하면 고해상도로만 만들 수 있어 자동으로 전환됩니다."
-      },
-      "generate": {
-        "title": "동영상 생성",
-        "desc": "생성 중에도 다음 작업을 바로 걸 수 있습니다. 완성된 영상은 오른쪽 히스토리에 쌓이고, 보관함에 저장할 수 있어요."
-      }
     }
   }
 }

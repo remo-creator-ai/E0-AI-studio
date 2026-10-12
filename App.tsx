@@ -14,9 +14,6 @@ import { pageView, setUserId } from './lib/analytics';
 // currentStep enum → analytics 용 path 문자열. GA 대시보드에서 페이지 구분에 씀.
 const STEP_TO_PATH: Record<ProjectStep, string> = {
   [ProjectStep.DASHBOARD]: '/dashboard',
-  [ProjectStep.IMAGE_STUDIO]: '/image-studio',
-  [ProjectStep.VIDEO_STUDIO]: '/video-studio',
-  [ProjectStep.VOICE_STUDIO]: '/voice-studio',
   [ProjectStep.ASSETS]: '/assets',
   [ProjectStep.PLANNING]: '/planning',
   [ProjectStep.VISUALIZING]: '/visualizing',
@@ -33,9 +30,6 @@ const ProductionStepShell = React.lazy(() => import('./components/ProductionStep
 const SettingsPage = React.lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AdminPage = React.lazy(() => import('./components/AdminPage').then(m => ({ default: m.AdminPage })));
 const AssetLibrary = React.lazy(() => import('./components/AssetLibrary').then(m => ({ default: m.AssetLibrary })));
-const ImageStudio = React.lazy(() => import('./components/ImageStudio').then(m => ({ default: m.ImageStudio })));
-const VideoStudio = React.lazy(() => import('./components/VideoStudio').then(m => ({ default: m.VideoStudio })));
-const VoiceStudio = React.lazy(() => import('./components/VoiceStudio').then(m => ({ default: m.VoiceStudio })));
 const OnboardingTour = React.lazy(() => import('./components/ui/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
 
 const App: React.FC = () => {
@@ -113,12 +107,6 @@ const App: React.FC = () => {
         return <AssemblyStep />;
       case ProjectStep.PRODUCTION:
         return <ProductionStepShell />;
-      case ProjectStep.IMAGE_STUDIO:
-        return <ImageStudio />;
-      case ProjectStep.VIDEO_STUDIO:
-        return <VideoStudio />;
-      case ProjectStep.VOICE_STUDIO:
-        return <VoiceStudio />;
       case ProjectStep.ASSETS:
         return <AssetLibrary />;
       case ProjectStep.SETTINGS:

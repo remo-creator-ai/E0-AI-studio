@@ -28,7 +28,6 @@ const preview = await load({ DEV: true, VITE_MOCK_AUTH: 'true' }, 'preview', `
   export * from './services/projectService';
   export * from './lib/localProjects';
   export { supabase } from './lib/supabase';
-  export { generateStudioImage } from './services/imageStudioService';
   export { generateStudioVideo } from './services/videoStudioService';
   export { CONTENT_STARTS } from './lib/brand';
 `);
@@ -46,7 +45,6 @@ await assert.rejects(preview.saveProject('user-1', project), /QuotaExceeded/);
 localStorage.setItem = originalSetter;
 const blocked = await preview.supabase.from('projects').select('*');
 assert.equal(blocked.error.code, 'PREVIEW_ONLY');
-assert.equal((await preview.generateStudioImage({ prompt: 'Product', aspect: '16:9' })).ok, false);
 assert.equal((await preview.generateStudioVideo({ prompt: 'Product' })).ok, false);
 assert.equal(networkCalls, 0, 'Preview must not contact external services');
 assert.equal(new Set(preview.CONTENT_STARTS.map(item => item.id)).size, 3);

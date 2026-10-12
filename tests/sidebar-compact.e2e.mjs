@@ -8,7 +8,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   page.setDefaultTimeout(5_000);
   await page.addInitScript(() => {
-    localStorage.setItem('mock-auth-role', 'user');
+    localStorage.setItem('e0-mock-auth-role', 'user');
     localStorage.setItem('remo-settings', JSON.stringify({
       state: { onboardingCompleted: { dashboard: true } },
       version: 0,

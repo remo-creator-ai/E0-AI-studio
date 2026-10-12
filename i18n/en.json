@@ -28,10 +28,6 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "creative": "Creative",
-    "imageStudio": "Image Studio",
-    "videoStudio": "Video Studio",
-    "voiceStudio": "Voice Studio",
     "assets": "Asset Library",
     "workflow": "Workflow",
     "planning": "1. Draft Planning",
@@ -45,7 +41,8 @@
     "settingsTitle": "Settings",
     "adminTitle": "Admin Settings",
     "projects": "Projects",
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "library": "Assets"
   },
   "status": {
     "pending": "Pending",
@@ -310,8 +307,7 @@
     "titleHighlight": "create today?",
     "subtitle": "Start with a product image and a clear message.",
     "mobileTitle": "Your brand workspace",
-    "mobileSubtitle": "Start with an idea for your brand.",
-    "quickStart": "Quick Start",
+    "mobileSubtitle": "Manage assets and take your project from planning to production.",
     "recentProjects": "Recent Projects",
     "newProject": "New project",
     "emptyTitle": "Create your first project",
@@ -703,74 +699,9 @@
       "deleteConfirm": "Delete this asset? Its images will be removed as well.",
       "deleteLinked": "This asset is linked to {{count}} project(s). Deleting it excludes it from future reference generation. Continue?",
       "nameLabel": "Name",
-      "descLabel": "Description · Prompt",
-      "generateFromHere": "Generate an image with this asset"
-    }
-  },
-  "imageStudio": {
-    "title": "Image Studio",
-    "subtitle": "Create a single image from one line of description.",
-    "mode": {
-      "label": "Mode",
-      "text": "From text",
-      "reference": "From reference image",
-      "multishot": "Multi-shot"
+      "descLabel": "Description · Prompt"
     },
-    "multishot": {
-      "packLabel": "Multi-shot pack",
-      "packHint": "Runs 6 preset variations of your prompt in parallel.",
-      "packs": {
-        "camera": "Camera angles",
-        "cameraDesc": "Wide · Medium · Close-up · OTS · Low angle · Bird's eye",
-        "character": "Character sheet",
-        "characterDesc": "Front · 3/4 · Side · Back · Expression · Action pose",
-        "product": "Product sheet",
-        "productDesc": "Hero · Detail · Lifestyle · Packaging · Group · In use"
-      },
-      "shots": {
-        "wide": "Wide",
-        "medium": "Medium",
-        "closeup": "Close-up",
-        "ots": "Over-the-shoulder",
-        "lowAngle": "Low angle",
-        "birdseye": "Bird's eye",
-        "front": "Front",
-        "threeQuarter": "3/4 view",
-        "side": "Side",
-        "back": "Back",
-        "expression": "Expression",
-        "actionPose": "Action pose",
-        "hero": "Hero",
-        "detail": "Detail",
-        "lifestyle": "Lifestyle",
-        "packaging": "Packaging",
-        "group": "Group",
-        "inUse": "In use"
-      },
-      "generateButton": "Generate multi-shot",
-      "generating": "Generating… {{done}}/{{total}}",
-      "sheetGenerating": "Generating sheet…",
-      "costHint": "Charged per successful shot · up to {{cost}} credits",
-      "sheetCostHint": "6 angles as one sheet · {{cost}} credit",
-      "retryShot": "Retry",
-      "shotFailed": "Failed",
-      "shotBusy": "Generating",
-      "outputLabel": "Output",
-      "outputIndividual": "6 separate",
-      "outputSheet": "1 sheet",
-      "outputIndividualDesc": "Each angle as its own image · up to 6 credits",
-      "outputSheetDesc": "6 angles as one grid · 1 credit",
-      "needReference": "Multi-shot requires at least one reference image."
-    },
-    "reference": {
-      "label": "Reference images",
-      "dropHere": "Drop images here or click to select",
-      "hint": "PNG · JPEG · WebP · up to {{mb}}MB each · max {{count}} images",
-      "maxCount": "You can add up to {{count}} reference images.",
-      "badType": "Only PNG, JPEG, and WebP files are supported.",
-      "tooLarge": "Files must be no larger than {{mb}}MB.",
-      "orDivider": "or",
-      "fromLibrary": "Pick from asset library",
+    "picker": {
       "libraryTitle": "Pick reference image from library",
       "librarySubtitle": "Select cards, then confirm. Up to {{count}}.",
       "libraryEmpty": "You have no assets saved to your library.",
@@ -784,81 +715,6 @@
       "libraryConfirm": "Add {{count}}",
       "libraryConfirmEmpty": "Add",
       "libraryAdding": "Adding…"
-    },
-    "style": {
-      "label": "Style",
-      "none": "None",
-      "popupTitle": "Select style",
-      "customGroup": "My styles",
-      "presetGroup": "Preset styles",
-      "manageInSettings": "Manage in settings"
-    },
-    "prompt": {
-      "label": "What to create",
-      "placeholder": "Describe the image you want to create.",
-      "example": "e.g. A Korean team meeting in a sunlit modern office"
-    },
-    "model": {
-      "label": "Model"
-    },
-    "aspect": {
-      "label": "Image shape",
-      "square": "Square",
-      "landscape": "Landscape",
-      "portrait": "Portrait"
-    },
-    "generate": {
-      "button": "Generate image",
-      "generating": "Generating…",
-      "cost": "{{count}} credits"
-    },
-    "empty": "Describe the image on the left and generate it.",
-    "loading": "Creating your image.",
-    "result": {
-      "saveToLibrary": "Save to library",
-      "saveToLibraryHint": "Kept permanently in the app",
-      "download": "Download PNG",
-      "downloadHint": "Save file to your device",
-      "regenerate": "Regenerate",
-      "saving": "Saving…",
-      "saved": "Saved",
-      "viewInLibrary": "View asset",
-      "saveError": "Save failed: {{message}}",
-      "saveNoUser": "Please sign in to save.",
-      "tryMultishot": "Expand to multi-shot",
-      "tryMultishotHint": "Generate 6 angle variations from this image"
-    },
-    "saveDialog": {
-      "title": "Save to library",
-      "subtitle": "Pick a type and confirm the name.",
-      "typeLabel": "Type",
-      "nameLabel": "Name",
-      "cancel": "Cancel",
-      "confirm": "Save",
-      "confirming": "Saving…"
-    },
-    "error": {
-      "noApiKey": "No image generation API key is registered. Please add one in the admin console first.",
-      "blocked": "This request cannot be generated due to content policy. Try rewording your description.",
-      "failed": "Image generation failed. Please try again in a moment.",
-      "notEnoughCredits": "Not enough credits. Need {{cost}} · You have {{balance}}",
-      "needReference": "Please add at least one reference image."
-    },
-    "history": {
-      "title": "History",
-      "counter": "{{count}} items",
-      "retentionNote": "Auto-deleted after 30 days · save to library to keep",
-      "empty": "No generated images yet.",
-      "loading": "Loading history…",
-      "loadError": "Could not load history.",
-      "signInRequired": "Sign in to use history.",
-      "openDrawer": "Open history",
-      "closeDrawer": "Close history",
-      "remix": "Reuse settings (Remix)",
-      "delete": "Remove from history",
-      "deleteConfirm": "Remove this history item? Copies saved to your library are kept.",
-      "savedBadge": "Saved to library",
-      "unsavedBadge": "Not saved"
     }
   },
   "settings": {
@@ -1093,34 +949,6 @@
       "replayAll": "Replay All Guides",
       "replayAllDesc": "Reset and replay all page tours from the beginning.",
       "replayPage": "Replay Guide"
-    },
-    "imageStudio": {
-      "mode": {
-        "title": "Pick a Mode",
-        "desc": "Generate from text alone, guide it with reference images, or capture several angles at once."
-      },
-      "model": {
-        "title": "Pick a Model",
-        "desc": "Each model differs in sharpness and strengths. Start with the default, and switch if the result falls short."
-      },
-      "generate": {
-        "title": "Generate",
-        "desc": "Results stay in your history. Save the ones you like to the Asset Library and reuse them in storyboards or videos."
-      }
-    },
-    "videoStudio": {
-      "frames": {
-        "title": "Start & End Frames",
-        "desc": "The start frame opens the video. Add an end frame and it will lead into that shot. You can pull either straight from the Asset Library."
-      },
-      "resolution": {
-        "title": "Length & Resolution",
-        "desc": "Choose the length and resolution. Setting an end frame requires the higher resolution, so it switches over automatically."
-      },
-      "generate": {
-        "title": "Generate Video",
-        "desc": "Queue the next job while one is still running. Finished videos collect in the history on the right, ready to save."
-      }
     }
   }
 }
