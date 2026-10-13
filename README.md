@@ -9,7 +9,7 @@ npm ci
 npm run dev
 ```
 
-로컬 주소: http://127.0.0.1:3456 . Supabase 설정이 없는 로컬 개발에서는 미리보기로 동작합니다. 랜딩의 **스튜디오 미리보기**로 입장할 수 있습니다.
+로컬 주소: http://127.0.0.1:3456 . Supabase 설정이 없는 로컬 개발에서는 미리보기로 동작합니다. 로컬 개발에서만 로그인 안내 팝업의 **사용자 화면 미리보기**로 입장할 수 있습니다. 공개 사이트에서는 가계정 진입·복원을 차단합니다.
 
 - A안: 화이트·청록색, 브랜드 목적별 시작 템플릿 3종.
 - 독립 이미지·동영상·음성 생성 도구는 제거했습니다. 자산 보관함과 프로젝트 워크플로우를 중심으로 제공합니다.
@@ -32,7 +32,7 @@ node tests/e0-core.test.mjs
 기존 소담 프로젝트의 URL·키·배포 훅을 사용하지 않습니다. `.env.example`의 공개 설정값을 **E0 전용 프로젝트**의 값으로 채웁니다.
 
 1. Vercel: 프로젝트 `e0-ai-studio`, Vite, 빌드 `npm run build`, 출력 `dist`, 설치 `npm ci`.
-2. 검토 배포에만 `VITE_MOCK_AUTH=true`를 명시합니다. 운영 배포는 `false`와 새 Supabase 공개 URL/anon key를 사용합니다.
+2. 배포 빌드에서는 `VITE_MOCK_AUTH=true`여도 가계정을 활성화하지 않습니다. 새 Supabase 공개 URL/anon key 연결 전에는 로그인·회원가입 준비 안내를 표시합니다.
 3. Supabase: 새 빈 프로젝트에 `supabase/migrations`를 번호순 적용합니다. 기존 마이그레이션은 보존하며 `pg_cron` 등 필요 확장과 실제 적용 결과를 확인해야 합니다. 아직 새 서버에 적용하지 않았습니다.
 4. `supabase/functions`의 필요한 Edge Functions를 새 프로젝트에 배포합니다. AI 공급자 비밀키는 서버 측에만 저장합니다.
 5. Google OAuth에 새 Supabase 콜백과 E0 사이트/리다이렉트 URL을 등록합니다. 최초 관리자 로그인 후 서버의 profiles.role을 별도로 부여합니다. 프런트 관리자 이메일은 UI 노출 용도일 뿐 서버 권한이 아닙니다.

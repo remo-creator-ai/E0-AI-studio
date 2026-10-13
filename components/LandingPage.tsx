@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BrandLogo } from './BrandLogo';
 import { LandingVideoExample } from './LandingVideoExample';
 import { BRAND, CONTENT_STARTS } from '../lib/brand';
-import { MOCK_MODE } from '../lib/mockAuth';
+import { AUTH_CONFIGURED, MOCK_MODE } from '../lib/mockAuth';
 import { useAuthStore } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 
@@ -16,7 +16,7 @@ export const LandingPage: React.FC = () => {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
-  const configured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const configured = AUTH_CONFIGURED && !MOCK_MODE;
   const start = () => { setError(''); dialog.current?.showModal(); };
   const login = async () => {
     setBusy(true); setError('');
@@ -44,7 +44,24 @@ export const LandingPage: React.FC = () => {
       <section className="e0-closing"><div><span className="e0-eyebrow">YOUR NEXT STORY STARTS HERE</span><h2>{en ? 'Give your next idea a place to grow.' : '브랜드의 다음 이야기를\n지금 시작하세요.'}</h2></div><button className="e0-button e0-button-large" onClick={start}>{en ? 'Open the studio' : '스튜디오 시작하기'}<ArrowRight size={18}/></button></section>
     </main>
     <footer className="e0-footer"><BrandLogo/><div><a href={BRAND.website} target="_blank" rel="noreferrer">{BRAND.company}<ArrowUpRight size={14}/></a><small>© {new Date().getFullYear()} {BRAND.name}</small></div></footer>
-    <dialog ref={dialog} className="e0-login-dialog" onClick={e=>{if(e.target===e.currentTarget)dialog.current?.close();}}><div><button className="e0-dialog-close" aria-label={en ? 'Close' : '닫기'} onClick={()=>dialog.current?.close()}><X size={22}/></button><BrandLogo/><h2>{en ? 'Your next story starts here.' : '새로운 이야기를 시작하세요.'}</h2><p>{en ? 'Plan, create, and refine your brand content.' : '기획부터 영상까지, E0에서 함께 만드세요.'}</p>{MOCK_MODE ? <><div className="e0-demo-explainer">{en ? 'Preview workspace. Projects are saved in this browser; AI generation is unavailable.' : '미리보기 스튜디오입니다. 프로젝트는 이 브라우저에 저장되며 실제 AI 생성은 연결 전입니다.'}</div><button className="e0-button" onClick={()=>signInAsMock('user')}>{en ? 'Explore the studio' : '스튜디오 미리보기'}<ArrowRight size={18}/></button>{import.meta.env.DEV && <button className="e0-text-button" onClick={()=>signInAsMock('master')}>{en ? 'Admin preview' : '관리자 화면 미리보기'}</button>}</> : configured ? <button className="e0-button" disabled={busy} onClick={login}>{busy ? (en ? 'Connecting…' : '연결 중…') : (en ? 'Continue with Google' : 'Google로 시작하기')}</button> : <p role="status" className="e0-demo-explainer">{en ? 'The studio is being prepared. Sign-in will be available soon.' : '스튜디오를 준비하고 있습니다. 서비스 연결 후 로그인이 제공됩니다.'}</p>}{error && <p role="alert" className="text-red-700">{error}</p>}</div></dialog>
+    <dialog ref={dialog} className="e0-login-dialog" aria-labelledby="e0-login-title" onClick={e => { if (e.target === e.currentTarget) dialog.current?.close(); }}>
+      <div>
+        <button className="e0-dialog-close" aria-label={en ? 'Close' : '닫기'} onClick={() => dialog.current?.close()}><X size={22}/></button>
+        <BrandLogo/>
+        <h2 id="e0-login-title">{en ? 'Log in or create an account' : '로그인하고 콘텐츠를 만들어보세요'}</h2>
+        <p>{en ? 'Sign in to manage your assets and create brand content. New users can sign up with Google.' : '자산 보관부터 콘텐츠 제작까지, 로그인 후 이용할 수 있습니다. 처음 방문하셨다면 Google 계정으로 가입하세요.'}</p>
+        <button className="e0-button" disabled={busy || !configured} onClick={login}>
+          {busy ? (en ? 'Connecting…' : '연결 중…') : (en ? 'Log in / Sign up with Google' : 'Google로 로그인 / 회원가입')}
+        </button>
+        {!configured && <p role="status" className="e0-demo-explainer">{en ? 'Sign-in and registration are being prepared. They will be available once the service is connected.' : '로그인·회원가입 기능을 준비 중입니다. 서비스 연결이 완료되면 이용할 수 있습니다.'}</p>}
+        {import.meta.env.DEV && MOCK_MODE && <div className="e0-demo-explainer">
+          <p>{en ? 'Local development preview' : '로컬 개발용 미리보기'}</p>
+          <button className="e0-text-button" onClick={() => signInAsMock('user')}>{en ? 'User preview' : '사용자 화면 미리보기'}</button>
+          <button className="e0-text-button" onClick={() => signInAsMock('master')}>{en ? 'Admin preview' : '관리자 화면 미리보기'}</button>
+        </div>}
+        {error && <p role="alert" className="text-red-700">{error}</p>}
+      </div>
+    </dialog>
   </div>;
 };
 function ArrowDown() { return <span aria-hidden="true">↓</span>; }

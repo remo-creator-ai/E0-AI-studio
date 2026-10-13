@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useCreditStore } from './creditStore';
 import { clearApiKeyCache } from '../services/geminiService';
-import { MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
+import { AUTH_CONFIGURED, MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
 let authSubscriptionRegistered = false;
@@ -35,6 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setIntroSurveyStatus: (s) => set({ introSurveyStatus: s }),
 
   signInWithGoogle: async () => {
+    if (MOCK_MODE || !AUTH_CONFIGURED) throw new Error("Authentication is not configured.");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   // 디자인(가계정) 모드: 가짜 마스터/일반 사용자로 즉시 입장
   signInAsMock: (role) => {
+    if (!MOCK_MODE) return;
     setMockRole(role);
     const user = buildMockUser(role);
     set({ user, session: buildMockSession(user) });
@@ -81,6 +83,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         return;
       }
 
+      // Ignore legacy preview roles on the public site.
+      setMockRole(null);
+      if (!AUTH_CONFIGURED) {
+        set({ session: null, user: null });
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
 
       set({ session, user: session?.user ?? null });

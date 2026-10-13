@@ -1,25 +1,11 @@
 import type { User, Session } from '@supabase/supabase-js';
 
-// =============================================================
-//  디자인(가계정) 모드 — Supabase/.env 없이 인증 화면을 보기 위한 목 인증
-//
-//  활성 조건:
-//    VITE_MOCK_AUTH='true'  → 강제 ON
-//    VITE_MOCK_AUTH='false' → 강제 OFF
-//    (미지정)               → VITE_SUPABASE_URL 이 없으면 자동 ON
-//
-//  → 나중에 .env 에 VITE_SUPABASE_URL 을 넣으면 자동으로 실제 인증으로 전환됩니다.
-//  ⚠️ 실제 백엔드(로그인/DB/크레딧 차감)는 동작하지 않으며 UI 확인 전용입니다.
-// =============================================================
-
+// Mock accounts are available only in the local development server.
+// A production build must never restore a preview role, even with an old env flag.
 const env = import.meta.env;
-
-export const MOCK_MODE: boolean =
-  env.VITE_MOCK_AUTH === 'true'
-    ? true
-    : env.VITE_MOCK_AUTH === 'false'
-      ? false
-      : import.meta.env.DEV && !env.VITE_SUPABASE_URL;
+export const AUTH_CONFIGURED = !!env.VITE_SUPABASE_URL && !!env.VITE_SUPABASE_ANON_KEY;
+export const MOCK_MODE: boolean = !!env.DEV && env.VITE_MOCK_AUTH !== 'false'
+  && (env.VITE_MOCK_AUTH === 'true' || !AUTH_CONFIGURED);
 
 export type MockRole = 'master' | 'user';
 

@@ -24,6 +24,19 @@ async function load(env, name, contents) {
 
 const production = await load({ DEV: false }, 'production', "export { MOCK_MODE } from './lib/mockAuth';");
 assert.equal(production.MOCK_MODE, false, 'Production cannot implicitly enable mock accounts');
+const publicSite = await load({ DEV: false, VITE_MOCK_AUTH: 'true' }, 'public-site', `
+  export { MOCK_MODE } from './lib/mockAuth';
+  export { useAuthStore } from './store/authStore';
+`);
+assert.equal(publicSite.MOCK_MODE, false, 'Old production preview flag cannot enable mock login');
+localStorage.setItem('e0-mock-auth-role', 'user');
+await publicSite.useAuthStore.getState().initialize();
+assert.equal(publicSite.useAuthStore.getState().user, null, 'Public site must ignore persisted preview accounts');
+assert.equal(localStorage.getItem('e0-mock-auth-role'), null);
+publicSite.useAuthStore.getState().signInAsMock('master');
+assert.equal(publicSite.useAuthStore.getState().user, null, 'Public site cannot enter a mock account');
+await assert.rejects(publicSite.useAuthStore.getState().signInWithGoogle(), /not configured/);
+
 const preview = await load({ DEV: true, VITE_MOCK_AUTH: 'true' }, 'preview', `
   export * from './services/projectService';
   export * from './lib/localProjects';
