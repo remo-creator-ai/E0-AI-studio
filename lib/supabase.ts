@@ -1,6 +1,11 @@
 import { MOCK_MODE } from './mockAuth';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import { getAuthRedirectError } from './authRedirect';
+
+// Capture before the auth SDK consumes/cleans the callback URL.
+export const authRedirectError = typeof window === 'undefined' ? null
+  : getAuthRedirectError(window.location.search, window.location.hash);
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;

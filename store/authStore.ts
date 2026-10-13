@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
+import { supabase, authRedirectError } from '../lib/supabase';
 import { useCreditStore } from './creditStore';
 import { clearApiKeyCache } from '../services/geminiService';
 import { AUTH_CONFIGURED, GOOGLE_AUTH_READY, MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
@@ -13,6 +13,7 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   isAuthLoading: boolean;
+  authError: string | null;
   introSurveyStatus: IntroSurveyStatus;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   isAuthLoading: true,
+  authError: authRedirectError,
   introSurveyStatus: 'unknown',
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session }),
@@ -89,25 +91,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ session: null, user: null });
         return;
       }
-      const { data: { session } } = await supabase.auth.getSession();
-
-      set({ session, user: session?.user ?? null });
-      if (session?.user) {
-        await useCreditStore.getState().loadCredits(session.user.id);
-      }
-
       if (!authSubscriptionRegistered) {
         authSubscriptionRegistered = true;
-        supabase.auth.onAuthStateChange(async (_event, session) => {
-          set({ session, user: session?.user ?? null });
-          if (session?.user) {
-            useCreditStore.getState().loadCredits(session.user.id);
-          } else {
+        supabase.auth.onAuthStateChange((_event, session) => {
+          // No Supabase calls inside this callback. App loads credits separately.
+          set({ session, user: session?.user ?? null, isAuthLoading: false,
+            ...(session ? { authError: null } : {}) });
+          if (!session?.user) {
             useCreditStore.getState().reset();
             clearApiKeyCache();
           }
         });
       }
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      set({ session, user: session?.user ?? null, ...(session ? { authError: null } : {}) });
+    } catch {
+      set({ user: null, session: null, authError: 'SESSION_RESTORE_FAILED' });
     } finally {
       set({ isAuthLoading: false });
     }

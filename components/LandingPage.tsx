@@ -12,7 +12,7 @@ export const LandingPage: React.FC = () => {
   const { i18n } = useTranslation();
   const en = i18n.language.startsWith('en');
   const { setLanguage } = useSettingsStore();
-  const { signInWithGoogle, signInAsMock } = useAuthStore();
+  const { signInWithGoogle, signInAsMock, authError } = useAuthStore();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -34,6 +34,12 @@ export const LandingPage: React.FC = () => {
     <a className="e0-skip" href="#main-content">{en ? 'Skip to content' : '본문으로 이동'}</a>
     <header className="e0-site-header"><a href="#" aria-label={BRAND.name}><BrandLogo /></a><nav aria-label={en ? 'Main navigation' : '주 메뉴'}><a href="#use-cases">{en ? 'Use cases' : '제작 용도'}</a><a href="#workflow">{en ? 'Workflow' : '제작 과정'}</a><button className="e0-language" onClick={() => setLanguage(en ? 'ko' : 'en')}>{en ? '한국어' : 'EN'}</button><button className="e0-button" onClick={start}>{en ? 'Get started' : '시작하기'}<ArrowUpRight size={16} /></button></nav></header>
     <main id="main-content">
+      {authError && <div role="alert" className="mx-6 mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <strong>{en ? 'Google sign-in did not complete.' : 'Google 로그인이 완료되지 않았습니다.'}</strong>
+        <p>{en ? 'Please try again. If this repeats, share the error code below with the administrator.' : '다시 시도해 주세요. 반복되면 아래 오류 코드를 관리자에게 알려주세요.'}</p>
+        <code>{authError}</code>
+        <button className="ml-4 underline" onClick={start}>{en ? 'Try signing in again' : '로그인 다시 시도'}</button>
+      </div>}
       <section className="e0-hero">
         <div className="e0-hero-copy"><span className="e0-eyebrow"><span /> CONTENT, WITH PURPOSE</span><h1>{en ? <>Your brand idea.<br />A story worth<br /><em>bringing to life.</em></> : <>브랜드의 아이디어를,<br /><em>완성도 있는</em><br />영상으로.</>}</h1><p>{en ? 'From the first idea to images and video. Create the next chapter of your brand with E0 AI Studio.' : '기획부터 이미지와 영상 제작까지.\nE0 AI Studio에서 브랜드의 다음 이야기를 만드세요.'}</p><div className="e0-hero-actions"><button className="e0-button e0-button-large" onClick={start}>{en ? 'Create content' : '콘텐츠 만들기'}<ArrowRight size={18} /></button><a href="#workflow">{en ? 'Explore the workflow' : '제작 흐름 살펴보기'}<ArrowDown /></a></div><div className="e0-hero-note"><Check size={15}/>{en ? 'One connected workflow · Your assets, your direction' : '하나로 이어지는 제작 과정 · 브랜드 자산 재사용'}</div></div>
         <LandingVideoExample en={en} />

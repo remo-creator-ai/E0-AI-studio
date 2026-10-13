@@ -22,3 +22,4 @@ design/
 .env*
 .tmp/
 supabase/.temp/
+client_secret_*.json

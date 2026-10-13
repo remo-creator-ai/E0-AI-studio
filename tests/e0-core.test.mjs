@@ -38,6 +38,28 @@ publicSite.useAuthStore.getState().signInAsMock('master');
 assert.equal(publicSite.useAuthStore.getState().user, null, 'Public site cannot enter a mock account');
 await assert.rejects(publicSite.useAuthStore.getState().signInWithGoogle(), /not configured/);
 
+const auth = await load({ DEV: false, VITE_SUPABASE_URL: 'https://example.supabase.co', VITE_SUPABASE_ANON_KEY: 'test-key' }, 'auth-transition', `
+  export { useAuthStore } from './store/authStore';
+  export { useCreditStore } from './store/creditStore';
+  export { supabase } from './lib/supabase';
+  export { getAuthRedirectError } from './lib/authRedirect';
+`);
+let authListener;
+auth.supabase.auth.onAuthStateChange = listener => { authListener = listener; return { data: { subscription: { unsubscribe() {} } } }; };
+const testSession = { user: { id: 'user-1' }, access_token: 'test' };
+auth.supabase.auth.getSession = async () => ({ data: { session: testSession }, error: null });
+auth.useCreditStore.setState({ loadCredits: () => { throw new Error('Authentication must not wait for credits'); } });
+await auth.useAuthStore.getState().initialize();
+assert.equal(auth.useAuthStore.getState().user.id, 'user-1');
+assert.equal(auth.useAuthStore.getState().isAuthLoading, false);
+assert.equal(authListener('SIGNED_IN', testSession), undefined, 'Auth callback must remain synchronous');
+assert.equal(auth.getAuthRedirectError('', '#error=server_error&error_description=private'), 'GOOGLE_CALLBACK_FAILED');
+assert.equal(auth.getAuthRedirectError('?error=access_denied', ''), 'GOOGLE_ACCESS_DENIED');
+assert.equal(auth.getAuthRedirectError('', '#access_token=private'), null);
+auth.supabase.auth.getSession = async () => ({ data: { session: null }, error: new Error('Failed') });
+await auth.useAuthStore.getState().initialize();
+assert.equal(auth.useAuthStore.getState().authError, 'SESSION_RESTORE_FAILED');
+assert.equal(auth.useAuthStore.getState().isAuthLoading, false);
 const preview = await load({ DEV: true, VITE_MOCK_AUTH: 'true' }, 'preview', `
   export * from './services/projectService';
   export * from './lib/localProjects';

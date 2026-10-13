@@ -66,3 +66,4 @@ design/sodami/video/
 # Local verification artifacts
 .tmp/
 .env*
+client_secret_*.json
