@@ -44,15 +44,15 @@ interface SidebarItemProps {
 const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+    className={`w-full min-w-0 flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all duration-200 ${
       active
         ? 'bg-primary text-white shadow-none'
         : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
     }`}
   >
-    <Icon size={20} />
-    <span className="font-bold">{label}</span>
-    {active && <ChevronRight size={16} className="ml-auto" />}
+    <span className="shrink-0"><Icon size={20} /></span>
+    <span className="min-w-0 flex-1 text-sm leading-5 font-bold break-words">{label}</span>
+    {active && <ChevronRight size={16} className="shrink-0" />}
   </button>
 );
 

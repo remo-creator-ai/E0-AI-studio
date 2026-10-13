@@ -57,7 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
       update: (updates) => set((state) => ({ ...state, ...updates })),
       setLanguage: (lang: 'ko' | 'en') => {
         i18n.changeLanguage(lang);
-        localStorage.setItem('remo-language', lang);
+        localStorage.setItem('e0-language', lang);
         set({ defaultLanguage: lang });
       },
       markTourCompleted: (tourId: string) => set((state) => ({
@@ -76,6 +76,11 @@ export const useSettingsStore = create<SettingsState>()(
       }),
       _clearReplayRequest: () => set({ _replayTourId: null }),
     }),
-    { name: 'remo-settings' }
+    {
+      name: 'remo-settings',
+      // Legacy persisted defaults must not override the actual interface language.
+      merge: (persisted, current) => ({ ...current, ...(persisted as Partial<SettingsState>),
+        defaultLanguage: i18n.language === 'en' ? 'en' : 'ko' }),
+    }
   )
 );

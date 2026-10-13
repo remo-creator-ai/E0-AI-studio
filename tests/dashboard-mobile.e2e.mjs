@@ -8,7 +8,7 @@ try {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     await context.addInitScript(() => {
       localStorage.setItem('e0-mock-auth-role', 'user');
-      localStorage.setItem('remo-language', 'ko');
+      localStorage.setItem('e0-language', 'ko');
       localStorage.setItem('remo-settings', JSON.stringify({ state: { onboardingCompleted: { dashboard: true, assembly: true } }, version: 0 }));
     });
     const page = await context.newPage();
