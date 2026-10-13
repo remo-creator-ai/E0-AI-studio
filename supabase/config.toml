@@ -4,6 +4,11 @@
 # working directory name when running `supabase init`.
 project_id = "052_E0-AI-studio"
 
+# ai-proxy validates the session with auth.getUser and checks active profiles.
+# Avoid the legacy JWT gateway check for E0's asymmetric signing keys.
+[functions.ai-proxy]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

@@ -4,7 +4,7 @@ import { SYSTEM_INSTRUCTION, getSystemInstruction } from "../constants";
 import { AdDuration, AspectRatio, SceneCount, CategorizedRefImage, REFERENCE_CATEGORY_INFO } from "../types";
 import { generateKlingVideo } from './klingService';
 import { normalizeImageInput } from './imageUtils';
-import { proxyClient, proxyFetch } from '../lib/aiProxy';
+import { proxyClient, proxyFetch, proxyHealth } from '../lib/aiProxy';
 import { ladderFor, isImageSizeRejection } from './imageSizeLadder';
 import {
   isOpenAIImageModel,
@@ -187,6 +187,13 @@ const REFINED_STORY_SCHEMA: Schema = {
 
 export async function generateAdScript(idea: string, duration: AdDuration, sceneCount?: number, aspectRatio?: string, language: 'ko' | 'en' = 'ko') {
   const ai = await getAI();
+  const health = await proxyHealth();
+  if (!health) throw new Error(language === 'en'
+    ? 'Unable to connect to the AI service. Please sign in again or contact the administrator.'
+    : 'AI 생성 서버에 연결할 수 없습니다. 다시 로그인하거나 관리자에게 연결 상태를 확인해 주세요.');
+  if (!health.gemini) throw new Error(language === 'en'
+    ? 'Script generation is not configured yet. The administrator must register a Gemini API key.'
+    : '스크립트 생성 기능이 아직 연결되지 않았습니다. 관리자가 Gemini API 키를 등록해야 합니다.');
   const prompt = `Idea: ${idea}\nDuration: ${duration} seconds. Generate the full script in JSON format according to the system instruction.`;
   const config = {
     systemInstruction: sceneCount && aspectRatio ? getSystemInstruction(sceneCount, aspectRatio, language) : SYSTEM_INSTRUCTION,
