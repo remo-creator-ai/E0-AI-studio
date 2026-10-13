@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useCreditStore } from './creditStore';
 import { clearApiKeyCache } from '../services/geminiService';
-import { AUTH_CONFIGURED, MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
+import { AUTH_CONFIGURED, GOOGLE_AUTH_READY, MOCK_MODE, getMockRole, setMockRole, buildMockUser, buildMockSession, type MockRole } from '../lib/mockAuth';
 import type { User, Session } from '@supabase/supabase-js';
 
 let authSubscriptionRegistered = false;
@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setIntroSurveyStatus: (s) => set({ introSurveyStatus: s }),
 
   signInWithGoogle: async () => {
-    if (MOCK_MODE || !AUTH_CONFIGURED) throw new Error("Authentication is not configured.");
+    if (MOCK_MODE || !GOOGLE_AUTH_READY) throw new Error("Authentication is not configured.");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

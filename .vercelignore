@@ -17,3 +17,8 @@ output/
 
 # 디자인/기획 자료 (배포 불필요)
 design/
+
+# Never upload local credentials or verification artifacts
+.env*
+.tmp/
+supabase/.temp/

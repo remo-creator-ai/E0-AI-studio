@@ -4,6 +4,7 @@ import type { User, Session } from '@supabase/supabase-js';
 // A production build must never restore a preview role, even with an old env flag.
 const env = import.meta.env;
 export const AUTH_CONFIGURED = !!env.VITE_SUPABASE_URL && !!env.VITE_SUPABASE_ANON_KEY;
+export const GOOGLE_AUTH_READY = AUTH_CONFIGURED && env.VITE_GOOGLE_AUTH_ENABLED === 'true';
 export const MOCK_MODE: boolean = !!env.DEV && env.VITE_MOCK_AUTH !== 'false'
   && (env.VITE_MOCK_AUTH === 'true' || !AUTH_CONFIGURED);
 

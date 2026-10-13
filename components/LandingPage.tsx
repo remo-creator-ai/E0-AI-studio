@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BrandLogo } from './BrandLogo';
 import { LandingVideoExample } from './LandingVideoExample';
 import { BRAND, CONTENT_STARTS } from '../lib/brand';
-import { AUTH_CONFIGURED, MOCK_MODE } from '../lib/mockAuth';
+import { GOOGLE_AUTH_READY, MOCK_MODE } from '../lib/mockAuth';
 import { useAuthStore } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 
@@ -16,7 +16,7 @@ export const LandingPage: React.FC = () => {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
-  const configured = AUTH_CONFIGURED && !MOCK_MODE;
+  const configured = GOOGLE_AUTH_READY && !MOCK_MODE;
   const start = () => { setError(''); dialog.current?.showModal(); };
   const login = async () => {
     setBusy(true); setError('');
