@@ -10,7 +10,7 @@ type Q2 = 'product_promo' | 'brand_story' | 'education' | 'sns_shorts' | 'other'
 type Q3 = 'food' | 'fashion' | 'retail' | 'service' | 'education' | 'it' | 'other';
 type Q4 = 'lt_5' | '5_to_20' | '20_to_50' | 'gte_50';
 type Q5 = 'first' | 'few' | 'often';
-type Q6 = 'openul' | 'referral' | 'search' | 'sns' | 'other';
+type Q6 = 'website' | 'referral' | 'search' | 'sns' | 'other';
 
 interface Props {
   userId: string;
@@ -61,7 +61,7 @@ const Q5_OPTIONS = [
 ];
 
 const Q6_OPTIONS = [
-  OPT<Q6>('openul', '오픈놀 프로그램'),
+  OPT<Q6>('website', '홈페이지'),
   OPT<Q6>('referral', '지인 소개'),
   OPT<Q6>('search', '검색'),
   OPT<Q6>('sns', 'SNS'),
