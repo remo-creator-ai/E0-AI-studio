@@ -30,7 +30,7 @@ import { useCreditStore } from '../store/creditStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ProjectStep } from '../types';
 import { STEP_TO_TOUR } from '../hooks/useOnboardingTour';
-import { isAdmin } from '../services/adminConfigService';
+import { useIsMaster } from '../hooks/useIsMaster';
 import { CreditRequestModal } from './CreditRequestModal';
 import { renameProject } from '../services/projectService';
 
@@ -94,7 +94,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
   const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const [showCreditRequest, setShowCreditRequest] = useState(false);
-  const isMasterUi = isAdmin(user?.email ?? undefined);
+  const isMasterUi = useIsMaster();
 
   const handleNavigate = (step: ProjectStep) => {
     if (flushSave) flushSave();
@@ -190,7 +190,7 @@ export const Layout: React.FC<{ children: React.ReactNode; saveStatus?: 'idle' |
           />
           </div>
 
-          {isAdmin(user?.email ?? undefined) && (
+          {isMasterUi && (
             <>
               <div className="h-[1px] bg-zinc-200 my-4" />
               <div className="text-[12px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">{t('nav.admin')}</div>
