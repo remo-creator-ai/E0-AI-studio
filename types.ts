@@ -74,6 +74,13 @@ export enum ImageModel {
  *  `image_model` 을 들고 있으면 그 값이 우선하고, 없으면 이 값이 쓰인다. */
 export const DEFAULT_IMAGE_MODEL = ImageModel.GEMINI_3_1_FLASH;
 
+/** E0 화면에서 고를 수 있는 이미지 모델. GPT Image 2 는 OpenAI 키 없이 운영하므로
+ *  선택지에서 숨긴다(기존에 저장된 값은 기본 모델로 취급). */
+export const SELECTABLE_IMAGE_MODELS: ImageModel[] = [ImageModel.GEMINI_3_1_FLASH, ImageModel.GEMINI_3_PRO];
+export function selectableImageModel(model?: ImageModel | null): ImageModel {
+  return model && SELECTABLE_IMAGE_MODELS.includes(model) ? model : DEFAULT_IMAGE_MODEL;
+}
+
 export const IMAGE_MODEL_INFO: Record<ImageModel, { label: string; description: string; creditCost: number }> = {
   [ImageModel.GEMINI_3_1_FLASH]: {
     label: 'Nano Banana 2',

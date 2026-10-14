@@ -43,7 +43,7 @@ import { generateThumbnail } from '../services/thumbnailService';
 import { supabase } from '../lib/supabase';
 import { GRID_ANGLES, STYLE_PROMPT_GUIDES } from '../constants';
 import { listCustomStyles, type CustomStyle } from '../services/customStyleService';
-import { Project, Scene, AdDuration, VisualStyle, StoryboardLayout, SCENE_DURATION_MAP, SceneCount, ImageModel, IMAGE_MODEL_INFO, DEFAULT_IMAGE_MODEL, CategorizedRefImage, ReferenceCategory, REFERENCE_CATEGORY_INFO } from '../types';
+import { Project, Scene, AdDuration, VisualStyle, StoryboardLayout, SCENE_DURATION_MAP, SceneCount, ImageModel, IMAGE_MODEL_INFO, SELECTABLE_IMAGE_MODELS, selectableImageModel, CategorizedRefImage, ReferenceCategory, REFERENCE_CATEGORY_INFO } from '../types';
 import { getSceneGridLayout } from '../lib/sceneGrid';
 import { scenePromptForImage } from '../lib/scenePrompt';
 
@@ -66,7 +66,7 @@ export const VisualizingStep: React.FC = () => {
   // 프로젝트가 기억하는 모델이 있으면 그걸로 시작. 바꾸면 프로젝트에 다시 기억시켜
   // 다듬기 단계의 편집기·업스케일이 같은 모델을 이어서 쓴다.
   const [selectedModel, setSelectedModelState] = useState<ImageModel>(
-    () => project?.image_model ?? DEFAULT_IMAGE_MODEL,
+    () => selectableImageModel(project?.image_model),
   );
   const setSelectedModel = useCallback((model: ImageModel) => {
     setSelectedModelState(model);
@@ -708,7 +708,7 @@ CRITICAL RULES:
         <div data-tour="visualizing-model" className="flex items-center gap-4">
           <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest shrink-0">Image Model</label>
           <div className="flex gap-3 flex-1">
-            {Object.values(ImageModel).map((model) => {
+            {SELECTABLE_IMAGE_MODELS.map((model) => {
               const info = IMAGE_MODEL_INFO[model];
               const isSelected = selectedModel === model;
               return (

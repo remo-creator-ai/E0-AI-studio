@@ -42,7 +42,6 @@ import {
 interface ApiKeyField { key: AdminConfigKey; label: string; placeholder: string; hint?: string; }
 const API_KEY_FIELDS: ApiKeyField[] = [
   { key: 'gemini_api_key', label: 'Gemini API Key', placeholder: 'AIza...' },
-  { key: 'openai_api_key', label: 'OpenAI API Key (GPT Image 2)', placeholder: 'sk-proj-...', hint: '스토리보드 시트를 4K 로 뽑는 GPT Image 2 용' },
   { key: 'google_tts_api_key', label: 'Google Cloud TTS API Key', placeholder: 'AIza...', hint: '음성 생성용 · 월 1M chars WaveNet 무료 티어' },
   { key: 'kling_api_key', label: 'Kling API Key (신규 단일 키 · 권장)', placeholder: 'sk-... 또는 발급된 단일 키', hint: '트라이얼/일반 계정은 이 한 값만 입력하세요' },
   { key: 'kling_access_key_id', label: 'Kling Access Key ID (Legacy)', placeholder: 'ak-...', hint: 'Legacy JWT 방식용 — 신규 단일 키가 있으면 비워두세요' },

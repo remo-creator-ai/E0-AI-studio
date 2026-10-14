@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useModal } from './ui/ModalProvider';
-import { StoryboardLayout, Scene, Project, VisualStyle, AdDuration, UPSCALE_CREDIT_COST, ImageModel, IMAGE_MODEL_INFO, DEFAULT_IMAGE_MODEL } from '../types';
+import { StoryboardLayout, Scene, Project, VisualStyle, AdDuration, UPSCALE_CREDIT_COST, ImageModel, IMAGE_MODEL_INFO, SELECTABLE_IMAGE_MODELS, selectableImageModel } from '../types';
 import { translateText, generateSingleImage, refineSceneFromImage, refineFullStory } from '../services/geminiService';
 import { upscaleSceneImage, type UpscaleTargetSize } from '../services/imageUpscaleService';
 import { detectAspectFromImage } from '../services/videoStudioService';
@@ -106,7 +106,7 @@ export const AssemblyStep: React.FC = () => {
   // 이미지 모델 — 스토리보드 만들기에서 고른 값을 프로젝트가 기억하고 여기서 이어받는다.
   // 예전엔 편집기가 3.1 flash, 업스케일이 3-pro 를 각각 하드코딩해서 같은 컷인데도
   // 단계마다 그림체가 갈렸다.
-  const activeImageModel = project?.image_model ?? DEFAULT_IMAGE_MODEL;
+  const activeImageModel = selectableImageModel(project?.image_model);
   const setActiveImageModel = useCallback((model: ImageModel) => {
     updateProjectSettings({ image_model: model });
   }, [updateProjectSettings]);
@@ -1649,8 +1649,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                     {/* 이미지 모델 — 프로젝트에 기억되어 스토리보드 만들기와 공유된다 */}
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{t('assembly.editor.imageModel')}</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(Object.values(ImageModel) as ImageModel[]).map((model) => {
+                      <div className="grid grid-cols-2 gap-2">
+                        {SELECTABLE_IMAGE_MODELS.map((model) => {
                           const info = IMAGE_MODEL_INFO[model];
                           const isSelected = activeImageModel === model;
                           return (
