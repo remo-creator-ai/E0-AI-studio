@@ -133,7 +133,7 @@ export const ProductionStep: React.FC = () => {
           <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/20 blur-[100px]"></div>
           <div className="flex flex-col items-center justify-center gap-8 relative z-10 py-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
-              <Film size={12} /> SODAM V-ENGINE PRODUCTION
+              <Film size={12} /> E0 VIDEO PRODUCTION
             </div>
             <h1 className="text-5xl font-black tracking-tight leading-none text-center text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
@@ -444,7 +444,7 @@ export const ProductionStep: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10">
           <div className="space-y-4 text-center lg:text-left flex-1">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-[10px] font-black uppercase tracking-widest">
-              <Film size={12} /> SODAM V-ENGINE PRODUCTION
+              <Film size={12} /> E0 VIDEO PRODUCTION
             </div>
             <h1 className="text-5xl font-black tracking-tight leading-none text-zinc-900">
               Cinematic <span className="text-primary">Production</span>
@@ -788,7 +788,7 @@ export const ProductionStep: React.FC = () => {
                    </button>
                    <a
                     href={scene.video_url}
-                    download={`SODAM_Scene_${idx+1}.mp4`}
+                    download={`E0_Scene_${idx+1}.mp4`}
                     className="p-4 bg-white text-black rounded-full shadow-2xl hover:scale-110 transition-all"
                    >
                      <Download size={24} />
@@ -875,7 +875,7 @@ export const ProductionStep: React.FC = () => {
                           const url = URL.createObjectURL(blob);
                           const link = document.createElement('a');
                           link.href = url;
-                          link.download = `SODAM_${project.title.replace(/\s+/g, '_')}.storyboard`;
+                          link.download = `E0_${project.title.replace(/\s+/g, '_')}.storyboard`;
                           link.click();
                           URL.revokeObjectURL(url);
                           setStoryboardDownloaded(true);
@@ -912,7 +912,7 @@ export const ProductionStep: React.FC = () => {
                           const url = URL.createObjectURL(content);
                           const link = document.createElement('a');
                           link.href = url;
-                          link.download = `SODAM_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
+                          link.download = `E0_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
                           link.click();
                           URL.revokeObjectURL(url);
                           setAssetsDownloaded(true);

@@ -227,7 +227,7 @@ export const PlanningStep: React.FC = () => {
   const handleDownloadText = () => {
     if (!project) return;
 
-    let textContent = `[SODAM AI STUDIO - MASTER STORYBOARD]\n`;
+    let textContent = `[E0 AI STUDIO - MASTER STORYBOARD]\n`;
     textContent += `========================================\n`;
     textContent += `PROJECT TITLE: ${project.title}\n`;
     textContent += `ASPECT RATIO: ${project.aspect_ratio || '16:9'}\n`;
@@ -252,7 +252,7 @@ export const PlanningStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `SODAM_Storyboard_${project.title.replace(/\s+/g, '_')}.txt`;
+    link.download = `E0_Storyboard_${project.title.replace(/\s+/g, '_')}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };

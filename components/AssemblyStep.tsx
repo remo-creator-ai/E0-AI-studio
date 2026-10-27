@@ -357,7 +357,7 @@ export const AssemblyStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `SODAM_${project.title.replace(/\s+/g, '_')}.storyboard`;
+    link.download = `E0_${project.title.replace(/\s+/g, '_')}.storyboard`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -372,7 +372,7 @@ export const AssemblyStep: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `SODAM_Scene_${String(idx + 1).padStart(2, '0')}.png`;
+    link.download = `E0_Scene_${String(idx + 1).padStart(2, '0')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -406,7 +406,7 @@ export const AssemblyStep: React.FC = () => {
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `SODAM_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
+      link.download = `E0_Assets_${project.title.replace(/\s+/g, '_')}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -498,7 +498,7 @@ export const AssemblyStep: React.FC = () => {
 </head>
 <body>
 <header>
-  <h1>SODAM AI STORYBOARD</h1>
+  <h1>E0 AI STORYBOARD</h1>
   <div class="meta">${titleSafe} · ${sceneData.length} cuts · ${aspect}</div>
 </header>
 <div class="grid" id="grid"></div>
@@ -508,7 +508,7 @@ export const AssemblyStep: React.FC = () => {
     <div id="modal-content"></div>
   </div>
 </div>
-<footer>© SODAM AI STUDIO · Generated Storyboard</footer>
+<footer>© E0 AI STUDIO · Generated Storyboard</footer>
 <script>
 const scenes = ${JSON.stringify(sceneData)};
 const grid = document.getElementById('grid');
@@ -553,7 +553,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `SODAM_Storyboard_${(project.title || 'Untitled').replace(/\s+/g, '_')}.zip`;
+      link.download = `E0_Storyboard_${(project.title || 'Untitled').replace(/\s+/g, '_')}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1114,7 +1114,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
               {/* Header */}
               <div className="flex justify-between items-start mb-6 border-b-4 border-black pb-4 text-left">
                 <div>
-                  <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">SODAM AI STUDIO</h2>
+                  <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">E0 AI STUDIO</h2>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{t('assembly.storyboardSubheader')}</p>
                 </div>
                 <div className="text-right grid grid-cols-2 gap-x-6 gap-y-1">
@@ -1512,7 +1512,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
                         const link = document.createElement('a');
                         link.href = editingScene.image_url;
                         const sceneIdx = project.scenes.findIndex(s => s.id === editingScene.id);
-                        link.download = `SODAM_Scene_${String(sceneIdx + 1).padStart(2, '0')}.png`;
+                        link.download = `E0_Scene_${String(sceneIdx + 1).padStart(2, '0')}.png`;
                         link.click();
                       }}
                       disabled={!editingScene?.image_url}
